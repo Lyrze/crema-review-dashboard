@@ -1,0 +1,1035 @@
+"""
+크리마 리뷰 CSV 데이터 처리 파이프라인
+- 슬룸(Sloom) 헬스테크 마사지기 브랜드용
+- GitHub Pages 정적 대시보드용 JSON 생성
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+import re
+import sys
+import time
+from collections import Counter, defaultdict
+from datetime import datetime
+from pathlib import Path
+from typing import List, Optional
+
+import pandas as pd
+
+__all__ = [
+    "load_csv",
+    "calc_kpis",
+    "calc_timeline",
+    "calc_review_path_distribution",
+    "calc_products",
+    "extract_keywords_basic",
+    "save_json",
+    "update_index_json",
+    "run_pipeline",
+    "normalize_product_name",
+    "validate_month",
+    "validate_brand",
+]
+
+# 프로젝트 루트 기준 경로
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+# ────────────────────────────────────────────
+# 로깅 설정
+# ────────────────────────────────────────────
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%H:%M:%S",
+)
+logger = logging.getLogger(__name__)
+
+
+# ────────────────────────────────────────────
+# 입력 검증 헬퍼
+# ────────────────────────────────────────────
+
+_MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
+_SAFE_NAME_RE = re.compile(r"^[\w가-힣\-. ]+$")
+
+
+def validate_month(month: str) -> str:
+    """YYYY-MM 형식 검증. 유효하지 않으면 ValueError 발생."""
+    if not _MONTH_RE.match(month):
+        raise ValueError(f"월 형식이 잘못되었습니다 (YYYY-MM 필요): {month!r}")
+    return month
+
+
+def validate_brand(brand: str) -> str:
+    """브랜드명 검증 — 경로 순회(path traversal) 방지."""
+    stripped = brand.strip()
+    if not stripped:
+        raise ValueError("브랜드명이 비어 있습니다.")
+    if not _SAFE_NAME_RE.match(stripped):
+        raise ValueError(
+            f"브랜드명에 허용되지 않는 문자가 포함되어 있습니다: {brand!r}"
+        )
+    return stripped
+
+
+def resolve_safe_output_dir(docs_root: Path, brand: str, month: str) -> Path:
+    """
+    출력 디렉토리를 반환하되, docs_root 외부로 벗어나지 않도록 검증.
+    경로 순회 공격(path traversal) 방지.
+    """
+    out_dir = (docs_root / brand / month).resolve()
+    if not str(out_dir).startswith(str(docs_root.resolve())):
+        raise ValueError(
+            f"출력 경로가 허용 범위를 벗어납니다: {out_dir}"
+        )
+    return out_dir
+
+
+# ────────────────────────────────────────────
+# 상품명 정규화
+# ────────────────────────────────────────────
+
+# 제거할 프로모션 접두사/패턴 (순서 중요: 구체적인 것부터)
+PROMO_PATTERNS: List[str] = [
+    # 1단계: ★[인플루언서x슬룸]...★ 형태의 맨 앞 콜라보+★ 블록
+    r"^★\s*\[[^\]]*[Xx×][^\]]*슬룸[^\]]*\]\s*",
+    r"^★\s*\[[^\]]*슬룸[^\]]*[Xx×][^\]]*\]\s*",
+    # ★숫자일 특별 연장★ 같은 기간 프로모션 블록
+    r"^★\d+일[^★]*★\s*",
+    # ★[내용]★ 일반 강조 블록
+    r"★[^★]*★\s*",
+    # 뒤에 홀로 남은 ★
+    r"★\s*$|^\s*★",
+    r"★",
+    r"☆[^☆]*☆\s*",
+    r"♥[^♥]*♥\s*",
+    # 콜라보 패턴: [인플루언서명x슬룸], [슬룸x인플루언서] (숫자포함 닉네임)
+    r"\[[\w가-힣\s]+[Xx×][\w가-힣\s]*슬룸[\w가-힣\s]*\]\s*",
+    r"\[[\w가-힣\s]*슬룸[\w가-힣\s]*[Xx×][\w가-힣\s]+\]\s*",
+    # 콜라보 태그 괄호 밖 버전: 인플루언서X슬룸 / 덤순이X슬룸
+    r"[가-힣\w]{2,15}[Xx×]슬룸\s*",
+    r"슬룸[Xx×][가-힣\w]{2,15}\s*",
+    # 일반 [ ] 프로모션 태그
+    r"\[[^\]]{1,30}\]\s*",
+    r"【[^】]{1,30}】\s*",
+    r"〔[^〕]{1,30}〕\s*",
+    # 괄호 안 할인/특가/이벤트
+    r"\([^)]{1,30}할인[^)]*\)\s*",
+    r"\([^)]{1,30}특가[^)]*\)\s*",
+    r"\([^)]{1,30}이벤트[^)]*\)\s*",
+    # 맨 앞 마케팅 키워드
+    r"^(최대할인|타임딜|특가|비밀링크|핫딜|한정|이벤트|추가할인|쿠폰)\s*[_\-]?\s*",
+    # 기간/회차 접두사: "7일 특별 연장" 같은 패턴
+    r"^\d+일\s+특별\s+연장\s*",
+    r"^[0-9]+차[!!\s]*\s*",
+]
+
+COMPILED_PROMO: List[re.Pattern] = [
+    re.compile(p, re.IGNORECASE) for p in PROMO_PATTERNS
+]
+
+# 쓸모없는 마케팅 잔재 접미사/접두사 제거
+TRAILING_NOISE_RE: re.Pattern = re.compile(
+    r"(최저가\s*OPEN[★!★]*"
+    r"|^\s*역대급\s*대박\s*할인\s*$"
+    r"|^\s*역대급\s*할인\s*$"
+    r"|\s*특가$"
+    r"|\s*OPEN[★!]*$)",
+    re.IGNORECASE,
+)
+
+_SEPARATOR_RE: re.Pattern = re.compile(r"^[\s_\-|/\\]+|[\s_\-|/\\]+$")
+_MARKETING_SUFFIX_RE: re.Pattern = re.compile(
+    r"\s*(특가|할인|한정|이벤트|기획|세일)$"
+)
+
+
+def normalize_product_name(raw_name: str) -> str:
+    """
+    마케팅/프로모션 접두사를 제거하고 핵심 상품명을 추출한다.
+
+    예:
+      "★[까밀라댁x슬룸] 구독자 한정 역대급 할인★" → "구독자 한정 역대급 할인"
+      "[타임딜] 목편한케어 목 마사지기"              → "목편한케어 목 마사지기"
+      "★최대할인 비밀링크★ 목베개 플러스 특가"       → "목베개 플러스"
+    """
+    if not isinstance(raw_name, str):
+        return str(raw_name)
+
+    name = raw_name.strip()
+
+    # 반복 적용으로 중첩 패턴 제거 (최대 5회)
+    for _ in range(5):
+        prev = name
+        for pattern in COMPILED_PROMO:
+            name = pattern.sub("", name).strip()
+        if name == prev:
+            break
+
+    # 마케팅 잔재 접미사 제거
+    name = TRAILING_NOISE_RE.sub("", name).strip()
+
+    # 앞뒤 구분자 제거
+    name = _SEPARATOR_RE.sub("", name)
+
+    # 빈 문자열이 되면 원본 반환
+    return name if name else raw_name.strip()
+
+
+def get_product_group_key(normalized_name: str) -> str:
+    """
+    정규화된 상품명을 동일 상품 그룹 키로 변환.
+    '목베개 플러스 특가' → '목베개 플러스'처럼 마케팅 잔재 제거.
+    """
+    return _MARKETING_SUFFIX_RE.sub("", normalized_name).strip()
+
+
+# ────────────────────────────────────────────
+# CSV 로딩 및 전처리
+# ────────────────────────────────────────────
+
+# 크리마 CSV 컬럼 → 내부 키 매핑
+COLUMN_MAP: dict = {
+    "리뷰ID": "review_id",
+    "리뷰code": "review_code",
+    "주문번호": "order_no",
+    "리뷰작성일": "review_date",
+    "상품구매일": "purchase_date",
+    "배송완료일": "delivery_date",
+    "리뷰본문": "body",
+    "회원ID": "member_id",
+    "회원명": "member_name",
+    "회원등급": "member_grade",
+    "추가수집정보": "extra_info",
+    "상품번호": "product_id",
+    "상품명": "product_name_raw",
+    "상품가격": "product_price",
+    "상품옵션": "product_option",
+    "적립금": "points",
+    "적립금지급일": "points_date",
+    "리뷰작성경로": "review_path",
+    "리뷰별점": "rating",
+    "태그": "tags",
+    "포토개수": "photo_count",
+    "동영상개수": "video_count",
+    "포토1_url": "photo1_url",
+    "포토2_url": "photo2_url",
+    "포토3_url": "photo3_url",
+    "포토4_url": "photo4_url",
+    "동영상1_url": "video1_url",
+    "동영상2_url": "video2_url",
+    "동영상3_url": "video3_url",
+    "동영상4_url": "video4_url",
+    "댓글개수": "comment_count",
+    "댓글내용": "comment_body",
+}
+
+_REQUIRED_COLUMNS: List[str] = ["review_id", "review_date", "body", "product_name_raw", "rating"]
+_DATE_COLUMNS: List[str] = ["review_date", "purchase_date", "delivery_date"]
+_NUMERIC_COLUMNS: List[str] = ["rating", "photo_count", "video_count", "comment_count", "product_price"]
+
+
+def load_csv(csv_path: Path) -> pd.DataFrame:
+    """
+    크리마 CSV를 읽어 전처리된 DataFrame 반환.
+    인코딩은 CP949 우선, 실패 시 UTF-8-SIG, UTF-8 순으로 시도.
+    """
+    logger.info("CSV 파일 읽는 중: %s", csv_path)
+    df: Optional[pd.DataFrame] = None
+
+    for enc in ("cp949", "utf-8-sig", "utf-8"):
+        try:
+            df = pd.read_csv(csv_path, encoding=enc, low_memory=False)
+            logger.info("  인코딩: %s, 행 수: %d", enc, len(df))
+            break
+        except UnicodeDecodeError:
+            continue
+        except Exception as exc:
+            raise RuntimeError(f"CSV 읽기 중 예상치 못한 오류: {exc}") from exc
+
+    if df is None:
+        raise RuntimeError(
+            f"모든 인코딩(cp949, utf-8-sig, utf-8)으로 CSV 읽기에 실패했습니다: {csv_path}"
+        )
+
+    # 컬럼명 공백 제거
+    df.columns = df.columns.str.strip()
+
+    # 내부 키로 리네임 (존재하는 컬럼만)
+    rename_map = {k: v for k, v in COLUMN_MAP.items() if k in df.columns}
+    df = df.rename(columns=rename_map)
+
+    # 필수 컬럼 확인
+    missing = [c for c in _REQUIRED_COLUMNS if c not in df.columns]
+    if missing:
+        logger.warning("누락된 필수 컬럼: %s", missing)
+
+    # 날짜 파싱 (벡터화)
+    for date_col in _DATE_COLUMNS:
+        if date_col in df.columns:
+            df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+
+    # 숫자형 변환 (벡터화)
+    for num_col in _NUMERIC_COLUMNS:
+        if num_col in df.columns:
+            df[num_col] = pd.to_numeric(df[num_col], errors="coerce")
+
+    # 결측 리뷰 본문 처리
+    if "body" in df.columns:
+        df["body"] = df["body"].fillna("").astype(str)
+
+    # 상품명 정규화 (벡터화 — Series.map 사용)
+    if "product_name_raw" in df.columns:
+        df["product_name"] = df["product_name_raw"].map(normalize_product_name)
+
+    # 별점 유효값만 유지 (1~5)
+    if "rating" in df.columns:
+        before = len(df)
+        df = df[df["rating"].between(1, 5)].copy()
+        dropped = before - len(df)
+        if dropped:
+            logger.warning("  유효하지 않은 별점 행 제거: %d건", dropped)
+
+    logger.info("  전처리 완료. 유효 리뷰: %d건", len(df))
+    return df
+
+
+# ────────────────────────────────────────────
+# KPI 계산
+# ────────────────────────────────────────────
+
+def calc_kpis(df: pd.DataFrame, prev_df: Optional[pd.DataFrame] = None) -> dict:
+    """전체 KPI 딕셔너리 생성."""
+    total = len(df)
+    avg_rating = round(float(df["rating"].mean()), 2) if total else 0.0
+
+    # 별점 분포 (벡터화)
+    rating_series = df["rating"].value_counts().reindex(range(1, 6), fill_value=0)
+    rating_dist: dict = {str(r): int(rating_series[r]) for r in range(1, 6)}
+
+    photo_count = (
+        int(df["photo_count"].fillna(0).gt(0).sum())
+        if "photo_count" in df.columns
+        else 0
+    )
+    photo_rate = round(photo_count / total * 100, 1) if total else 0.0
+
+    # 감성 분포
+    if "sentiment" in df.columns:
+        sentiment_counts = df["sentiment"].value_counts()
+        pos = int(sentiment_counts.get("positive", 0))
+        neg = int(sentiment_counts.get("negative", 0))
+        neu = int(sentiment_counts.get("neutral", 0))
+    else:
+        # 별점 기반 간이 추정: 4~5 긍정, 3 중립, 1~2 부정
+        pos = int(df["rating"].ge(4).sum())
+        neu = int(df["rating"].eq(3).sum())
+        neg = int(df["rating"].le(2).sum())
+
+    pos_rate = round(pos / total * 100, 2) if total else 0.0
+    neg_rate = round(neg / total * 100, 2) if total else 0.0
+
+    kpis: dict = {
+        "total_reviews": total,
+        "avg_rating": avg_rating,
+        "rating_distribution": rating_dist,
+        "photo_review_count": photo_count,
+        "photo_review_rate": photo_rate,
+        "positive_count": pos,
+        "neutral_count": neu,
+        "negative_count": neg,
+        "positive_rate": pos_rate,
+        "negative_rate": neg_rate,
+    }
+
+    # 전월 대비 변화
+    if prev_df is not None and len(prev_df) > 0:
+        prev_total = len(prev_df)
+        prev_avg = float(prev_df["rating"].mean())
+        kpis["mom_review_change"] = total - prev_total
+        kpis["mom_review_change_pct"] = round((total - prev_total) / prev_total * 100, 1)
+        kpis["mom_rating_change"] = round(avg_rating - prev_avg, 2)
+    else:
+        kpis["mom_review_change"] = None
+        kpis["mom_review_change_pct"] = None
+        kpis["mom_rating_change"] = None
+
+    return kpis
+
+
+def calc_timeline(df: pd.DataFrame) -> List[dict]:
+    """
+    일별 리뷰수 + 평균별점 타임라인 (완전 벡터화 집계).
+    iterrows() 를 제거하고 .to_dict('records') 로 변환.
+    """
+    if "review_date" not in df.columns:
+        return []
+
+    grouped = (
+        df.assign(date_str=df["review_date"].dt.strftime("%Y-%m-%d"))
+        .groupby("date_str", sort=True)["rating"]
+        .agg(count="count", avg_rating="mean")
+        .reset_index()
+    )
+    # 컬럼명 정규화
+    grouped.columns = ["date_str", "count", "avg_rating"]
+
+    return [
+        {
+            "date": r["date_str"],
+            "count": int(r["count"]),
+            "avg_rating": round(float(r["avg_rating"]), 2),
+        }
+        for r in grouped.to_dict("records")
+    ]
+
+
+def calc_review_path_distribution(df: pd.DataFrame) -> dict:
+    """리뷰 작성 경로별 분포 (벡터화)."""
+    if "review_path" not in df.columns:
+        return {}
+    counts = df["review_path"].fillna("미분류").value_counts()
+    return {str(k): int(v) for k, v in counts.items()}
+
+
+# ────────────────────────────────────────────
+# 상품별 집계
+# ────────────────────────────────────────────
+
+def calc_products(df: pd.DataFrame, top_review_count: int = 3) -> List[dict]:
+    """상품별 집계 데이터 생성."""
+    if "product_name" not in df.columns:
+        return []
+
+    products: List[dict] = []
+
+    for product_name, group in df.groupby("product_name"):
+        # 빈 그룹 방어 (GroupBy 결과는 이론상 비어 있지 않지만 안전하게 처리)
+        if group.empty:
+            continue
+
+        # .iat[0] 사용으로 IndexError 방어 (iloc[0] 대체)
+        pid = str(group["product_id"].iat[0]) if "product_id" in group.columns else ""
+        raw_name = (
+            str(group["product_name_raw"].iat[0])
+            if "product_name_raw" in group.columns
+            else str(product_name)
+        )
+        price_series = (
+            group["product_price"].dropna()
+            if "product_price" in group.columns
+            else pd.Series(dtype=float)
+        )
+        price = price_series.median() if not price_series.empty else None
+
+        # 별점 분포 (벡터화)
+        rc = group["rating"].value_counts().reindex(range(1, 6), fill_value=0)
+        rating_dist: dict = {str(r): int(rc[r]) for r in range(1, 6)}
+
+        photo_cnt = (
+            int(group["photo_count"].fillna(0).gt(0).sum())
+            if "photo_count" in group.columns
+            else 0
+        )
+
+        # 감성 분포 (벡터화)
+        if "sentiment" in group.columns:
+            sc = group["sentiment"].value_counts()
+            sentiment: dict = {
+                "positive": int(sc.get("positive", 0)),
+                "neutral": int(sc.get("neutral", 0)),
+                "negative": int(sc.get("negative", 0)),
+            }
+        else:
+            sentiment = {
+                "positive": int(group["rating"].ge(4).sum()),
+                "neutral": int(group["rating"].eq(3).sum()),
+                "negative": int(group["rating"].le(2).sum()),
+            }
+
+        # 대표 리뷰 (최신 + 별점 높은 순) — itertuples 사용으로 성능 개선
+        top = group.sort_values(
+            ["rating", "review_date"], ascending=[False, False]
+        ).head(top_review_count)
+
+        top_reviews: List[dict] = []
+        for row in top.itertuples(index=False):
+            date_str = ""
+            rv_date = getattr(row, "review_date", None)
+            if rv_date is not None and pd.notna(rv_date):
+                date_str = pd.Timestamp(rv_date).strftime("%Y-%m-%d")
+            top_reviews.append({
+                "review_id": str(getattr(row, "review_id", "")),
+                "text": str(getattr(row, "body", ""))[:300],
+                "rating": int(getattr(row, "rating", 0)),
+                "date": date_str,
+            })
+
+        products.append({
+            "id": pid,
+            "name": str(product_name),
+            "raw_name": raw_name,
+            "price": int(price) if price is not None and not pd.isna(price) else None,
+            "review_count": len(group),
+            "avg_rating": round(float(group["rating"].mean()), 2),
+            "rating_distribution": rating_dist,
+            "photo_count": photo_cnt,
+            "sentiment": sentiment,
+            "top_reviews": top_reviews,
+        })
+
+    products.sort(key=lambda x: x["review_count"], reverse=True)
+    return products
+
+
+# ────────────────────────────────────────────
+# 키워드 분석 (AI 없는 기본 버전)
+# ────────────────────────────────────────────
+
+# 한국어 불용어 목록
+STOPWORDS: frozenset = frozenset({
+    # 조사
+    "이", "가", "을", "를", "은", "는", "에", "의", "와", "과", "도", "로", "으로",
+    "에서", "에게", "한테", "에서도", "까지", "부터",
+    # 접속사/연결어
+    "이고", "이며", "하고", "하여", "해서", "하지만", "그리고", "그런데", "근데",
+    "그래서", "때문에", "이라서", "라서", "아서", "어서",
+    # 형식어
+    "있어요", "있어", "있는", "없어요", "없어", "같아요", "같아", "같은",
+    "이에요", "예요", "이네요", "네요", "이죠", "죠",
+    # 부사
+    "정말", "너무", "매우", "아주", "좀", "더", "잘", "잘못", "그냥",
+    "많이", "자주", "계속", "항상", "특히", "확실히", "진짜", "엄청",
+    "약간", "조금", "조금씩", "꽤", "상당히", "다소",
+    # 의존명사/일반명사
+    "것", "거", "게", "수", "등", "및", "또", "다", "만", "뿐",
+    "이번", "번", "개", "번째", "처음", "마지막", "이거", "이건", "이것",
+    # 동사/형용사 어간
+    "합니다", "했어요", "해요", "해서", "했습니다", "입니다", "됩니다",
+    "했는데", "하는데", "인데", "인지", "라고", "이라고",
+    "쓰면", "쓰고", "써도", "쓰는", "쓰다가", "써보니",
+    "사용해", "사용하면", "사용하고", "사용하니", "사용했는데",
+    "느낌이에요", "느낌이", "느낌은",
+    "같이", "함께", "바로", "이미", "아직", "벌써",
+    "않고", "없이", "없는", "없을",
+    "받고", "받아서", "오고", "왔는데",
+    # 브랜드/상품 일반어
+    "슬룸", "제품", "상품", "구매", "사용", "리뷰",
+    "배송", "포장", "택배",
+    # 기타 빈출 무의미어
+    "그", "이", "저", "것도", "거도", "되는", "되어", "되었", "됩니다",
+    "분들한테", "분이", "분들", "분들도",
+})
+
+# ── 불만(complaint) 패턴 정의 ──
+COMPLAINT_PATTERNS: List[tuple] = [
+    ("소음",        r"소음이?|소리.*크|시끄럽|웅.*소리|귀.*울림|머리.*울",        "소음/시끄러움"),
+    ("환불반품",    r"환불.*안|반품.*안|반품.*힘|환불.*못|환불.*불가|반품.*불가|개봉.*반품",  "환불·반품 불가"),
+    ("효과없음",    r"효과.*없|시원하지.*않|별로|아무.*효과|효용.*못|모르겠|느껴지지.*않|느낌이.*없|약해|강도.*약",  "효과 미흡"),
+    ("AS문제",     r"AS.*안|as.*안|고객.*과실|상담원.*연결.*안|전화.*연결.*안|전화.*수신.*거절|ai.*상담만",  "AS/고객서비스 문제"),
+    ("고장",        r"고장났|작동.*안|작동이.*안|일주일.*고장|한달.*고장|전원.*안",   "고장/작동불량"),
+    ("과장광고",    r"광고.*다르|과대광고|속아|광고와|과장",                        "과장광고"),
+    ("높이불편",    r"높이.*높|높아서.*불편|너무.*높|높이.*불편",                   "높이 불편"),
+    ("진동두통",    r"진동.*골|골이.*울|두통|머리.*울려|골이.*울려",               "진동 두통"),
+    ("AI상담",     r"AI.*상담|ai.*상담|상담원.*연결.*안되|전화.*안됨",              "AI상담·전화 불가"),
+    ("가격대비",    r"가격.*비싸|돈.*아까|돈.*비해|비싸고|가성비.*나쁜",           "가격 대비 효과"),
+    ("충전불편",    r"전원코드.*연결|코드.*연결.*사용|무선.*아니|충전.*안되|배터리.*없",  "유선/충전 불편"),
+]
+
+# ── 칭찬(praise) 패턴 ──
+PRAISE_PATTERNS: List[tuple] = [
+    ("효과좋음",   r"효과.*좋|효과.*있|확실히.*효과|효과적|개운|시원하고|시원해요|시원합니다",  "효과 좋음"),
+    ("편안함",     r"편안|편하게|편히|편한|부드럽게|부드러운",                      "편안함"),
+    ("품질좋음",   r"품질.*좋|품질.*훌륭|퀄리티.*좋|만들어진",                      "품질 좋음"),
+    ("디자인",     r"디자인.*예쁘|디자인.*좋|예쁘게|예쁜|고급스럽|깔끔",            "디자인"),
+    ("배송빠름",   r"배송.*빠르|배송.*빠름|배송.*빨리|빠른.*배송",                  "빠른 배송"),
+    ("온열기능",   r"온열.*좋|따뜻하게|따뜻한|온열이랑|온열기능",                   "온열 기능"),
+    ("에어백",     r"에어백.*좋|에어백.*강도|에어백.*세게|에어백.*효과",             "에어백 마사지"),
+    ("추천",       r"추천합니다|추천해요|강력.*추천|적극.*추천|꼭.*추천",            "추천"),
+    ("만족",       r"만족합니다|만족해요|만족스럽|대만족|최고.*만족",               "만족"),
+    ("선물추천",   r"선물.*좋|선물.*추천|부모님|어머니|아버지",                      "선물 추천"),
+]
+
+# ── 개선요청(improvement) 패턴 ──
+IMPROVEMENT_PATTERNS: List[tuple] = [
+    ("강도개선",   r"강도.*쎈|강도.*강하|더.*강하|강도.*높|강도.*세|세게.*해|강하게.*해줬으면",  "강도 강화 요청"),
+    ("무선충전",   r"무선이라면|충전.*되면|무선.*있으면|배터리.*있으면|무선으로.*바꿔",          "무선/충전 개선"),
+    ("소음개선",   r"소음.*줄|소음.*낮|조용하게|소리.*작게",                          "소음 개선"),
+    ("리모컨",     r"리모컨.*있으면|리모컨.*없|리모컨.*추가|별도.*리모컨",             "리모컨 추가"),
+    ("높이조절",   r"높이.*조절|높이.*다양|높이.*선택|낮은.*버전",                    "높이 조절 기능"),
+    ("AS개선",    r"AS.*개선|상담원.*연결|전화.*연결|반품.*가능하게",                 "AS·반품 정책 개선"),
+    ("경량화",     r"가벼웠으면|가볍게|무거워|무겁지.*않|경량",                       "경량화"),
+]
+
+# 패턴 사전 컴파일 (모듈 로드 시 1회만 실행)
+_COMPILED_COMPLAINT: List[tuple] = [
+    (cat, re.compile(pat, re.IGNORECASE), label)
+    for cat, pat, label in COMPLAINT_PATTERNS
+]
+_COMPILED_PRAISE: List[tuple] = [
+    (cat, re.compile(pat, re.IGNORECASE), label)
+    for cat, pat, label in PRAISE_PATTERNS
+]
+_COMPILED_IMPROVEMENT: List[tuple] = [
+    (cat, re.compile(pat, re.IGNORECASE), label)
+    for cat, pat, label in IMPROVEMENT_PATTERNS
+]
+
+_KOREAN_WORD_RE: re.Pattern = re.compile(r"[가-힣]{2,8}")
+
+
+def _tokenize(text: str) -> List[str]:
+    """2~8자 한글 어절 추출 + 불용어 제거."""
+    return [w for w in _KOREAN_WORD_RE.findall(text) if w not in STOPWORDS]
+
+
+def _count_keywords(source_df: pd.DataFrame, top_n: int) -> List[dict]:
+    """
+    어절 빈도 카운트 + 리뷰 ID 연결 (문서 단위 TF).
+    zip() 대신 itertuples()로 행 순회 — 약 3~4배 빠름.
+    """
+    counter: Counter = Counter()
+    word_to_ids: dict = defaultdict(list)
+
+    has_review_id = "review_id" in source_df.columns
+    cols = ["body", "review_id"] if has_review_id else ["body"]
+    sub = source_df[cols].copy()
+    sub["body"] = sub["body"].fillna("").astype(str)
+    if has_review_id:
+        sub["review_id"] = sub["review_id"].astype(str)
+
+    for row in sub.itertuples(index=False):
+        rid = row.review_id if has_review_id else str(row.Index if hasattr(row, "Index") else "")
+        for word in set(_tokenize(row.body)):
+            counter[word] += 1
+            word_to_ids[word].append(rid)
+
+    return [
+        {"word": word, "count": cnt, "reviews": word_to_ids[word][:10]}
+        for word, cnt in counter.most_common(top_n)
+    ]
+
+
+def _match_compiled_patterns(
+    compiled_patterns: List[tuple],
+    texts: List[str],
+    review_ids: List[str],
+) -> List[dict]:
+    """
+    사전 컴파일된 패턴 리스트로 매칭 수행.
+    벡터화: pandas Series.str.contains 활용.
+    """
+    text_series = pd.Series(texts, dtype=str)
+    results: List[dict] = []
+
+    for category, compiled, label in compiled_patterns:
+        mask = text_series.str.contains(compiled, na=False)
+        matched_ids = [review_ids[i] for i in mask[mask].index.tolist()]
+        if matched_ids:
+            results.append({
+                "word": label,
+                "count": len(matched_ids),
+                "category": category,
+                "reviews": matched_ids[:10],
+            })
+
+    results.sort(key=lambda x: x["count"], reverse=True)
+    return results
+
+
+def extract_keywords_basic(df: pd.DataFrame, top_n: int = 30) -> dict:
+    """
+    형태소 분석기 없이 어절 빈도 + 패턴 기반 키워드 추출.
+
+    Returns:
+        {
+          "negative_keywords": [...],    # 1~2점 리뷰 어절 빈도
+          "low_rating_keywords": [...],  # 1~3점 리뷰 어절 빈도
+          "positive_keywords": [...],    # 4~5점 리뷰 어절 빈도
+          "by_intent": {
+              "praise": [...],
+              "complaint": [...],
+              "improvement": [...]
+          }
+        }
+    """
+    low_df = df[df["rating"].le(3)].reset_index(drop=True)
+    neg_df = df[df["rating"].le(2)].reset_index(drop=True)
+    pos_df = df[df["rating"].ge(4)].reset_index(drop=True)
+
+    all_texts = df["body"].fillna("").astype(str).tolist()
+    low_texts = low_df["body"].fillna("").astype(str).tolist()
+
+    # review_id 리스트 (패턴 매칭용)
+    all_ids = (
+        df["review_id"].astype(str).tolist()
+        if "review_id" in df.columns
+        else [str(i) for i in range(len(df))]
+    )
+    low_ids = (
+        low_df["review_id"].astype(str).tolist()
+        if "review_id" in low_df.columns
+        else [str(i) for i in range(len(low_df))]
+    )
+
+    praise_items = _match_compiled_patterns(_COMPILED_PRAISE, all_texts, all_ids)
+    complaint_items = _match_compiled_patterns(_COMPILED_COMPLAINT, low_texts, low_ids)
+    improvement_items = _match_compiled_patterns(_COMPILED_IMPROVEMENT, all_texts, all_ids)
+
+    return {
+        "negative_keywords": _count_keywords(neg_df, top_n),
+        "low_rating_keywords": _count_keywords(low_df, top_n),
+        "positive_keywords": _count_keywords(pos_df, top_n),
+        "by_intent": {
+            "praise": praise_items[:top_n],
+            "complaint": complaint_items[:top_n],
+            "improvement": improvement_items[:top_n],
+        },
+    }
+
+
+# ────────────────────────────────────────────
+# JSON 저장
+# ────────────────────────────────────────────
+
+def save_json(data: object, path: Path) -> None:
+    """JSON 파일 저장 (예쁜 형식, UTF-8)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2, default=str)
+    size_kb = path.stat().st_size / 1024
+    logger.info("  저장: %s (%.1f KB)", path, size_kb)
+
+
+def update_index_json(brand: str, month: str, docs_root: Path) -> None:
+    """
+    docs/data/index.json 을 업데이트.
+    브랜드/월 목록을 누적 관리한다.
+    """
+    index_path = docs_root / "index.json"
+    index: dict = {"brands": {}}
+
+    if index_path.exists():
+        try:
+            with open(index_path, encoding="utf-8") as f:
+                loaded = json.load(f)
+            if isinstance(loaded, dict) and isinstance(loaded.get("brands"), dict):
+                index = loaded
+        except (json.JSONDecodeError, OSError) as exc:
+            logger.warning("index.json 읽기 실패, 새로 생성합니다: %s", exc)
+
+    if brand not in index["brands"]:
+        index["brands"][brand] = {"months": []}
+
+    months: List[str] = index["brands"][brand]["months"]
+    if month not in months:
+        months.append(month)
+        months.sort(reverse=True)
+
+    index["last_updated"] = datetime.now().isoformat()
+    save_json(index, index_path)
+
+
+# ────────────────────────────────────────────
+# 진행률 표시 헬퍼
+# ────────────────────────────────────────────
+
+class Progress:
+    """tqdm 없이 동작하는 간단한 진행률 표시기. 컨텍스트 매니저로도 사용 가능."""
+
+    def __init__(self, total: int, desc: str = "처리 중") -> None:
+        self.total = total
+        self.desc = desc
+        self.current = 0
+        self.start = time.monotonic()
+
+    def __enter__(self) -> "Progress":
+        return self
+
+    def __exit__(self, exc_type: object, exc_val: object, exc_tb: object) -> None:
+        # 완료 처리 — 진행 중 예외 발생 시에도 줄바꿈 보장
+        if self.current < self.total:
+            print()
+
+    def update(self, n: int = 1) -> None:
+        self.current = min(self.current + n, self.total)
+        pct = self.current / self.total * 100 if self.total else 0.0
+        elapsed = time.monotonic() - self.start
+        bar_len = 30
+        filled = int(bar_len * self.current / self.total) if self.total else 0
+        bar = "=" * filled + "-" * (bar_len - filled)
+        print(
+            f"\r  {self.desc} [{bar}] {self.current}/{self.total} ({pct:.0f}%) {elapsed:.1f}s",
+            end="",
+            flush=True,
+        )
+        if self.current >= self.total:
+            print()
+
+
+# ────────────────────────────────────────────
+# 메인 파이프라인
+# ────────────────────────────────────────────
+
+def run_pipeline(args: argparse.Namespace) -> None:
+    t_start = time.monotonic()
+
+    # ── 입력값 검증
+    try:
+        brand = validate_brand(args.brand)
+        month = validate_month(args.month)
+    except ValueError as exc:
+        logger.error("입력값 오류: %s", exc)
+        sys.exit(1)
+
+    logger.info("=" * 60)
+    logger.info("  크리마 리뷰 처리 파이프라인 시작")
+    logger.info("  브랜드: %s | 월: %s", brand, month)
+    logger.info("=" * 60)
+
+    # ── 1. CSV 로드
+    csv_path = Path(args.input).resolve()
+    if not csv_path.exists():
+        logger.error("CSV 파일을 찾을 수 없습니다: %s", csv_path)
+        sys.exit(1)
+
+    try:
+        df = load_csv(csv_path)
+    except RuntimeError as exc:
+        logger.error("CSV 로드 실패: %s", exc)
+        sys.exit(1)
+
+    # ── 2. 전월 CSV (있으면 로드)
+    prev_df: Optional[pd.DataFrame] = None
+    if args.prev_input:
+        prev_path = Path(args.prev_input).resolve()
+        if prev_path.exists():
+            logger.info("전월 데이터 로드: %s", prev_path)
+            try:
+                prev_df = load_csv(prev_path)
+            except RuntimeError as exc:
+                logger.warning("전월 CSV 로드 실패 (건너뜀): %s", exc)
+        else:
+            logger.warning("전월 CSV 없음: %s", prev_path)
+
+    # ── 3. AI 감성 분석 (--skip-ai 없을 때)
+    skip_ai: bool = args.skip_ai
+    analyzer = None
+    if not skip_ai:
+        logger.info("AI 분석: Ollama 감성 분석 시작...")
+        try:
+            from ollama_analysis import OllamaAnalyzer  # type: ignore[import]
+
+            analyzer = OllamaAnalyzer(model=args.ollama_model, base_url=args.ollama_url)
+            if analyzer.health_check():
+                progress = Progress(len(df), desc="감성 분석")
+                sentiments: List[dict] = []
+                batch_size = 5
+
+                for i in range(0, len(df), batch_size):
+                    batch = df.iloc[i: i + batch_size]
+                    results = analyzer.analyze_sentiment_batch(batch["body"].tolist())
+                    sentiments.extend(results)
+                    progress.update(len(batch))
+
+                df["sentiment"] = [r.get("sentiment", "neutral") for r in sentiments]
+                df["sentiment_score"] = [r.get("score", 0.5) for r in sentiments]
+                df["sentiment_reason"] = [r.get("reason", "") for r in sentiments]
+                logger.info("  감성 분석 완료: %d건", len(sentiments))
+            else:
+                logger.warning("Ollama 서버 응답 없음 → 별점 기반 감성 추정으로 대체")
+                skip_ai = True
+
+        except ImportError:
+            logger.warning("ollama_analysis 모듈 없음 → AI 분석 건너뜀")
+            skip_ai = True
+        except RuntimeError as exc:
+            logger.error("AI 분석 실패: %s → 별점 기반 추정으로 대체", exc)
+            skip_ai = True
+        except Exception as exc:  # noqa: BLE001
+            logger.error("AI 분석 중 예상치 못한 오류: %s → 별점 기반 추정으로 대체", exc)
+            skip_ai = True
+
+    # ── 4. KPI 계산
+    logger.info("KPI 계산 중...")
+    kpis = calc_kpis(df, prev_df)
+    timeline = calc_timeline(df)
+    path_dist = calc_review_path_distribution(df)
+
+    summary = {
+        "brand": brand,
+        "month": month,
+        "generated_at": datetime.now().isoformat(),
+        "kpis": kpis,
+        "timeline": timeline,
+        "review_path_distribution": path_dist,
+    }
+
+    # ── 5. 상품별 집계
+    logger.info("상품별 데이터 계산 중...")
+    products_list = calc_products(df)
+    products_data = {"products": products_list}
+
+    # ── 6. 키워드 분석
+    logger.info("키워드 추출 중...")
+    keywords_data = extract_keywords_basic(df, top_n=args.top_n_keywords)
+
+    # ── 7. AI 분석 JSON (AI 실행된 경우)
+    ai_analysis: Optional[dict] = None
+    if not skip_ai and analyzer is not None:
+        try:
+            logger.info("AI 분석: 키워드 추출 및 Smart Brief 생성 중...")
+
+            neg_texts = df[df["rating"].le(2)]["body"].tolist()
+            ai_keywords = analyzer.extract_keywords(neg_texts, top_n=30)
+
+            product_briefs: List[dict] = []
+            with Progress(min(10, len(products_list)), desc="상품 브리프") as prog:
+                for prod in products_list[:10]:
+                    prod_df = df[df["product_name"] == prod["name"]]
+                    sample_texts = prod_df["body"].dropna().tolist()[:20]
+                    brief = analyzer.generate_product_brief(
+                        product_name=prod["name"],
+                        reviews=sample_texts,
+                        avg_rating=prod["avg_rating"],
+                        sentiment=prod["sentiment"],
+                    )
+                    product_briefs.append({
+                        "product_id": prod["id"],
+                        "product_name": prod["name"],
+                        "brief": brief.get("brief", ""),
+                        "key_insights": brief.get("key_insights", []),
+                    })
+                    prog.update(1)
+
+            smart_brief = analyzer.generate_smart_brief(
+                brand=brand,
+                month=month,
+                kpis=kpis,
+                top_products=products_list[:5],
+                neg_keywords=ai_keywords.get("complaint", [])[:10],
+            )
+
+            if ai_keywords:
+                keywords_data["by_intent"]["praise"] = ai_keywords.get("praise", [])
+                keywords_data["by_intent"]["complaint"] = ai_keywords.get("complaint", [])
+                keywords_data["by_intent"]["improvement"] = ai_keywords.get("improvement", [])
+
+            ai_analysis = {
+                "smart_brief": smart_brief,
+                "product_briefs": product_briefs,
+                "sentiment_summary": {
+                    "positive": kpis.get("positive_count", 0),
+                    "neutral": kpis.get("neutral_count", 0),
+                    "negative": kpis.get("negative_count", 0),
+                    "positive_rate": kpis.get("positive_rate", 0),
+                    "negative_rate": kpis.get("negative_rate", 0),
+                },
+                "generated_at": datetime.now().isoformat(),
+                "model": args.ollama_model,
+            }
+
+        except Exception as exc:  # noqa: BLE001
+            logger.error("AI 분석 JSON 생성 실패: %s", exc)
+
+    # ── 8. JSON 저장
+    docs_root = (PROJECT_ROOT / "docs" / "data").resolve()
+    try:
+        out_dir = resolve_safe_output_dir(docs_root, brand, month)
+    except ValueError as exc:
+        logger.error("출력 경로 검증 실패: %s", exc)
+        sys.exit(1)
+
+    logger.info("출력 디렉토리: %s", out_dir)
+    save_json(summary, out_dir / "summary.json")
+    save_json(products_data, out_dir / "products.json")
+    save_json(keywords_data, out_dir / "keywords.json")
+
+    if ai_analysis:
+        save_json(ai_analysis, out_dir / "ai_analysis.json")
+    else:
+        empty_ai: dict = {
+            "smart_brief": None,
+            "product_briefs": [],
+            "sentiment_summary": {
+                "positive": kpis.get("positive_count", 0),
+                "neutral": kpis.get("neutral_count", 0),
+                "negative": kpis.get("negative_count", 0),
+                "positive_rate": kpis.get("positive_rate", 0),
+                "negative_rate": kpis.get("negative_rate", 0),
+            },
+            "generated_at": datetime.now().isoformat(),
+            "model": None,
+        }
+        save_json(empty_ai, out_dir / "ai_analysis.json")
+
+    # ── 9. index.json 업데이트
+    update_index_json(brand, month, docs_root)
+
+    elapsed = time.monotonic() - t_start
+    logger.info("=" * 60)
+    logger.info("  파이프라인 완료. 소요시간: %.1f초", elapsed)
+    logger.info("  출력 경로: %s", out_dir)
+    logger.info("=" * 60)
+
+
+# ────────────────────────────────────────────
+# CLI
+# ────────────────────────────────────────────
+
+def parse_args() -> argparse.Namespace:
+    """CLI 인수 파싱."""
+    parser = argparse.ArgumentParser(
+        description="크리마 리뷰 CSV → GitHub Pages 대시보드 JSON 생성기",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "-i", "--input",
+        required=True,
+        help="크리마 리뷰 CSV 파일 경로",
+    )
+    parser.add_argument(
+        "--prev-input",
+        default=None,
+        help="전월 CSV 파일 경로 (MoM 비교용, 선택)",
+    )
+    parser.add_argument(
+        "-b", "--brand",
+        required=True,
+        help="브랜드 슬러그 (예: sloom)",
+    )
+    parser.add_argument(
+        "-m", "--month",
+        required=True,
+        help="처리 대상 월 (YYYY-MM 형식)",
+    )
+    parser.add_argument(
+        "--skip-ai",
+        action="store_true",
+        default=False,
+        help="Ollama AI 분석 건너뜀 (별점 기반 추정 사용)",
+    )
+    parser.add_argument(
+        "--ollama-model",
+        default="exaone3.5:7.8b",
+        help="사용할 Ollama 모델명",
+    )
+    parser.add_argument(
+        "--ollama-url",
+        default="http://localhost:11434",
+        help="Ollama API 베이스 URL",
+    )
+    parser.add_argument(
+        "--top-n-keywords",
+        type=int,
+        default=30,
+        help="추출할 키워드 상위 N개",
+    )
+    return parser.parse_args()
+
+
+if __name__ == "__main__":
+    run_pipeline(parse_args())

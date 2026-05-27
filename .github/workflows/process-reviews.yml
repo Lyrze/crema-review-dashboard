@@ -1,0 +1,129 @@
+name: Process Crema Reviews
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'data/raw/**.csv'
+
+  # 수동 실행도 허용
+  workflow_dispatch:
+    inputs:
+      skip_ai:
+        description: 'AI 분석 건너뛰기 (true 권장)'
+        required: false
+        default: 'true'
+
+permissions:
+  contents: write
+
+jobs:
+  process-reviews:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Python 3.11 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 의존성 설치
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas requests
+
+      - name: 변경된 CSV 파일 감지
+        id: detect-files
+        run: |
+          # push 이벤트: 변경된 CSV 파일 목록 추출
+          if [ "${{ github.event_name }}" = "push" ]; then
+            CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} \
+              | grep '^data/raw/.*\.csv$' || true)
+          else
+            # workflow_dispatch: data/raw 전체 처리
+            CHANGED=$(find data/raw -name "*.csv" 2>/dev/null || true)
+          fi
+
+          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGED" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          if [ -z "$CHANGED" ]; then
+            echo "has_files=false" >> $GITHUB_OUTPUT
+            echo "처리할 CSV 파일이 없습니다."
+          else
+            echo "has_files=true" >> $GITHUB_OUTPUT
+            echo "처리할 파일:"
+            echo "$CHANGED"
+          fi
+
+      - name: docs/data 디렉토리 확인
+        if: steps.detect-files.outputs.has_files == 'true'
+        run: |
+          mkdir -p docs/data
+
+      - name: 리뷰 데이터 처리 (AI 없이)
+        if: steps.detect-files.outputs.has_files == 'true'
+        run: |
+          # 변경된 CSV 목록을 순서대로 처리
+          echo "${{ steps.detect-files.outputs.changed_files }}" | while IFS= read -r FILE; do
+            [ -z "$FILE" ] && continue
+
+            # 경로 규칙: data/raw/{BRAND}/{MONTH}/reviews.csv
+            BRAND=$(echo "$FILE" | awk -F'/' '{print $3}')
+            MONTH=$(echo "$FILE"  | awk -F'/' '{print $4}')
+
+            if [ -z "$BRAND" ] || [ -z "$MONTH" ]; then
+              echo "[경고] 경로 파싱 실패, 건너뜀: $FILE"
+              continue
+            fi
+
+            echo "처리 중: 브랜드=$BRAND 월=$MONTH 파일=$FILE"
+
+            SKIP_AI_FLAG=""
+            if [ "${{ github.event.inputs.skip_ai }}" = "true" ] || [ "${{ github.event_name }}" = "push" ]; then
+              SKIP_AI_FLAG="--skip-ai"
+            fi
+
+            python scripts/process_data.py \
+              --brand "$BRAND" \
+              --month "$MONTH" \
+              --input "$FILE" \
+              $SKIP_AI_FLAG
+          done
+        env:
+          PYTHONIOENCODING: utf-8
+
+      - name: 처리 결과 확인
+        if: steps.detect-files.outputs.has_files == 'true'
+        run: |
+          echo "=== docs/data 폴더 내용 ==="
+          ls -la docs/data/
+          echo ""
+          echo "=== index.json 내용 ==="
+          cat docs/data/index.json
+
+      - name: 변경사항 커밋 및 푸시
+        if: steps.detect-files.outputs.has_files == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add docs/data/
+
+          # 변경사항이 있을 때만 커밋
+          if git diff --staged --quiet; then
+            echo "커밋할 변경사항이 없습니다."
+          else
+            TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M UTC')
+            git commit -m "chore: 리뷰 데이터 자동 업데이트 [$TIMESTAMP]"
+            git push
+            echo "변경사항이 성공적으로 푸시되었습니다."
+          fi

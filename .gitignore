@@ -1,0 +1,152 @@
+# ======================
+# Python
+# ======================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 가상환경
+venv/
+env/
+ENV/
+.venv/
+.env/
+
+# ======================
+# 환경변수 및 시크릿
+# ======================
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+secrets.json
+
+# ======================
+# 원본 리뷰 데이터 (민감 데이터)
+# 로컬에서만 보관, GitHub에는 올리지 않음
+# CI/CD에서는 GitHub Actions secrets 또는 별도 스토리지 사용
+# ======================
+data/raw/
+# 단, data/raw/.gitkeep 은 추적 (폴더 구조 유지)
+!data/raw/.gitkeep
+
+# ======================
+# macOS
+# ======================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ======================
+# Windows
+# ======================
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+
+# ======================
+# Linux
+# ======================
+*~
+
+# ======================
+# 에디터 및 IDE
+# ======================
+# VS Code
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# JetBrains (PyCharm, etc.)
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Sublime Text
+*.tmlanguage.cache
+*.tmPreferences.cache
+*.stTheme.cache
+*.sublime-workspace
+*.sublime-project
+
+# Vim
+*.swp
+*.swo
+*~
+Session.vim
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# ======================
+# 로그 및 임시 파일
+# ======================
+*.log
+*.tmp
+*.temp
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ======================
+# 테스트 커버리지
+# ======================
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# ======================
+# Jupyter Notebook
+# ======================
+.ipynb_checkpoints
+*.ipynb
+
+# ======================
+# 기타
+# ======================
+*.bak
+*.orig
