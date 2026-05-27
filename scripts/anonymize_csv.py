@@ -4,9 +4,9 @@ anonymize_csv.py
 크리마 리뷰 CSV에서 개인식별정보(PII)를 제거한 익명화 파일을 생성합니다.
 
 처리 방식:
-  - 회원ID  → SHA-256 해시 '사용자_익명ID' 컬럼으로 변환
-             (같은 회원 = 항상 같은 해시 → 월 간 추적 가능, 역추적 불가)
-  - 회원명, 주문번호 등 나머지 PII → 완전 제거
+  - 회원ID  -> SHA-256 해시 '사용자_익명ID' 컬럼으로 변환
+             (같은 회원 = 항상 같은 해시 -> 월 간 추적 가능, 역추적 불가)
+  - 회원명, 주문번호 등 나머지 PII -> 완전 제거
 
 유지 컬럼 (AI 분석 + 집계):
   사용자_익명ID, 리뷰ID, 리뷰작성일, 상품구매일, 배송완료일, 리뷰본문,
@@ -42,7 +42,7 @@ HASH_SALT = "crema-anon-v1"
 
 
 def hash_user_id(raw_id: str) -> str:
-    """회원ID → 12자리 익명 ID (역추적 불가, 동일인 추적 가능)"""
+    """회원ID -> 12자리 익명 ID (역추적 불가, 동일인 추적 가능)"""
     if not raw_id:
         return ""
     return hashlib.sha256(f"{HASH_SALT}:{raw_id}".encode()).hexdigest()[:12]
@@ -76,20 +76,20 @@ def anonymize(input_path: str, output_path: str) -> dict:
     with open(inp, encoding=encoding, newline="") as fin:
         reader = csv.DictReader(fin)
         raw_headers = reader.fieldnames or []
-        headers = [h.lstrip("﻿") for h in raw_headers]  # BOM 제거
+        headers = [h.lstrip("\ufeff") for h in raw_headers]  # BOM 제거
 
         # 출력 컬럼 구성
         out_headers = []
         for h in headers:
             if h == "회원ID":
-                out_headers.append("사용자_익명ID")   # 해시로 대체
+                out_headers.append("사용자_익명ID")
             elif h in DROP_COLUMNS:
                 dropped.append(h)
             else:
                 out_headers.append(h)
 
         for row in reader:
-            clean = {k.lstrip("﻿"): v for k, v in row.items()}
+            clean = {k.lstrip("\ufeff"): v for k, v in row.items()}
             out_row = {}
             for h in headers:
                 if h in DROP_COLUMNS:
@@ -121,7 +121,10 @@ def main():
 
     try:
         s = anonymize(args.input, args.output)
-        print(f"[OK] 익명화 완료: {s['rows']:,}건 | 유지 {s['kept']}컬럼 | 제거: {', '.join(s['dropped'])}")
+        rows = s["rows"]
+        kept = s["kept"]
+        dropped_str = ", ".join(s["dropped"])
+        print(f"[OK] 익명화 완료: {rows:,}건 | 유지 {kept}컬럼 | 제거: {dropped_str}")
     except Exception as e:
         print(f"[ERROR] {e}", file=sys.stderr)
         sys.exit(1)

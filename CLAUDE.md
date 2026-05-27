@@ -19,18 +19,29 @@
 ```
 crema-review-dashboard/
 ├── .github/workflows/process-reviews.yml   # GitHub Actions (CSV push → JSON 생성)
-├── data/raw/{브랜드}/{YYYY-MM}/reviews.csv  # 원본 CSV (gitignore됨)
+├── data/
+│   ├── raw/{브랜드}/{YYYY-MM}/reviews.csv   # 원본 CSV (gitignore — PII 포함)
+│   └── anonymized/{브랜드}/{YYYY-MM}/       # 익명화 CSV (GitHub 업로드 O)
+│       └── reviews_anon.csv                # 주문번호·회원명 제거, 회원ID→해시
 ├── docs/                                    # GitHub Pages 서빙 루트
-│   ├── index.html                           # 대시보드 (단일 HTML 파일)
+│   ├── index.html                           # 대시보드 (단일 HTML 파일, ~816줄)
 │   └── data/
-│       ├── index.json                       # 브랜드·월 목록
+│       ├── index.json                       # 브랜드·월 목록 (딕셔너리 형태 필수)
 │       └── {브랜드}/{YYYY-MM}/
-│           ├── summary.json
-│           ├── products.json
-│           └── keywords.json
+│           ├── summary.json                 # KPI, 타임라인
+│           ├── products.json                # 상품별 통계 (positive_rate 포함 필수)
+│           ├── keywords.json                # 키워드 분석
+│           └── ai_analysis.json             # Ollama AI 결과 (선택)
 ├── scripts/
-│   ├── process_data.py                      # 메인 파이프라인
-│   └── ollama_analysis.py                   # Ollama AI 모듈
+│   ├── process_data.py                      # 메인 파이프라인 (CLI: parse_args)
+│   ├── ollama_analysis.py                   # Ollama AI 모듈
+│   ├── anonymize_csv.py                     # PII 제거 익명화 스크립트
+│   ├── interactive_select.py                # update-data.bat 대화형 메뉴 (Python)
+│   ├── scan_raw.py                          # data/raw 스캔 → KEY=VALUE 출력
+│   ├── scan_ollama.py                       # Ollama 모델 목록 → KEY=VALUE 출력
+│   └── show_result.py                       # 처리 결과 요약 출력
+├── update-data.bat                          # 월별 업데이트 배치파일
+├── upload.bat                               # 최초 GitHub 업로드
 ├── CLAUDE.md                                # ← 이 파일
 └── README.md
 ```
@@ -41,23 +52,19 @@ crema-review-dashboard/
 
 ### 🔴 CRITICAL: Windows 배치파일 — LF 줄바꿈 금지
 
-**발생**: Linux 샌드박스에서 Write/bash로 `.bat` 파일을 생성하면 기본적으로 LF(`\n`) 줄바꿈으로 저장됨.  
+**발생**: Linux 샌드박스에서 Write/bash로 `.bat` 파일을 생성하면 기본적으로 LF(`\n`) 줄바꿈으로 저장됨.
 **증상**: `'exist'은(는) 내부 또는 외부 명령이 아닙니다`, `'%i.'은(는) 내부 또는 외부 명령이 아닙니다`, 한글 깨짐, 명령어가 중간에 잘려 실행됨.
 
 **원인**: Windows CMD는 CRLF(`\r\n`)만 올바르게 파싱한다. LF만 있으면 줄 경계를 인식 못해 여러 줄이 붙거나 명령어가 단어 단위로 쪼개짐.
 
-**규칙**:
-- `.bat` 파일은 **반드시 Python으로 `newline='\r\n'`을 명시해서 저장**한다.
+**규칙**: `.bat` 파일은 **반드시 Python으로 `newline='\r\n'`을 명시해서 저장**한다.
 
 ```python
 # 올바른 배치파일 저장 패턴
 with open('script.bat', 'w', newline='\r\n', encoding='utf-8') as f:
     f.write(content)
-```
 
-- 저장 후 반드시 검증:
-
-```python
+# 저장 후 반드시 검증
 data = open('script.bat', 'rb').read()
 lf_only = data.count(b'\n') - data.count(b'\r\n')
 assert lf_only == 0, f"LF-only lines found: {lf_only}"
@@ -65,33 +72,32 @@ assert lf_only == 0, f"LF-only lines found: {lf_only}"
 
 ---
 
-### 🔴 CRITICAL: Windows 배치파일 — for 루프 동적 변수명
+### 🔴 CRITICAL: Windows 배치파일 — for 루프 동적 변수 + 지연 확장 서브셸 버그
 
-**발생**: `for /l %%i in (1,1,!COUNT!) do echo !BRAND_%%i!` 패턴이 제대로 동작하지 않음.  
-**원인**: 복잡한 동적 변수 접근이 배치 내에서 불안정하고 가독성이 떨어짐.
+**발생**: `for /f ... in ('findstr "^ITEM_!SEL!_" ...')` 패턴에서 `!SEL!`이 서브셸에서 전개되지 않아 패턴 매칭 실패 → 변수 미설정 → 배치파일 오류 없이 그냥 종료됨.
 
-**규칙**: 목록 스캔, 모델 열거 등 **복잡한 로직은 Python 보조 스크립트로 분리**한다.  
-배치파일은 Python이 출력한 `KEY=VALUE` 형식 텍스트를 `findstr` + `for /f`로 파싱한다.
+**증상**: 번호를 입력해도 CMD 창이 그냥 꺼짐.
+
+**규칙**: 배치 내 복잡한 파싱 로직은 **Python 스크립트로 완전히 분리**한다.
+- `interactive_select.py`처럼 Python이 대화형 메뉴와 파싱을 전담
+- Python은 `KEY=VALUE` 형식으로 stdout 출력
+- 배치파일은 `for /f "usebackq tokens=1,* delims==" %%A in ("파일") do ...` 로 파일 읽기
 
 ```batch
-:: 올바른 패턴 — Python 스크립트가 KEY=VALUE 출력
-python scripts\scan_raw.py > "%TEMP%\result.tmp"
-for /f "tokens=1,2 delims==" %%A in ('findstr "^COUNT=" "%TEMP%\result.tmp"') do set "COUNT=%%B"
-```
-
-```python
-# scan_raw.py 출력 형식
-print(f"COUNT={len(items)}")
-print(f"ITEM_1_BRAND=슬룸")
-print(f"SHOW_1=1. 슬룸 / 2026-03  [미처리]")
+:: 올바른 패턴
+python scripts\interactive_select.py > "%TEMP%\crema_sel.tmp"
+for /f "usebackq tokens=1,* delims==" %%A in ("%TEMP%\crema_sel.tmp") do (
+  if "%%A"=="BRAND" set "BRAND=%%B"
+)
 ```
 
 ---
 
-### 🟠 HIGH: Windows 배치파일 — Python inline 코드에서 dict key 직접 참조
+### 🔴 CRITICAL: Windows 배치파일 — Python inline 코드 따옴표 충돌
 
-**발생**: `python -c "... d['total_reviews'] ..."` 처럼 따옴표가 중첩되면 배치 파서가 깨짐.  
-**규칙**: 배치 내 `python -c` 코드에서 dict key는 `chr()` 조합 대신 **변수 할당 후 사용**하거나, **별도 `.py` 파일로 분리**한다.
+**발생**: `python -c "... d['total_reviews'] ..."` 처럼 배치 내 `python -c` 코드에서 dict key를 직접 참조하면 배치 파서가 따옴표를 잘못 파싱함.
+
+**규칙**: 배치 내 `python -c` 코드에서 dict key는 **별도 `.py` 파일로 분리**한다.
 
 ```batch
 :: 올바른 패턴
@@ -100,9 +106,35 @@ python scripts\show_result.py "!BRAND!" "!MONTH!"
 
 ---
 
+### 🔴 CRITICAL: products.json — positive_rate / negative_rate 필드 누락
+
+**발생**: `process_data.py`의 `products.append({...})` 블록에 `positive_rate`, `negative_rate` 필드가 없었음.
+**증상**: 대시보드 SKU 섹션(③④⑤)에서 `p.positive_rate`가 `undefined` → `0`으로 처리 → 테이블이 비어 보임.
+
+**규칙**: products.json의 각 상품 객체에는 반드시 아래 필드가 있어야 한다.
+
+```json
+{
+  "sentiment": {"positive": 1199, "neutral": 96, "negative": 5},
+  "positive_rate": 92.23,
+  "negative_rate": 0.38,
+  "prev_review_count": null,
+  "prev_avg_rating": null
+}
+```
+
+`process_data.py` 내 계산 방식:
+```python
+total = len(group)
+pos_r = round(sentiment["positive"] / total * 100, 2) if total > 0 else 0.0
+neg_r = round(sentiment["negative"] / total * 100, 2) if total > 0 else 0.0
+```
+
+---
+
 ### 🔴 CRITICAL: 파일 잘림 (Truncation) 문제
 
-**발생**: `process_data.py`, `ollama_analysis.py` 등 긴 파일을 여러 번에 나눠 쓸 때 마지막 청크가 잘렸음.  
+**발생**: `process_data.py`, `ollama_analysis.py` 등 긴 파일을 여러 번에 나눠 쓸 때 마지막 청크가 잘렸음.
 **증상**: `SyntaxError: unexpected EOF`, 함수 중간에서 파일이 끊김, `if __name__ == "__main__"` 블록 없음.
 
 **규칙**:
@@ -121,7 +153,7 @@ tail -20 scripts/process_data.py
 
 ### 🔴 CRITICAL: process_data.py 진입점 함수명
 
-**발생**: `parse_args()` 대신 `build_arg_parser()`를 호출해 NameError 발생.  
+**발생**: `parse_args()` 대신 `build_arg_parser()`를 호출해 NameError 발생.
 **규칙**: 이 파일의 CLI 진입점은 반드시 **`parse_args()`** 이다. `build_arg_parser()`, `get_args()` 등 다른 이름 사용 금지.
 
 ```python
@@ -135,7 +167,7 @@ if __name__ == "__main__":
 
 ### 🔴 CRITICAL: docs/data/index.json 포맷
 
-**발생**: `brands` 필드를 리스트(`[]`)로 작성했다가 `update_index_json()`에서 `TypeError` 발생.  
+**발생**: `brands` 필드를 리스트(`[]`)로 작성했다가 `update_index_json()`에서 `TypeError` 발생.
 **규칙**: `brands`는 반드시 **딕셔너리** 형태여야 한다.
 
 ```json
@@ -147,7 +179,7 @@ if __name__ == "__main__":
       "months": ["2026-04"]
     }
   },
-  "last_updated": "2026-05-27"
+  "last_updated": "2026-05-28"
 }
 ```
 
@@ -155,22 +187,14 @@ if __name__ == "__main__":
 
 ### 🔴 CRITICAL: GitHub Actions — 스크립트 파일명
 
-**발생**: 워크플로우에서 `process_reviews.py`를 호출했으나 실제 파일은 `process_data.py`.  
+**발생**: 워크플로우에서 `process_reviews.py`를 호출했으나 실제 파일은 `process_data.py`.
 **규칙**: GitHub Actions YAML에서 스크립트 호출 시 **반드시 `process_data.py`** 를 사용한다.
-
-```yaml
-# 올바름
-python scripts/process_data.py --brand "$BRAND" --month "$MONTH" --input "$FILE"
-
-# 틀림 (절대 사용 금지)
-python scripts/process_reviews.py ...
-```
 
 ---
 
 ### 🔴 CRITICAL: GitHub Actions — CSV 경로 파싱
 
-**발생**: CSV 경로 `data/raw/{브랜드}/{월}/reviews.csv`에서 브랜드·월 추출 시 `cut`을 쓰다가 인덱스 오류 발생.  
+**발생**: CSV 경로 `data/raw/{브랜드}/{월}/reviews.csv`에서 브랜드·월 추출 시 `cut`을 쓰다가 인덱스 오류 발생.
 **규칙**: `awk -F'/'`로 필드를 추출한다. 브랜드 = `$3`, 월 = `$4`.
 
 ```bash
@@ -180,38 +204,59 @@ MONTH=$(echo "$FILE"  | awk -F'/' '{print $4}')
 
 ---
 
+### 🟠 HIGH: 대시보드 JS — 가짜(fake) MoM 데이터 사용 금지
+
+**발생**: `renderSKUCombo()`와 `renderChangeTables()`에서 `p.review_count * 0.70` 등 계산으로 가짜 전월 데이터를 만들었음.
+
+**규칙**:
+- 전월 데이터는 `products.json`의 `prev_review_count`, `prev_avg_rating` 필드를 사용한다.
+- `null`이면 "전월 없음"으로 표시한다. 절대 fake 계산값으로 대체하지 않는다.
+- 콤보차트: prev가 `null`이면 **별점 분포(★1~★5) 바 차트**로 대체한다.
+
+```javascript
+// 올바른 패턴
+var hasPrev = p.prev_review_count !== null && p.prev_review_count !== undefined;
+if (hasPrev) {
+  // 실제 MoM 차트
+} else {
+  // 별점 분포 차트 (대체)
+}
+```
+
+---
+
 ### 🟠 HIGH: 키워드 추출 — 씨앗 단어 기반 매칭 실패
 
-**발생**: 씨앗 단어 목록 기반 매칭은 실제 리뷰에 매칭되는 경우가 드물어 `complaint` / `improvement` 결과가 항상 비어 있었음.  
-**규칙**: 키워드 추출은 반드시 **정규식 패턴 그룹** (`COMPLAINT_PATTERNS`, `PRAISE_PATTERNS`, `IMPROVEMENT_PATTERNS`) 기반으로 동작한다. 씨앗 단어 단순 포함 여부 확인 방식은 사용하지 않는다.
+**발생**: 씨앗 단어 목록 기반 매칭은 실제 리뷰에 매칭되는 경우가 드물어 `complaint` / `improvement` 결과가 항상 비어 있었음.
+**규칙**: 키워드 추출은 반드시 **정규식 패턴 그룹** (`COMPLAINT_PATTERNS`, `PRAISE_PATTERNS`, `IMPROVEMENT_PATTERNS`) 기반으로 동작한다.
 
 ---
 
 ### 🟠 HIGH: 상품명 정규화 — 프로모션 패턴 부족
 
-**발생**: `normalize_product_name()`의 `PROMO_PATTERNS`가 8개뿐이어서 39개 중복 상품명이 생성됨.  
-**규칙**: 패턴은 현재 21개. 새 이상한 상품명이 발생하면 `PROMO_PATTERNS` 리스트에 추가한다.  
+**발생**: `normalize_product_name()`의 `PROMO_PATTERNS`가 8개뿐이어서 39개 중복 상품명이 생성됨.
+**규칙**: 패턴은 현재 21개. 새 이상한 상품명이 발생하면 `PROMO_PATTERNS` 리스트에 추가한다.
 처리 후 `products.json`의 상품 수가 비정상적으로 많으면 (예: 100개 이상) 정규화 패턴을 점검한다.
 
 ---
 
 ### 🟡 MEDIUM: ollama_analysis.py — 172.x SSRF 방어
 
-**발생**: `172.x.x.x` 전체를 사설망으로 허용하면 실제로 172.16~31 범위가 아닌 주소도 통과됨.  
+**발생**: `172.x.x.x` 전체를 사설망으로 허용하면 실제로 172.16~31 범위가 아닌 주소도 통과됨.
 **수정**: `ipaddress.ip_address(host).is_private` (Python 표준 라이브러리) 사용으로 RFC 1918 정확히 적용.
 
 ---
 
-### 🟡 MEDIUM: dashboard index.html — `let`/`const` 금지
+### 🟡 MEDIUM: 대시보드 index.html — 최상위 `let`/`const` 금지
 
-**규칙**: 최상위 레벨 JS 변수는 **모두 `var`** 를 사용한다. `let`/`const`는 함수 내부에서만 허용.  
+**규칙**: 최상위 레벨 JS 변수는 **모두 `var`** 를 사용한다. `let`/`const`는 함수 내부에서만 허용.
 이유: 테마 변경·차트 재초기화 시 TDZ(Temporal Dead Zone) 오류 방지.
 
 ---
 
 ### 🟡 MEDIUM: Chart.js — `maintainAspectRatio: false` 필수
 
-**규칙**: 모든 Chart.js 인스턴스에 `responsive: true, maintainAspectRatio: false` 를 설정한다.  
+**규칙**: 모든 Chart.js 인스턴스에 `responsive: true, maintainAspectRatio: false` 를 설정한다.
 캔버스 컨테이너에 명시적 높이(`min-height`) 없으면 차트가 0px로 렌더링됨.
 
 ```javascript
@@ -226,7 +271,7 @@ options: {
 
 ### 🟡 MEDIUM: `data/raw/` CSV 파일 경로 규칙
 
-**규칙**: 원본 CSV는 반드시 `data/raw/{브랜드명}/{YYYY-MM}/reviews.csv` 구조로 저장.  
+**규칙**: 원본 CSV는 반드시 `data/raw/{브랜드명}/{YYYY-MM}/reviews.csv` 구조로 저장.
 브랜드명은 한글 그대로 사용 (예: `슬룸`, `넥케어`). 파일명은 항상 `reviews.csv`.
 
 ```
@@ -236,30 +281,69 @@ data/raw/sloom_2026-04.csv          ❌ (구 방식, 사용 금지)
 
 ---
 
+## 익명화 파이프라인
+
+**목적**: raw CSV(PII 포함)는 로컬에만 보관, 익명화 버전을 GitHub에 누적해 AI 분석용으로 활용
+
+| 컬럼 처리 | 컬럼명 |
+|---|---|
+| 완전 제거 (PII) | 주문번호, 회원명, 추가수집정보, 적립금, 적립금지급일, 포토/동영상 URL, 리뷰code |
+| 해시로 대체 | 회원ID → `사용자_익명ID` (SHA-256 12자리, 동일 솔트로 월간 추적 가능) |
+| 유지 | 리뷰본문, 별점, 상품명, 상품옵션, 회원등급, 작성일 등 17개 |
+
+**솔트**: `crema-anon-v1` (변경 시 기존 월과 ID가 달라짐 — 변경 금지)
+
+```bash
+python scripts/anonymize_csv.py \
+  --input data/raw/슬룸/2026-03/reviews.csv \
+  --output data/anonymized/슬룸/2026-03/reviews_anon.csv
+```
+
+---
+
+## 대시보드 기능 현황 (2026-05-28 기준)
+
+| 기능 | 상태 | 위치 |
+|---|---|---|
+| 브랜드/월 선택 | ✅ | 사이드바 |
+| Ollama 연결 상태 | ✅ | 사이드바 하단 |
+| Ollama 모델 선택 | ✅ | 사이드바 하단 (온라인 시 표시) |
+| Executive Summary | ✅ | 섹션 ① |
+| 리뷰 지표 KPI | ✅ | 섹션 ② |
+| **리뷰 지표 AI 분석** | ✅ | 섹션 ② 우측 버튼 |
+| SKU 테이블 | ✅ | 섹션 ③ |
+| **SKU 테이블 필터/정렬** | ✅ | 섹션 ③ 상단 (리뷰수/별점/긍정률 정렬, 10/50/100건+ 필터) |
+| **SKU AI 분석** | ✅ | 섹션 ③ 우측 버튼 |
+| SKU 콤보차트 | ✅ | 섹션 ④ (prev 있으면 MoM, 없으면 별점분포) |
+| SKU 변화 테이블 | ✅ | 섹션 ⑤ (prev null이면 "전월 없음" 표시) |
+| 상품 VOC | ✅ | 섹션 ⑥ |
+| 구매경험 VOC | ✅ | 섹션 ⑦ |
+| 다크 테마 | ✅ | 사이드바 하단 🌙 버튼 |
+
+---
+
 ## 자주 쓰는 명령어
 
 ```bash
 # 데이터 처리 (AI 없이)
 python scripts/process_data.py \
   --brand 슬룸 \
-  --month 2026-04 \
-  --input data/raw/슬룸/2026-04/reviews.csv \
+  --month 2026-05 \
+  --input data/raw/슬룸/2026-05/reviews.csv \
+  --prev-input data/raw/슬룸/2026-04/reviews.csv \
   --skip-ai
 
 # 데이터 처리 (Ollama AI 포함)
 python scripts/process_data.py \
   --brand 슬룸 \
-  --month 2026-04 \
-  --input data/raw/슬룸/2026-04/reviews.csv \
-  --ollama-model exaone3.5:7.8b
-
-# 전월 비교 포함
-python scripts/process_data.py \
-  --brand 슬룸 \
   --month 2026-05 \
   --input data/raw/슬룸/2026-05/reviews.csv \
-  --prev-input data/raw/슬룸/2026-04/reviews.csv \
-  --skip-ai
+  --ollama-model exaone3.5:7.8b
+
+# 익명화
+python scripts/anonymize_csv.py \
+  --input data/raw/슬룸/2026-05/reviews.csv \
+  --output data/anonymized/슬룸/2026-05/reviews_anon.csv
 
 # Python 구문 검증
 python3 -m py_compile scripts/process_data.py && echo "OK"
@@ -274,16 +358,13 @@ cd docs && python3 -m http.server 8080
 
 ## Ollama 설정
 
-- 모델: `exaone3.5:7.8b`
+- 모델: `exaone3.5:7.8b` (기본값, 대시보드에서 변경 가능)
 - 엔드포인트: `http://localhost:11434`
 - `--skip-ai` 플래그로 건너뛸 수 있음 (GitHub Actions 기본값)
-- 대시보드 우상단에서 연결 상태 실시간 표시
+- 대시보드 사이드바 하단에서 연결 상태 + 모델 선택 가능
 
 ```bash
-# 모델 설치
 ollama pull exaone3.5:7.8b
-
-# 서버 실행
 ollama serve
 ```
 
@@ -293,8 +374,9 @@ ollama serve
 
 | 파일 | 설명 |
 |------|------|
-| `docs/data/index.json` | 브랜드·월 목록 (딕셔너리 형태 필수) |
+| `docs/data/index.json` | 브랜드·월 목록 (**딕셔너리 형태 필수**) |
 | `docs/data/{브랜드}/{월}/summary.json` | KPI, 타임라인 |
-| `docs/data/{브랜드}/{월}/products.json` | 상품별 통계 |
+| `docs/data/{브랜드}/{월}/products.json` | 상품별 통계 (**positive_rate, negative_rate 필수**) |
 | `docs/data/{브랜드}/{월}/keywords.json` | 키워드 분석 (칭찬/불만/개선) |
 | `docs/data/{브랜드}/{월}/ai_analysis.json` | Ollama AI 결과 (선택) |
+| `data/anonymized/{브랜드}/{월}/reviews_anon.csv` | 익명화 원본 (GitHub 보관) |

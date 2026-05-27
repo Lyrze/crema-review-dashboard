@@ -4,9 +4,10 @@
   "sentiment_summary": {
     "positive": 1829,
     "neutral": 134,
-    "negative": 35
+    "negative": 35,
+    "positive_rate": 91.54,
+    "negative_rate": 1.75
   },
-  "generated_at": "2026-05-27T00:34:17.093456",
-  "model": null,
-  "note": "AI 분석이 실행되지 않았습니다. --skip-ai 플래그 또는 Ollama 서버 미실행."
+  "generated_at": "2026-05-27T15:03:54.905977",
+  "model": null
 }

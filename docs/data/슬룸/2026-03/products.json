@@ -20,6 +20,10 @@
         "neutral": 47,
         "negative": 0
       },
+      "positive_rate": 93.49,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "108703",
@@ -61,6 +65,10 @@
         "neutral": 33,
         "negative": 26
       },
+      "positive_rate": 78.39,
+      "negative_rate": 9.52,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96912",
@@ -102,6 +110,10 @@
         "neutral": 2,
         "negative": 1
       },
+      "positive_rate": 95.08,
+      "negative_rate": 1.64,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96902",
@@ -143,6 +155,10 @@
         "neutral": 5,
         "negative": 5
       },
+      "positive_rate": 79.17,
+      "negative_rate": 10.42,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96897",
@@ -184,6 +200,10 @@
         "neutral": 4,
         "negative": 2
       },
+      "positive_rate": 87.5,
+      "negative_rate": 4.17,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96878",
@@ -225,6 +245,10 @@
         "neutral": 1,
         "negative": 1
       },
+      "positive_rate": 94.29,
+      "negative_rate": 2.86,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96906",
@@ -266,6 +290,10 @@
         "neutral": 1,
         "negative": 1
       },
+      "positive_rate": 93.33,
+      "negative_rate": 3.33,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96909",
@@ -307,6 +335,10 @@
         "neutral": 2,
         "negative": 1
       },
+      "positive_rate": 70.0,
+      "negative_rate": 10.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96762",
@@ -348,6 +380,10 @@
         "neutral": 0,
         "negative": 1
       },
+      "positive_rate": 88.89,
+      "negative_rate": 11.11,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96777",
@@ -389,6 +425,10 @@
         "neutral": 1,
         "negative": 0
       },
+      "positive_rate": 87.5,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96823",
@@ -430,6 +470,10 @@
         "neutral": 0,
         "negative": 0
       },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96910",
@@ -471,6 +515,10 @@
         "neutral": 0,
         "negative": 0
       },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96907",
@@ -512,6 +560,10 @@
         "neutral": 0,
         "negative": 0
       },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96890",
@@ -553,6 +605,10 @@
         "neutral": 0,
         "negative": 0
       },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96899",
@@ -594,6 +650,10 @@
         "neutral": 0,
         "negative": 0
       },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96886",
@@ -635,6 +695,10 @@
         "neutral": 0,
         "negative": 0
       },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96885",
@@ -676,6 +740,10 @@
         "neutral": 1,
         "negative": 0
       },
+      "positive_rate": 80.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96715",
@@ -717,6 +785,10 @@
         "neutral": 0,
         "negative": 0
       },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96650",
@@ -758,6 +830,10 @@
         "neutral": 1,
         "negative": 0
       },
+      "positive_rate": 75.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96842",
@@ -799,6 +875,10 @@
         "neutral": 0,
         "negative": 0
       },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96782",
@@ -840,6 +920,10 @@
         "neutral": 1,
         "negative": 0
       },
+      "positive_rate": 66.67,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96518",
@@ -881,6 +965,10 @@
         "neutral": 1,
         "negative": 0
       },
+      "positive_rate": 66.67,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "89792",
@@ -922,6 +1010,10 @@
         "neutral": 2,
         "negative": 1
       },
+      "positive_rate": 0.0,
+      "negative_rate": 33.33,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96603",
@@ -963,6 +1055,10 @@
         "neutral": 0,
         "negative": 1
       },
+      "positive_rate": 66.67,
+      "negative_rate": 33.33,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96787",
@@ -1004,6 +1100,10 @@
         "neutral": 0,
         "negative": 0
       },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96901",
@@ -1045,6 +1145,10 @@
         "neutral": 0,
         "negative": 0
       },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96747",
@@ -1080,6 +1184,10 @@
         "neutral": 0,
         "negative": 0
       },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "89835",
@@ -1115,6 +1223,10 @@
         "neutral": 0,
         "negative": 1
       },
+      "positive_rate": 50.0,
+      "negative_rate": 50.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96550",
@@ -1150,6 +1262,10 @@
         "neutral": 0,
         "negative": 0
       },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "89760",
@@ -1185,6 +1301,10 @@
         "neutral": 0,
         "negative": 0
       },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96825",
@@ -1220,6 +1340,10 @@
         "neutral": 0,
         "negative": 0
       },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96517",
@@ -1249,6 +1373,10 @@
         "neutral": 0,
         "negative": 1
       },
+      "positive_rate": 0.0,
+      "negative_rate": 100.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96745",
@@ -1278,6 +1406,10 @@
         "neutral": 0,
         "negative": 0
       },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "89797",
@@ -1307,6 +1439,10 @@
         "neutral": 0,
         "negative": 0
       },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96877",
@@ -1336,6 +1472,10 @@
         "neutral": 0,
         "negative": 0
       },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96589",
@@ -1365,6 +1505,10 @@
         "neutral": 0,
         "negative": 0
       },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96530",
@@ -1394,6 +1538,10 @@
         "neutral": 0,
         "negative": 0
       },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96590",
@@ -1423,6 +1571,10 @@
         "neutral": 0,
         "negative": 0
       },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "96528",

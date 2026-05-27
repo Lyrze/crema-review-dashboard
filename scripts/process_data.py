@@ -468,16 +468,24 @@ def calc_products(df: pd.DataFrame, top_review_count: int = 3) -> List[dict]:
                 "date": date_str,
             })
 
+        total = len(group)
+        pos_r = round(sentiment["positive"] / total * 100, 2) if total > 0 else 0.0
+        neg_r = round(sentiment["negative"] / total * 100, 2) if total > 0 else 0.0
+
         products.append({
             "id": pid,
             "name": str(product_name),
             "raw_name": raw_name,
             "price": int(price) if price is not None and not pd.isna(price) else None,
-            "review_count": len(group),
+            "review_count": total,
             "avg_rating": round(float(group["rating"].mean()), 2),
             "rating_distribution": rating_dist,
             "photo_count": photo_cnt,
             "sentiment": sentiment,
+            "positive_rate": pos_r,
+            "negative_rate": neg_r,
+            "prev_review_count": None,
+            "prev_avg_rating": None,
             "top_reviews": top_reviews,
         })
 
