@@ -46,7 +46,12 @@
     nav a:hover { background:var(--surface-hover); color:var(--text); }
     nav a.active { background:var(--accent-bg); color:var(--accent); font-weight:700; }
     nav a .icon { font-size:13px; width:18px; text-align:center; flex-shrink:0; }
-    .sb-footer { padding:10px 14px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+    .sb-footer { padding:10px 14px 12px; border-top:1px solid var(--border); display:flex; flex-direction:column; gap:8px; }
+    .sb-footer-row { display:flex; align-items:center; justify-content:space-between; }
+    .ollama-model-row { display:none; }
+    .ollama-model-row.visible { display:block; }
+    .ollama-model-row label { font-size:10px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.6px; display:block; margin-bottom:3px; }
+    .ollama-model-row select { width:100%; padding:5px 24px 5px 8px; border:1px solid var(--border); border-radius:6px; font-size:11px; color:var(--text); background:var(--bg); cursor:pointer; font-family:inherit; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 8px center; }
     .ollama-badge { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-secondary); }
     .ollama-dot { width:7px; height:7px; border-radius:50%; background:var(--border); flex-shrink:0; }
     .ollama-dot.online { background:#22c55e; } .ollama-dot.offline { background:#ef4444; }
@@ -183,8 +188,14 @@
     <a href="#sec-pvoc"><span class="icon">🛒</span> 구매경험 VOC</a>
   </nav>
   <div class="sb-footer">
-    <div class="ollama-badge"><div class="ollama-dot" id="ollama-dot"></div><span id="ollama-status">Ollama 확인 중</span></div>
-    <button class="theme-btn" id="theme-btn" onclick="cycleTheme()" title="테마 전환">🌙</button>
+    <div class="sb-footer-row">
+      <div class="ollama-badge"><div class="ollama-dot" id="ollama-dot"></div><span id="ollama-status">Ollama 확인 중</span></div>
+      <button class="theme-btn" id="theme-btn" onclick="cycleTheme()" title="테마 전환">🌙</button>
+    </div>
+    <div class="ollama-model-row" id="ollama-model-row">
+      <label>AI 모델</label>
+      <select id="ollama-model-select" onchange="onModelChange(this.value)" title="Ollama 모델 선택"></select>
+    </div>
   </div>
 </aside>
 
@@ -559,7 +570,7 @@ var REAL_DATA = {
   ]
 };
 
-var STATE = { brand:'슬룸', month:'2026-04', index:null, summary:null, products:null, keywords:null };
+var STATE = { brand:'슬룸', month:'2026-04', index:null, summary:null, products:null, keywords:null, ollamaModel: localStorage.getItem('ollamaModel') || 'exaone3.5:7.8b' };
 var CHARTS = {};
 var $ = function(id){ return document.getElementById(id); };
 function fmt(n){ return n!=null ? Number(n).toLocaleString('ko-KR') : '-'; }
@@ -585,9 +596,44 @@ function toggleMenu(){ $('sidebar').classList.toggle('open'); }
 async function pingOllama(){
   try{
     var r=await fetch('http://localhost:11434/',{signal:AbortSignal.timeout(1500)});
-    if(r.ok){ $('ollama-dot').className='ollama-dot online'; $('ollama-status').textContent='Ollama 연결됨'; return; }
+    if(r.ok){
+      $('ollama-dot').className='ollama-dot online';
+      $('ollama-status').textContent='Ollama 연결됨';
+      await fetchOllamaModels();
+      return;
+    }
   }catch(e){}
-  $('ollama-dot').className='ollama-dot offline'; $('ollama-status').textContent='Ollama 오프라인';
+  $('ollama-dot').className='ollama-dot offline';
+  $('ollama-status').textContent='Ollama 오프라인';
+  $('ollama-model-row').classList.remove('visible');
+}
+
+async function fetchOllamaModels(){
+  try{
+    var r=await fetch('http://localhost:11434/api/tags',{signal:AbortSignal.timeout(2000)});
+    if(!r.ok) return;
+    var data=await r.json();
+    var models=(data.models||[]).map(function(m){return m.name;});
+    if(models.length===0) return;
+    var sel=$('ollama-model-select');
+    sel.innerHTML='';
+    models.forEach(function(m){
+      var o=document.createElement('option');
+      o.value=m; o.textContent=m;
+      if(m===STATE.ollamaModel) o.selected=true;
+      sel.appendChild(o);
+    });
+    if(!models.includes(STATE.ollamaModel)){
+      STATE.ollamaModel=models[0];
+      sel.value=models[0];
+    }
+    $('ollama-model-row').classList.add('visible');
+  }catch(e){ $('ollama-model-row').classList.remove('visible'); }
+}
+
+function onModelChange(model){
+  STATE.ollamaModel=model;
+  localStorage.setItem('ollamaModel',model);
 }
 
 async function fetchJSON(url){ var r=await fetch(url); if(!r.ok) throw new Error(r.status); return r.json(); }
@@ -732,54 +778,4 @@ function renderChangeTables(){
     var rtCls=parseFloat(rtD)>0?'ch-up':parseFloat(rtD)<0?'ch-dn':'';
     var rtA=parseFloat(rtD)>0?'▲ +':parseFloat(rtD)<0?'▼ ':'─ ';
     var trRv=document.createElement('tr');
-    trRv.innerHTML='<td style="padding-left:12px">'+fmtS(p.name)+'</td><td class="r">'+fmt(prevRv)+'</td><td class="r"><strong>'+fmt(p.review_count)+'</strong></td><td class="r '+rvCls+'" style="padding-right:12px">'+rvA+Math.abs(rvD)+'</td>';
-    rvB.appendChild(trRv);
-    var trRt=document.createElement('tr');
-    trRt.innerHTML='<td style="padding-left:12px">'+fmtS(p.name)+'</td><td class="r">'+prevRt.toFixed(2)+'★</td><td class="r"><strong>'+p.avg_rating.toFixed(2)+'★</strong></td><td class="r '+rtCls+'" style="padding-right:12px">'+rtA+Math.abs(rtD)+'</td>';
-    rtB.appendChild(trRt);
-  });
-}
-
-function renderVOC(){
-  var kw=STATE.keywords||REAL_DATA.keywords;
-  var bi=(kw&&kw.by_intent)||REAL_DATA.keywords.by_intent;
-  kwCloud('praise-keywords',bi.praise||[],'kw-pos');
-  kwCloud('complaint-keywords',bi.complaint||[],'kw-neg');
-  kwCloud('improve-keywords',(bi.improvement||bi.improve||[]),'kw-imp');
-  var cont=$('negative-reviews-list'); cont.innerHTML='';
-  REAL_DATA.negative_reviews.forEach(function(rv){
-    var s=''; for(var i=1;i<=5;i++) s+=i<=rv.rating?'★':'☆';
-    var div=document.createElement('div'); div.className='review-card';
-    div.innerHTML='<div class="review-meta"><span class="review-prod">'+rv.product+'</span><span class="review-stars">'+s+'</span></div><div class="review-text">'+rv.text+'</div>';
-    cont.appendChild(div);
-  });
-}
-
-function kwCloud(cid,kws,cls){
-  var el=$(cid); if(!el) return; el.innerHTML='';
-  kws.slice(0,12).forEach(function(k){
-    var sp=document.createElement('span'); sp.className='kw-pill '+cls;
-    sp.innerHTML=k.word+' <span class="kw-cnt">'+k.count+'</span>';
-    el.appendChild(sp);
-  });
-}
-
-function updateActiveNav(){
-  var secs=document.querySelectorAll('section[id]');
-  var links=document.querySelectorAll('nav a');
-  var sy=window.scrollY+120;
-  var cur='';
-  secs.forEach(function(s){ if(s.offsetTop<=sy) cur=s.id; });
-  links.forEach(function(a){ a.classList.toggle('active',a.getAttribute('href')==='#'+cur); });
-}
-window.addEventListener('scroll',updateActiveNav,{passive:true});
-
-document.addEventListener('DOMContentLoaded',async function(){
-  pingOllama();
-  await loadIndex();
-  await loadData(STATE.brand,STATE.month);
-  render();
-});
-</script>
-</body>
-</html>
+    trRv.innerHTML='<td style="padding-left:12px">'+fmtS(p

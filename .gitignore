@@ -51,6 +51,13 @@ data/raw/
 !data/raw/.gitkeep
 
 # ======================
+# 익명화 데이터 (PII 제거 버전 — GitHub에 누적 보관)
+# 주문번호, 회원ID, 회원명 등 제거 후 업로드
+# scripts/anonymize_csv.py 로 자동 생성됨
+# ======================
+# data/anonymized/ 는 gitignore에서 제외 → 추적 O
+
+# ======================
 # macOS
 # ======================
 .DS_Store

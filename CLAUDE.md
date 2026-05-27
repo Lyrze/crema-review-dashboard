@@ -39,6 +39,67 @@ crema-review-dashboard/
 
 ## 과거 실수 & 재발 방지 규칙
 
+### 🔴 CRITICAL: Windows 배치파일 — LF 줄바꿈 금지
+
+**발생**: Linux 샌드박스에서 Write/bash로 `.bat` 파일을 생성하면 기본적으로 LF(`\n`) 줄바꿈으로 저장됨.  
+**증상**: `'exist'은(는) 내부 또는 외부 명령이 아닙니다`, `'%i.'은(는) 내부 또는 외부 명령이 아닙니다`, 한글 깨짐, 명령어가 중간에 잘려 실행됨.
+
+**원인**: Windows CMD는 CRLF(`\r\n`)만 올바르게 파싱한다. LF만 있으면 줄 경계를 인식 못해 여러 줄이 붙거나 명령어가 단어 단위로 쪼개짐.
+
+**규칙**:
+- `.bat` 파일은 **반드시 Python으로 `newline='\r\n'`을 명시해서 저장**한다.
+
+```python
+# 올바른 배치파일 저장 패턴
+with open('script.bat', 'w', newline='\r\n', encoding='utf-8') as f:
+    f.write(content)
+```
+
+- 저장 후 반드시 검증:
+
+```python
+data = open('script.bat', 'rb').read()
+lf_only = data.count(b'\n') - data.count(b'\r\n')
+assert lf_only == 0, f"LF-only lines found: {lf_only}"
+```
+
+---
+
+### 🔴 CRITICAL: Windows 배치파일 — for 루프 동적 변수명
+
+**발생**: `for /l %%i in (1,1,!COUNT!) do echo !BRAND_%%i!` 패턴이 제대로 동작하지 않음.  
+**원인**: 복잡한 동적 변수 접근이 배치 내에서 불안정하고 가독성이 떨어짐.
+
+**규칙**: 목록 스캔, 모델 열거 등 **복잡한 로직은 Python 보조 스크립트로 분리**한다.  
+배치파일은 Python이 출력한 `KEY=VALUE` 형식 텍스트를 `findstr` + `for /f`로 파싱한다.
+
+```batch
+:: 올바른 패턴 — Python 스크립트가 KEY=VALUE 출력
+python scripts\scan_raw.py > "%TEMP%\result.tmp"
+for /f "tokens=1,2 delims==" %%A in ('findstr "^COUNT=" "%TEMP%\result.tmp"') do set "COUNT=%%B"
+```
+
+```python
+# scan_raw.py 출력 형식
+print(f"COUNT={len(items)}")
+print(f"ITEM_1_BRAND=슬룸")
+print(f"SHOW_1=1. 슬룸 / 2026-03  [미처리]")
+```
+
+---
+
+### 🟠 HIGH: Windows 배치파일 — Python inline 코드에서 dict key 직접 참조
+
+**발생**: `python -c "... d['total_reviews'] ..."` 처럼 따옴표가 중첩되면 배치 파서가 깨짐.  
+**규칙**: 배치 내 `python -c` 코드에서 dict key는 `chr()` 조합 대신 **변수 할당 후 사용**하거나, **별도 `.py` 파일로 분리**한다.
+
+```batch
+:: 올바른 패턴
+python scripts\show_result.py "!BRAND!" "!MONTH!"
+```
+
+---
+
 ### 🔴 CRITICAL: 파일 잘림 (Truncation) 문제
 
 **발생**: `process_data.py`, `ollama_analysis.py` 등 긴 파일을 여러 번에 나눠 쓸 때 마지막 청크가 잘렸음.  
