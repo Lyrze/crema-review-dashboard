@@ -511,10 +511,23 @@ def calc_review_path_distribution(df: pd.DataFrame) -> dict:
 # 상품별 집계
 # ────────────────────────────────────────────
 
-def calc_products(df: pd.DataFrame, top_review_count: int = 3) -> List[dict]:
+def calc_products(
+    df: pd.DataFrame,
+    prev_df: Optional[pd.DataFrame] = None,
+    top_review_count: int = 3,
+) -> List[dict]:
     """상품별 집계 데이터 생성."""
     if "product_name" not in df.columns:
         return []
+
+    # 전월 상품별 집계 사전 구성 (prev_df 있을 때만)
+    prev_lookup: dict = {}
+    if prev_df is not None and "product_name" in prev_df.columns:
+        for pn, pg in prev_df.groupby("product_name"):
+            prev_lookup[pn] = {
+                "review_count": len(pg),
+                "avg_rating": round(float(pg["rating"].mean()), 2),
+            }
 
     products: List[dict] = []
 
@@ -596,8 +609,8 @@ def calc_products(df: pd.DataFrame, top_review_count: int = 3) -> List[dict]:
             "sentiment": sentiment,
             "positive_rate": pos_r,
             "negative_rate": neg_r,
-            "prev_review_count": None,
-            "prev_avg_rating": None,
+            "prev_review_count": prev_lookup[product_name]["review_count"] if product_name in prev_lookup else None,
+            "prev_avg_rating": prev_lookup[product_name]["avg_rating"] if product_name in prev_lookup else None,
             "top_reviews": top_reviews,
         })
 
@@ -990,7 +1003,7 @@ def run_pipeline(args: argparse.Namespace) -> None:
 
     # ── 5. 상품별 집계
     logger.info("상품별 데이터 계산 중...")
-    products_list = calc_products(df)
+    products_list = calc_products(df, prev_df=prev_df)
     products_data = {"products": products_list}
 
     # ── 6. 키워드 분석

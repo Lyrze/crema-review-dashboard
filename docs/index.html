@@ -229,6 +229,22 @@
     .drag-handle:hover { opacity:1; }
     section[id][draggable="true"] { transition:opacity .15s; }
     section[id].drag-over { outline:2px dashed var(--accent); outline-offset:2px; border-radius:12px; }
+    /* Syncly 스타일 %Change 배지 */
+    .pct-badge { display:inline-flex; align-items:center; gap:3px; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:700; }
+    .pct-badge.up { background:var(--positive-bg); color:var(--positive); }
+    .pct-badge.dn { background:var(--negative-bg); color:var(--negative); }
+    .pct-badge.new-item { background:var(--warning-bg); color:var(--warning); }
+    .pct-badge.neu { background:var(--surface-hover); color:var(--text-secondary); }
+    /* 상품 탭 스트립 (Syncly 스타일) */
+    .product-tab-bar { display:flex; align-items:center; gap:0; margin-bottom:20px; border-bottom:1px solid var(--border); overflow-x:auto; scrollbar-width:none; }
+    .product-tab-bar::-webkit-scrollbar { display:none; }
+    .product-tab { padding:8px 14px; font-size:12px; font-weight:500; color:var(--text-secondary); border-bottom:2px solid transparent; cursor:pointer; white-space:nowrap; background:none; border-top:none; border-left:none; border-right:none; font-family:inherit; transition:color .12s, border-color .12s; flex-shrink:0; }
+    .product-tab:hover { color:var(--text); }
+    .product-tab.active { color:var(--accent); border-bottom-color:var(--accent); font-weight:700; }
+    /* 섹션 카드 ... 메뉴 버튼 */
+    .card-menu-btn { border:none; background:none; color:var(--text-secondary); cursor:pointer; font-size:16px; padding:4px 6px; border-radius:6px; line-height:1; opacity:.6; }
+    .card-menu-btn:hover { background:var(--surface-hover); opacity:1; }
+    .section-actions { display:flex; align-items:center; gap:4px; }
   </style>
 </head>
 <body>
@@ -273,14 +289,8 @@
 
 <main id="main-content">
 
-  <!-- 상품 포커스 필터 -->
-  <div class="product-focus-bar" id="product-focus-bar" style="display:none;">
-    <span class="product-focus-label">🔍 상품 포커스</span>
-    <select class="product-focus-select" id="product-focus-select" onchange="onProductFocusChange(this.value)">
-      <option value="">모든 상품 보기</option>
-    </select>
-    <span id="product-focus-tag"></span>
-  </div>
+  <!-- 상품 탭 필터 (Syncly 스타일) -->
+  <div class="product-tab-bar" id="product-focus-bar" style="display:none;"></div>
 
   <!-- PAGE HEADER -->
   <div class="page-header animate">
@@ -1085,32 +1095,36 @@ function renderChangeTables(){
     var trRv=document.createElement('tr');
     if(hasPrevRv){
       var rvD=p.review_count-p.prev_review_count;
-      var rvCls=rvD>0?'ch-up':rvD<0?'ch-dn':'';
+      var rvPct=p.prev_review_count>0?Math.abs(rvD/p.prev_review_count*100).toFixed(1):null;
+      var isNew=p.prev_review_count===0;
+      var badgeCls=isNew?'new-item':rvD>0?'up':rvD<0?'dn':'neu';
+      var badgeTxt=isNew?'new':rvPct?(rvD>0?'↑ +':rvD<0?'↓ -':'')+(rvPct)+'%':'—';
       trRv.innerHTML='<td style="padding-left:12px">'+fmtS(p.name)+'</td>'+
         '<td class="r">'+fmt(p.prev_review_count)+'</td>'+
         '<td class="r"><strong>'+fmt(p.review_count)+'</strong></td>'+
-        '<td class="r" style="padding-right:12px"><span class="'+rvCls+'">'+(rvD>0?'▲ +':rvD<0?'▼ ':'─ ')+Math.abs(rvD)+'</span></td>';
+        '<td class="r" style="padding-right:12px"><span class="pct-badge '+badgeCls+'">'+badgeTxt+'</span></td>';
     } else {
       trRv.innerHTML='<td style="padding-left:12px">'+fmtS(p.name)+'</td>'+
         '<td class="r" style="color:var(--text-secondary)">—</td>'+
         '<td class="r"><strong>'+fmt(p.review_count)+'</strong></td>'+
-        '<td class="r" style="color:var(--text-secondary);padding-right:12px">전월 없음</td>';
+        '<td class="r" style="padding-right:12px"><span class="pct-badge new-item">new</span></td>';
     }
     rvB.appendChild(trRv);
     var trRt=document.createElement('tr');
     if(hasPrevRt){
-      var rtD=(p.avg_rating-p.prev_avg_rating).toFixed(2);
-      var rtF=parseFloat(rtD);
-      var rtCls=rtF>0?'ch-up':rtF<0?'ch-dn':'';
+      var rtD=p.avg_rating-p.prev_avg_rating;
+      var rtPct=p.prev_avg_rating>0?Math.abs(rtD/p.prev_avg_rating*100).toFixed(1):null;
+      var rtBadgeCls=rtD>0.005?'up':rtD<-0.005?'dn':'neu';
+      var rtBadgeTxt=rtPct?(rtD>0.005?'↑ +':rtD<-0.005?'↓ -':'')+(rtPct)+'%':'—';
       trRt.innerHTML='<td style="padding-left:12px">'+fmtS(p.name)+'</td>'+
         '<td class="r">'+p.prev_avg_rating.toFixed(2)+'</td>'+
         '<td class="r"><strong>'+p.avg_rating.toFixed(2)+'</strong></td>'+
-        '<td class="r" style="padding-right:12px"><span class="'+rtCls+'">'+(rtF>0?'▲ +':rtF<0?'▼ ':'─ ')+Math.abs(rtD)+'</span></td>';
+        '<td class="r" style="padding-right:12px"><span class="pct-badge '+rtBadgeCls+'">'+rtBadgeTxt+'</span></td>';
     } else {
       trRt.innerHTML='<td style="padding-left:12px">'+fmtS(p.name)+'</td>'+
         '<td class="r" style="color:var(--text-secondary)">—</td>'+
         '<td class="r"><strong>'+p.avg_rating.toFixed(2)+'</strong></td>'+
-        '<td class="r" style="color:var(--text-secondary);padding-right:12px">전월 없음</td>';
+        '<td class="r" style="padding-right:12px"><span class="pct-badge new-item">new</span></td>';
     }
     rtB.appendChild(trRt);
   });
@@ -1124,17 +1138,36 @@ function renderVOC(){
   kwCloud('improve-keywords',(bi.improvement||[]),'kw-imp');
   var neg=STATE.products||REAL_DATA.products;
   var cont=$('negative-reviews-list'); if(!cont) return; cont.innerHTML='';
-  // 부정 리뷰 샘플 (별점 1-2점 상품 키워드 기반)
-  var lowProds=neg.filter(function(p){return p.review_count>=5&&p.negative_rate>0;})
-    .sort(function(a,b){return b.negative_rate-a.negative_rate;}).slice(0,3);
-  lowProds.forEach(function(p){
+  // 부정 리뷰 샘플: top_reviews에서 별점 낮은 리뷰 우선 표시
+  var reviewSamples=[];
+  neg.filter(function(p){return p.review_count>=5&&p.negative_rate>0;})
+    .sort(function(a,b){return b.negative_rate-a.negative_rate;}).slice(0,5)
+    .forEach(function(p){
+      if(p.top_reviews&&p.top_reviews.length){
+        p.top_reviews.filter(function(r){return r.rating<=2;}).slice(0,2).forEach(function(r){
+          reviewSamples.push({name:p.name,rating:r.rating,text:r.text,date:r.date,negRate:p.negative_rate});
+        });
+      }
+      if(reviewSamples.length<3){
+        // 낮은 별점 없으면 첫 리뷰로 대체
+        if(p.top_reviews&&p.top_reviews.length){
+          reviewSamples.push({name:p.name,rating:p.top_reviews[0].rating,text:p.top_reviews[0].text,date:p.top_reviews[0].date,negRate:p.negative_rate});
+        }
+      }
+    });
+  reviewSamples.slice(0,4).forEach(function(r){
+    var starsHtml=''; for(var i=1;i<=5;i++) starsHtml+=i<=r.rating?'★':'☆';
     var div=document.createElement('div'); div.className='review-card';
-    div.innerHTML='<div class="review-meta"><span class="review-prod">'+fmtS(p.name)+'</span>'+
-      '<span class="review-stars" style="color:#ef4444">부정률 '+p.negative_rate.toFixed(1)+'%</span></div>'+
-      '<div class="review-text">부정 리뷰 '+Math.round(p.review_count*p.negative_rate/100)+'건 / '+
-      '전체 '+p.review_count+'건 중</div>';
+    div.innerHTML='<div class="review-meta"><span class="review-prod">'+fmtS(r.name)+'</span>'+
+      '<span class="review-stars">'+starsHtml+'</span>'+
+      '<span style="font-size:10px;color:var(--text-secondary);margin-left:4px;">'+r.date+'</span>'+
+      '<span class="pct-badge dn" style="margin-left:auto;font-size:10px;">부정률 '+r.negRate.toFixed(1)+'%</span></div>'+
+      '<div class="review-text">'+(r.text||'리뷰 원문 없음')+'</div>';
     cont.appendChild(div);
   });
+  if(!reviewSamples.length){
+    cont.innerHTML='<div style="padding:16px;color:var(--text-secondary);font-size:12px;">부정 리뷰 샘플이 없습니다.</div>';
+  }
 }
 
 function kwCloud(cid,kws,cls){
@@ -1155,28 +1188,34 @@ function updateActiveNav(){
 }
 window.addEventListener('scroll',updateActiveNav,{passive:true});
 
-// ── 상품 포커스 바 ──
+// ── 상품 포커스 탭 바 (Syncly 스타일) ──
 function updateProductFocusBar(){
-  var bar=$('product-focus-bar'),sel=$('product-focus-select');
-  if(!bar||!sel) return;
+  var bar=$('product-focus-bar');
+  if(!bar) return;
   var prods=STATE.products||REAL_DATA.products;
   if(!prods||!prods.length){bar.style.display='none';return;}
   bar.style.display='flex';
-  var cur=sel.value;
-  sel.innerHTML='<option value="">모든 상품 보기</option>';
+  bar.innerHTML='';
+  // 전체 탭
+  var allTab=document.createElement('button');
+  allTab.className='product-tab'+(STATE.productFocus?'':' active');
+  allTab.textContent='전체';
+  allTab.onclick=function(){onProductFocusChange('');};
+  bar.appendChild(allTab);
+  // 상품별 탭 (리뷰 수 상위순)
   prods.slice().sort(function(a,b){return b.review_count-a.review_count;}).forEach(function(p){
-    var o=document.createElement('option');
-    o.value=p.name; o.textContent=p.name+(p.review_count?' ('+p.review_count+'건)':'');
-    if(p.name===cur) o.selected=true;
-    sel.appendChild(o);
+    var tab=document.createElement('button');
+    tab.className='product-tab'+(STATE.productFocus===p.name?' active':'');
+    tab.textContent=p.name;
+    tab.title=p.name+' ('+p.review_count+'건)';
+    tab.onclick=function(){onProductFocusChange(p.name);};
+    bar.appendChild(tab);
   });
-  if(STATE.productFocus) sel.value=STATE.productFocus;
 }
 
 function onProductFocusChange(val){
   STATE.productFocus=val||null;
-  var tag=$('product-focus-tag');
-  if(tag) tag.innerHTML=val?'<span class="product-focus-tag">'+val+' 필터 적용 중</span>':'';
+  updateProductFocusBar();
   renderSKUTable(); renderSKUCombo(); renderChangeTables();
 }
 
@@ -1289,7 +1328,7 @@ function _doAddChart(metric, rangeVal, ctype) {
   if(placeholder) placeholder.remove();
   var card=document.createElement('div'); card.className='custom-chart-card'; card.id='card-'+cid;
   card.innerHTML='<div class="custom-chart-head"><span class="custom-chart-title">'+title+'</span>'+
-    '<button class="custom-chart-remove" onclick="removeCustomChart(''+cid+'')" title="제거">✕</button>'+
+    '<button class="custom-chart-remove" onclick="removeCustomChart(\''+cid+'\')" title="제거">✕</button>'+
     '</div><div style="position:relative;height:260px;"><canvas id="'+cid+'" role="img" aria-label="'+title+'"></canvas></div>';
   grid.appendChild(card);
   var labels=filtered.map(function(p){return p.name.length>10?p.name.slice(0,9)+'…':p.name;});
@@ -1342,7 +1381,7 @@ function injectAIInlineAsk(panelBodyId, sectionType) {
   div.innerHTML='<div class="ai-inline-ask-label">💬 추가 질문</div>'+
     '<div class="ai-inline-ask-row">'+
       '<textarea class="ai-inline-input" id="'+askId+'" rows="2" placeholder="이 분석에 대해 추가로 질문하세요..."></textarea>'+
-      '<button class="ai-inline-send" id="'+sendId+'" onclick="aiInlineQuestion(''+panelBodyId+'',''+sectionType+'')">전송</button>'+
+      '<button class="ai-inline-send" id="'+sendId+'" onclick="aiInlineQuestion(\''+panelBodyId+'\',\''+sectionType+'\')">전송</button>'+
     '</div>'+
     '<div class="ai-inline-answer" id="'+answerId+'"></div>';
   body.appendChild(div);
@@ -1376,13 +1415,7 @@ async function aiInlineQuestion(panelBodyId, sectionType) {
   ansEl.style.display='block';
   ansEl.textContent='답변 생성 중...';
 
-  var prompt='[기존 분석 내용]
-'+prevAnalysis+'
-
-[추가 질문]
-'+question+'
-
-한국어로 간결하게 답변해주세요.';
+  var prompt='[기존 분석 내용]\n'+prevAnalysis+'\n\n[추가 질문]\n'+question+'\n\n한국어로 간결하게 답변해주세요.';
   try{
     var r=await fetch('http://localhost:11434/api/generate',{
       method:'POST',headers:{'Content-Type':'application/json'},

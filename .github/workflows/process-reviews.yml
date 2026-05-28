@@ -87,6 +87,23 @@ jobs:
 
             echo "처리 중: 브랜드=$BRAND 월=$MONTH 파일=$FILE"
 
+            # 전월 CSV 자동 탐지 (MoM 비교용)
+            PREV_MONTH=$(python3 -c "
+y, m = '$MONTH'.split('-')
+m = int(m) - 1
+if m < 1:
+    m = 12; y = int(y) - 1
+print(f'{y}-{m:02d}')
+")
+            PREV_FILE="data/raw/$BRAND/$PREV_MONTH/reviews.csv"
+            PREV_FLAG=""
+            if [ -f "$PREV_FILE" ]; then
+              echo "  전월 CSV 발견: $PREV_FILE"
+              PREV_FLAG="--prev-input $PREV_FILE"
+            else
+              echo "  전월 CSV 없음 (MoM 비교 생략)"
+            fi
+
             SKIP_AI_FLAG=""
             if [ "${{ github.event.inputs.skip_ai }}" = "true" ] || [ "${{ github.event_name }}" = "push" ]; then
               SKIP_AI_FLAG="--skip-ai"
@@ -96,6 +113,7 @@ jobs:
               --brand "$BRAND" \
               --month "$MONTH" \
               --input "$FILE" \
+              $PREV_FLAG \
               $SKIP_AI_FLAG
           done
         env:

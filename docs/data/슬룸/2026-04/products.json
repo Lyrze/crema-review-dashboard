@@ -22,8 +22,8 @@
       },
       "positive_rate": 92.23,
       "negative_rate": 0.38,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
+      "prev_review_count": 722,
+      "prev_avg_rating": 4.67,
       "top_reviews": [
         {
           "review_id": "112268",
@@ -112,8 +112,8 @@
       },
       "positive_rate": 76.77,
       "negative_rate": 11.11,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
+      "prev_review_count": 330,
+      "prev_avg_rating": 4.24,
       "top_reviews": [
         {
           "review_id": "112271",
@@ -157,8 +157,8 @@
       },
       "positive_rate": 92.75,
       "negative_rate": 4.35,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
+      "prev_review_count": 12,
+      "prev_avg_rating": 4.67,
       "top_reviews": [
         {
           "review_id": "112255",
@@ -202,8 +202,8 @@
       },
       "positive_rate": 91.07,
       "negative_rate": 1.79,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
+      "prev_review_count": 66,
+      "prev_avg_rating": 4.74,
       "top_reviews": [
         {
           "review_id": "112257",
@@ -247,8 +247,8 @@
       },
       "positive_rate": 97.78,
       "negative_rate": 2.22,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
+      "prev_review_count": 48,
+      "prev_avg_rating": 4.56,
       "top_reviews": [
         {
           "review_id": "112260",
@@ -292,8 +292,8 @@
       },
       "positive_rate": 100.0,
       "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
+      "prev_review_count": 6,
+      "prev_avg_rating": 4.5,
       "top_reviews": [
         {
           "review_id": "111945",
@@ -337,8 +337,8 @@
       },
       "positive_rate": 94.44,
       "negative_rate": 5.56,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
+      "prev_review_count": 37,
+      "prev_avg_rating": 4.73,
       "top_reviews": [
         {
           "review_id": "111724",
@@ -382,8 +382,8 @@
       },
       "positive_rate": 71.43,
       "negative_rate": 7.14,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
+      "prev_review_count": 3,
+      "prev_avg_rating": 2.33,
       "top_reviews": [
         {
           "review_id": "112259",
@@ -427,8 +427,8 @@
       },
       "positive_rate": 92.31,
       "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
+      "prev_review_count": 36,
+      "prev_avg_rating": 4.83,
       "top_reviews": [
         {
           "review_id": "111318",
@@ -517,8 +517,8 @@
       },
       "positive_rate": 100.0,
       "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
+      "prev_review_count": 6,
+      "prev_avg_rating": 5.0,
       "top_reviews": [
         {
           "review_id": "111049",
@@ -562,8 +562,8 @@
       },
       "positive_rate": 100.0,
       "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
+      "prev_review_count": 6,
+      "prev_avg_rating": 5.0,
       "top_reviews": [
         {
           "review_id": "111320",
@@ -607,8 +607,8 @@
       },
       "positive_rate": 50.0,
       "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
+      "prev_review_count": 4,
+      "prev_avg_rating": 4.5,
       "top_reviews": [
         {
           "review_id": "111953",
@@ -652,8 +652,8 @@
       },
       "positive_rate": 100.0,
       "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
+      "prev_review_count": 10,
+      "prev_avg_rating": 4.2,
       "top_reviews": [
         {
           "review_id": "109337",
@@ -697,8 +697,8 @@
       },
       "positive_rate": 100.0,
       "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
+      "prev_review_count": 8,
+      "prev_avg_rating": 4.62,
       "top_reviews": [
         {
           "review_id": "111073",
@@ -742,8 +742,8 @@
       },
       "positive_rate": 66.67,
       "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
+      "prev_review_count": 3,
+      "prev_avg_rating": 4.0,
       "top_reviews": [
         {
           "review_id": "110888",
@@ -787,8 +787,8 @@
       },
       "positive_rate": 100.0,
       "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
+      "prev_review_count": 3,
+      "prev_avg_rating": 3.67,
       "top_reviews": [
         {
           "review_id": "111322",
@@ -832,8 +832,8 @@
       },
       "positive_rate": 100.0,
       "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
+      "prev_review_count": 3,
+      "prev_avg_rating": 5.0,
       "top_reviews": [
         {
           "review_id": "111722",
@@ -871,8 +871,8 @@
       },
       "positive_rate": 50.0,
       "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
+      "prev_review_count": 2,
+      "prev_avg_rating": 4.0,
       "top_reviews": [
         {
           "review_id": "109323",
@@ -910,8 +910,8 @@
       },
       "positive_rate": 100.0,
       "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
+      "prev_review_count": 3,
+      "prev_avg_rating": 5.0,
       "top_reviews": [
         {
           "review_id": "111719",
@@ -1027,8 +1027,8 @@
       },
       "positive_rate": 100.0,
       "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
+      "prev_review_count": 4,
+      "prev_avg_rating": 4.25,
       "top_reviews": [
         {
           "review_id": "110471",
@@ -1060,8 +1060,8 @@
       },
       "positive_rate": 0.0,
       "negative_rate": 100.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
+      "prev_review_count": 2,
+      "prev_avg_rating": 4.5,
       "top_reviews": [
         {
           "review_id": "109786",
@@ -1093,8 +1093,8 @@
       },
       "positive_rate": 100.0,
       "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
+      "prev_review_count": 7,
+      "prev_avg_rating": 5.0,
       "top_reviews": [
         {
           "review_id": "111094",
