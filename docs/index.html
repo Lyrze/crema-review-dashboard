@@ -311,6 +311,11 @@
     .pc-val { font-weight:700; color:var(--text); }
     .pc-compare-btn { border:none; background:var(--surface-hover); color:var(--text-secondary); cursor:pointer; padding:3px 8px; border-radius:6px; font-size:10px; font-weight:700; }
     .pc-compare-btn.selected { background:rgba(91,94,244,.15); color:var(--accent); }
+    /* ── 카드 인라인 AI 버튼 ── */
+    .ai-card-btn { border:none; background:var(--accent-bg); color:var(--accent); cursor:pointer; padding:3px 7px; border-radius:6px; font-size:10px; font-weight:700; font-family:inherit; transition:background .12s,color .12s; flex-shrink:0; line-height:1.4; }
+    .ai-card-btn:hover { background:var(--accent); color:#fff; }
+    /* ── 비교 패널 열릴 때 FAB 위로 ── */
+    body.compare-panel-open .chart-fab { bottom:180px; }
     /* ── 인쇄(PDF) 스타일 ── */
     @media print {
       aside, .menu-btn, .product-focus-bar, .fab-btn, .fab-menu,
@@ -387,6 +392,22 @@
     <select id="product-focus-select" class="product-focus-select" onchange="onProductFocusChange(this.value)"></select>
   </div>
 
+  <!-- 비교 모드 배너 -->
+  <div id="compare-banner" style="display:none;margin-bottom:20px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="exec-badge" style="flex-direction:column;align-items:flex-start;gap:4px;padding:12px 16px;">
+        <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;">현재 기간</div>
+        <div id="cmp-cur-label" style="font-size:14px;font-weight:800;"></div>
+        <div id="cmp-cur-data" style="font-size:11px;color:var(--text-secondary);line-height:1.7;"></div>
+      </div>
+      <div class="exec-badge" style="flex-direction:column;align-items:flex-start;gap:4px;padding:12px 16px;border-style:dashed;">
+        <div style="font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;">비교 기간</div>
+        <div id="cmp-prev-label" style="font-size:14px;font-weight:800;"></div>
+        <div id="cmp-prev-data" style="font-size:11px;color:var(--text-secondary);line-height:1.7;"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- PAGE HEADER -->
   <div class="page-header animate">
     <div>
@@ -456,7 +477,10 @@
       <div class="card" data-key="kpi-reviews">
         <div class="card-header">
           <span class="card-title">전월 대비 리뷰 수</span>
-          <span id="kpi-total-delta" class="delta neu">—</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span id="kpi-total-delta" class="delta neu">—</span>
+            <button class="ai-card-btn" id="btn-ai-kpi-reviews" onclick="aiAnalyzeSection('kpi-reviews')">✦</button>
+          </div>
         </div>
         <div style="position:relative;height:170px;"><canvas id="kpi-reviews-chart" role="img" aria-label="전월 대비 리뷰 수"></canvas></div>
         <div style="margin-top:8px;"><span id="kpi-total-val" style="font-size:20px;font-weight:800;color:var(--text);">—</span><span style="font-size:12px;color:var(--text-secondary);margin-left:3px;">건</span></div>
@@ -464,6 +488,7 @@
       <div class="card" data-key="kpi-sentiment">
         <div class="card-header">
           <span class="card-title">감성 분포</span>
+          <button class="ai-card-btn" id="btn-ai-kpi-sentiment" onclick="aiAnalyzeSection('kpi-sentiment')">✦</button>
         </div>
         <div style="position:relative;height:170px;"><canvas id="sentiment-chart" role="img" aria-label="감성 분포 도넛"></canvas></div>
         <div style="margin-top:6px;font-size:11px;color:var(--text-secondary);" id="kpi-pos-count"></div>
@@ -471,7 +496,10 @@
       <div class="card" data-key="kpi-rating">
         <div class="card-header">
           <span class="card-title">평균 별점</span>
-          <span id="kpi-rating-delta" class="delta neu">—</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span id="kpi-rating-delta" class="delta neu">—</span>
+            <button class="ai-card-btn" id="btn-ai-kpi-rating" onclick="aiAnalyzeSection('kpi-rating')">✦</button>
+          </div>
         </div>
         <div style="position:relative;height:170px;"><canvas id="kpi-rating-chart" role="img" aria-label="평균 별점 전월 비교"></canvas></div>
         <div style="margin-top:8px;"><span id="kpi-rating-val" style="font-size:20px;font-weight:800;color:#f59e0b;">—</span><span style="font-size:12px;color:#f59e0b;margin-left:2px;">★</span></div>
@@ -479,6 +507,7 @@
       <div class="card" data-key="kpi-keywords">
         <div class="card-header">
           <span class="card-title">Sentiment 키워드</span>
+          <button class="ai-card-btn" id="btn-ai-kpi-keywords" onclick="aiAnalyzeSection('kpi-keywords')">✦</button>
         </div>
         <div style="font-size:10px;font-weight:600;color:#16a34a;margin-bottom:4px;">🟢 긍정</div>
         <div id="pos-word-cloud" style="min-height:68px;display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start;padding:2px 0;overflow:hidden;"></div>
@@ -488,7 +517,7 @@
     </div>
     <!-- 일별 추이: 풀폭 카드 -->
     <div class="chart-card" style="margin-top:16px;">
-      <div class="card-header"><div><div class="card-title">일별 리뷰 추이</div><div class="card-sub">일별 리뷰 수(막대) + 평균 별점(라인)</div></div></div>
+      <div class="card-header"><div><div class="card-title">일별 리뷰 추이</div><div class="card-sub">일별 리뷰 수(막대) + 평균 별점(라인)</div></div><button class="ai-card-btn" id="btn-ai-kpi-timeline" onclick="aiAnalyzeSection('kpi-timeline')">✦</button></div>
       <div class="chart-wrap" style="min-height:220px;"><canvas id="timeline-chart" role="img" aria-label="일별 리뷰 추이 콤보 차트"></canvas></div>
       <div class="chart-legend">
         <div style="display:flex;align-items:center;gap:5px;"><div class="legend-bar" style="background:rgba(91,94,244,.4)"></div><span>일별 리뷰 수</span></div>
@@ -1108,6 +1137,7 @@ async function aiAnalyzeSection(key){
   if($('ollama-dot').className.indexOf('online')<0){
     alert('Ollama가 오프라인 상태입니다. ollama serve 실행 후 재시도하세요.'); return;
   }
+  var origText=btn.textContent;
   AI_POPUP_KEY=key;
   var popBody=$('ai-popup-body'), popAsk=$('ai-popup-ask'), popAns=$('ai-popup-answer'), popInput=$('ai-popup-input');
   if(popBody) popBody.textContent='데이터 분석 중입니다...';
@@ -1115,16 +1145,55 @@ async function aiAnalyzeSection(key){
   if(popAns) { popAns.textContent=''; popAns.style.display='none'; }
   if(popInput) popInput.value='';
   showAIPopup(btn);
-  btn.disabled=true; btn.textContent='분석 중...';
+  btn.disabled=true; btn.textContent='…';
 
   var k=(STATE.summary||REAL_DATA.summary).kpis;
   var prompt='';
+  var prod=STATE.productFocus?(STATE.products||REAL_DATA.products).find(function(p){return p.name===STATE.productFocus;}):null;
+  var subject=prod?prod.name+' 상품':STATE.brand;
+
   if(key==='kpi'){
-    var prod=STATE.productFocus?(STATE.products||REAL_DATA.products).find(function(p){return p.name===STATE.productFocus;}):null;
-    var kk=prod?{total_reviews:prod.review_count,avg_rating:prod.avg_rating,positive_rate:prod.positive_rate||0,negative_rate:prod.negative_rate||0,positive_count:0,neutral_count:0,negative_count:0}:k;
-    prompt=(prod?prod.name+' 상품':STATE.brand)+' '+STATE.month+' 리뷰 KPI:\n'+
+    var kk=prod?{total_reviews:prod.review_count,avg_rating:prod.avg_rating,positive_rate:prod.positive_rate||0,negative_rate:prod.negative_rate||0}:k;
+    prompt=subject+' '+STATE.month+' 리뷰 KPI:\n'+
       '총리뷰: '+kk.total_reviews+'건, 평균별점: '+kk.avg_rating+', 긍정률: '+(kk.positive_rate||0).toFixed(1)+'%, 부정률: '+(kk.negative_rate||0).toFixed(2)+'%\n\n'+
       '핵심 인사이트와 개선 포인트를 3~5줄로 한국어로 요약하세요.';
+  } else if(key==='kpi-reviews'){
+    var cur=prod?prod.review_count:k.total_reviews;
+    var prev=prod&&prod.prev_review_count!=null?prod.prev_review_count:FALLBACK_PREV.total_reviews;
+    prompt=subject+' '+STATE.month+' 리뷰 수 분석:\n'+
+      '현재: '+cur+'건, 전월: '+prev+'건, 변화: '+(cur-prev)+'건 ('+(((cur-prev)/prev)*100).toFixed(1)+'%)\n\n'+
+      '리뷰 수 변화의 원인과 시사점을 3~5줄로 한국어로 분석하세요.';
+  } else if(key==='kpi-sentiment'){
+    var kk2=prod&&prod.sentiment?{pos:prod.sentiment.positive||0,neu:prod.sentiment.neutral||0,neg:prod.sentiment.negative||0,pr:prod.positive_rate||0,nr:prod.negative_rate||0}:{pos:k.positive_count||0,neu:k.neutral_count||0,neg:k.negative_count||0,pr:k.positive_rate||0,nr:k.negative_rate||0};
+    prompt=subject+' '+STATE.month+' 감성 분포:\n'+
+      '긍정 '+kk2.pos+'건 ('+kk2.pr.toFixed(1)+'%), 중립 '+kk2.neu+'건, 부정 '+kk2.neg+'건 ('+kk2.nr.toFixed(2)+'%)\n\n'+
+      '감성 분포의 의미와 부정 리뷰 주요 원인 추정, 개선 방향을 3~5줄로 한국어로 분석하세요.';
+  } else if(key==='kpi-rating'){
+    var curRt=prod?prod.avg_rating:k.avg_rating;
+    var prevRt=prod&&prod.prev_avg_rating!=null?prod.prev_avg_rating:FALLBACK_PREV.avg_rating;
+    prompt=subject+' '+STATE.month+' 평균 별점:\n'+
+      '현재: '+curRt.toFixed(2)+'★, 전월: '+prevRt.toFixed(2)+'★, 변화: '+(curRt-prevRt>=0?'+':'')+(curRt-prevRt).toFixed(2)+'\n\n'+
+      '별점 변화의 의미와 고객 만족도 개선 방향을 3~5줄로 한국어로 분석하세요.';
+  } else if(key==='kpi-keywords'){
+    var kw=STATE.keywords||REAL_DATA.keywords;
+    var bi=(kw&&kw.by_intent)||{};
+    var praise=(bi.praise||[]).slice(0,6).map(function(x){return x.word+'('+x.count+')';}).join(', ');
+    var complaint=(bi.complaint||[]).slice(0,6).map(function(x){return x.word+'('+x.count+')';}).join(', ');
+    prompt=subject+' '+STATE.month+' 감성 키워드:\n'+
+      '긍정 키워드: '+praise+'\n부정 키워드: '+complaint+'\n\n'+
+      '키워드 패턴의 인사이트와 마케팅·제품 개선 액션 포인트를 3~5줄로 한국어로 분석하세요.';
+  } else if(key==='kpi-timeline'){
+    var tl=(STATE.summary||REAL_DATA.summary).timeline||[];
+    if(tl.length){
+      var maxDay=tl.reduce(function(a,b){return b.count>a.count?b:a});
+      var minDay=tl.reduce(function(a,b){return b.count<a.count?b:a});
+      var avgRtMin=Math.min.apply(null,tl.map(function(t){return t.avg_rating;}));
+      var avgRtMax=Math.max.apply(null,tl.map(function(t){return t.avg_rating;}));
+      prompt=subject+' '+STATE.month+' 일별 리뷰 추이:\n'+
+        '최다 리뷰일: '+maxDay.date+'('+maxDay.count+'건), 최소 리뷰일: '+minDay.date+'('+minDay.count+'건)\n'+
+        '일별 별점 범위: '+avgRtMin.toFixed(2)+'★ ~ '+avgRtMax.toFixed(2)+'★\n\n'+
+        '일별 추이의 특이점(급증/급락일 원인 추정 포함)을 3~5줄로 한국어로 분석하세요.';
+    }
   } else if(key==='sku'){
     var prods=(STATE.products||REAL_DATA.products).filter(function(p){return p.review_count>=(STATE.skuMin||10);}).sort(function(a,b){return b.review_count-a.review_count;}).slice(0,8);
     prompt=STATE.brand+' '+STATE.month+' SKU 데이터:\n'+
@@ -1132,7 +1201,7 @@ async function aiAnalyzeSection(key){
       '\n\n주목 상품, 주의 상품, 전략 제안을 3~5줄로 한국어로 요약하세요.';
   }
 
-  if(!prompt){ btn.disabled=false; btn.textContent='✦ AI 분석'; return; }
+  if(!prompt){ btn.disabled=false; btn.textContent=origText; return; }
   try{
     var r=await fetch('http://localhost:11434/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:STATE.ollamaModel,prompt:prompt,stream:false}),signal:AbortSignal.timeout(60000)});
@@ -1143,7 +1212,7 @@ async function aiAnalyzeSection(key){
   }catch(e){
     if(popBody) popBody.textContent='[오류] '+e.message+'\n\nOllama가 실행 중인지 확인하세요.';
   }
-  btn.disabled=false; btn.textContent='✦ AI 분석';
+  btn.disabled=false; btn.textContent=origText;
 }
 
 async function fetchJSON(url){ var r=await fetch(url); if(!r.ok) throw new Error(r.status); return r.json(); }
@@ -1185,7 +1254,7 @@ function onBrandChange(v){ STATE.brand=v; populateMonths(); reload(); }
 function onMonthChange(v){ STATE.month=v; reload(); }
 async function reload(){ await loadData(STATE.brand,STATE.month); render(); }
 
-function render(){ renderHeader(); renderExec(); renderKPI(); renderTimeline(); renderSKUTable(); renderSKUCombo(); renderChangeTables(); renderVOC(); updateProductFocusBar(); updateCustomAIModelLabel(); populateCompareMonths(); }
+function render(){ renderHeader(); renderExec(); renderKPI(); renderTimeline(); renderSKUTable(); renderSKUCombo(); renderChangeTables(); renderVOC(); updateProductFocusBar(); updateCustomAIModelLabel(); populateCompareMonths(); updateCompareBanner(); }
 
 function renderHeader(){
   var p=STATE.month.split('-');
@@ -1461,21 +1530,30 @@ function renderVOC(){
   var cont=$('negative-reviews-list'); if(!cont) return; cont.innerHTML='';
   // 부정 리뷰 샘플: top_reviews에서 별점 낮은 리뷰 우선 표시
   var reviewSamples=[];
+  // 1차: 별점 ≤2 리뷰만 수집
   neg.filter(function(p){return p.review_count>=5&&p.negative_rate>0;})
-    .sort(function(a,b){return b.negative_rate-a.negative_rate;}).slice(0,5)
+    .sort(function(a,b){return b.negative_rate-a.negative_rate;}).slice(0,8)
     .forEach(function(p){
       if(p.top_reviews&&p.top_reviews.length){
         p.top_reviews.filter(function(r){return r.rating<=2;}).slice(0,2).forEach(function(r){
           reviewSamples.push({name:p.name,rating:r.rating,text:r.text,date:r.date,negRate:p.negative_rate});
         });
       }
-      if(reviewSamples.length<3){
-        // 낮은 별점 없으면 첫 리뷰로 대체
-        if(p.top_reviews&&p.top_reviews.length){
-          reviewSamples.push({name:p.name,rating:p.top_reviews[0].rating,text:p.top_reviews[0].text,date:p.top_reviews[0].date,negRate:p.negative_rate});
-        }
-      }
     });
+  // 2차 fallback: 별점 ≤3 (긍정 리뷰 혼입 방지를 위해 rating 3 이하만)
+  if(reviewSamples.length<3){
+    neg.filter(function(p){return p.review_count>=5&&p.negative_rate>0;})
+      .sort(function(a,b){return b.negative_rate-a.negative_rate;}).slice(0,8)
+      .forEach(function(p){
+        if(reviewSamples.length>=4) return;
+        if(p.top_reviews&&p.top_reviews.length){
+          p.top_reviews.filter(function(r){return r.rating<=3;}).slice(0,1).forEach(function(r){
+            if(!reviewSamples.some(function(s){return s.text===r.text;}))
+              reviewSamples.push({name:p.name,rating:r.rating,text:r.text,date:r.date,negRate:p.negative_rate});
+          });
+        }
+      });
+  }
   reviewSamples.slice(0,4).forEach(function(r){
     var starsHtml=''; for(var i=1;i<=5;i++) starsHtml+=i<=r.rating?'★':'☆';
     var div=document.createElement('div'); div.className='review-card';
@@ -1913,6 +1991,25 @@ function onSKUSearch(){
 // ── 두 달 비교 모드 ──
 var COMPARE_STATE={active:false,month:null,data:null};
 
+function updateCompareBanner(){
+  var banner=$('compare-banner'); if(!banner) return;
+  if(!COMPARE_STATE.active){banner.style.display='none';return;}
+  banner.style.display='block';
+  var curK=(STATE.summary||REAL_DATA.summary).kpis;
+  var cmpK=COMPARE_STATE.data&&COMPARE_STATE.data.summary&&COMPARE_STATE.data.summary.kpis;
+  $('cmp-cur-label').textContent=STATE.month;
+  $('cmp-cur-data').textContent='리뷰 '+fmt(curK.total_reviews)+'건  |  ★'+curK.avg_rating.toFixed(2)+'  |  긍정 '+(curK.positive_rate||0).toFixed(1)+'%  |  부정 '+(curK.negative_rate||0).toFixed(2)+'%';
+  $('cmp-prev-label').textContent=COMPARE_STATE.month||'—';
+  if(cmpK){
+    $('cmp-prev-data').textContent='리뷰 '+fmt(cmpK.total_reviews)+'건  |  ★'+cmpK.avg_rating.toFixed(2)+'  |  긍정 '+(cmpK.positive_rate||0).toFixed(1)+'%  |  부정 '+(cmpK.negative_rate||0).toFixed(2)+'%';
+    var rvD=curK.total_reviews-cmpK.total_reviews;
+    var rtD=(curK.avg_rating-cmpK.avg_rating).toFixed(2);
+    $('cmp-prev-data').textContent+='  →  리뷰 '+(rvD>=0?'+':'')+rvD+'건 / 별점 '+(rtD>=0?'+':'')+rtD;
+  }else{
+    $('cmp-prev-data').textContent=COMPARE_STATE.month?'데이터 로드 중...':'비교 기간을 선택하세요';
+  }
+}
+
 function toggleCompareMode(){
   COMPARE_STATE.active=!COMPARE_STATE.active;
   var btn=$('compare-toggle');
@@ -1920,7 +2017,7 @@ function toggleCompareMode(){
   if(btn){btn.classList.toggle('active',COMPARE_STATE.active);btn.textContent=COMPARE_STATE.active?'비교 모드 ON':'비교 모드';}
   if(row) row.style.display=COMPARE_STATE.active?'block':'none';
   if(COMPARE_STATE.active&&COMPARE_STATE.month) loadCompareData(COMPARE_STATE.month);
-  renderKPI(); renderSKUTable();
+  updateCompareBanner(); renderKPI(); renderSKUTable();
 }
 
 function onCompareMonthChange(val){
@@ -1936,8 +2033,8 @@ async function loadCompareData(month){
     var sum=await fetchJSON(base+'/data/'+encodeURIComponent(brand)+'/'+month+'/summary.json');
     var prods=await fetchJSON(base+'/data/'+encodeURIComponent(brand)+'/'+month+'/products.json');
     COMPARE_STATE.data={summary:sum,products:prods,month:month};
-    renderKPI(); renderSKUTable();
-  }catch(e){ COMPARE_STATE.data=null; }
+    updateCompareBanner(); renderKPI(); renderSKUTable();
+  }catch(e){ COMPARE_STATE.data=null; updateCompareBanner(); }
 }
 
 function populateCompareMonths(){
@@ -1987,6 +2084,7 @@ function toggleProductCompare(name){
 
 function clearProductCompare(){
   PROD_COMPARE=[];
+  document.body.classList.remove('compare-panel-open');
   renderProductComparePanel();
   document.querySelectorAll('.pc-compare-btn').forEach(function(btn){
     btn.classList.remove('selected'); btn.textContent='비교';
@@ -1996,8 +2094,9 @@ function clearProductCompare(){
 function renderProductComparePanel(){
   var panel=$('prod-compare-panel'); var grid=$('pc-grid');
   if(!panel||!grid) return;
-  if(!PROD_COMPARE.length){ panel.classList.remove('open'); return; }
+  if(!PROD_COMPARE.length){ panel.classList.remove('open'); document.body.classList.remove('compare-panel-open'); return; }
   panel.classList.add('open');
+  document.body.classList.add('compare-panel-open');
   var allProds=STATE.products||REAL_DATA.products;
   grid.innerHTML='';
   PROD_COMPARE.forEach(function(name){
