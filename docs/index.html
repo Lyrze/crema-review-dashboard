@@ -16,14 +16,14 @@
       --accent-bg: #eef0ff; --positive: #16a34a; --positive-bg: #dcfce7;
       --negative: #dc2626; --negative-bg: #fee2e2; --warning: #d97706; --warning-bg: #fef3c7;
       --sidebar-bg: #fafafa; --card-shadow: 0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
-      --prev-color: #e2e8f0;
+      --prev-color: #e2e8f0; --card: #ffffff;
     }
     .theme-dark {
       --bg: #0f1117; --surface: #1a1d27; --surface-hover: #22263a; --border: #2d3148;
       --text: #f1f5f9; --text-secondary: #94a3b8; --accent: #818cf8; --accent-secondary: #a5b4fc;
       --accent-bg: #1e2048; --positive: #4ade80; --positive-bg: #14532d;
       --negative: #f87171; --negative-bg: #7f1d1d; --warning: #fbbf24; --warning-bg: #78350f;
-      --sidebar-bg: #13151e; --card-shadow: 0 1px 3px rgba(0,0,0,.3); --prev-color: #374151;
+      --sidebar-bg: #13151e; --card-shadow: 0 1px 3px rgba(0,0,0,.3); --prev-color: #374151; --card: #1a1d27;
     }
     html { scroll-behavior: smooth; }
     body { font-family: 'Noto Sans KR',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; font-size: 13px; line-height: 1.5; }
@@ -275,6 +275,42 @@
     .ai-popup-send { margin-top:6px; width:100%; padding:7px; background:var(--accent); color:#fff; border:none; border-radius:8px; cursor:pointer; font-size:11px; font-family:inherit; }
     .ai-popup-send:hover { opacity:.88; }
     .ai-popup-answer { margin-top:8px; font-size:11px; line-height:1.7; color:var(--text); white-space:pre-wrap; }
+    /* ── 비교 모드 ── */
+    .compare-toggle { display:flex; align-items:center; gap:6px; padding:8px 12px; margin:6px 0; border-radius:8px; cursor:pointer; font-size:11px; font-weight:600; color:var(--text-secondary); border:1px dashed var(--border); background:none; width:100%; font-family:inherit; transition:background .12s; }
+    .compare-toggle:hover { background:var(--surface-hover); }
+    .compare-toggle.active { background:rgba(91,94,244,.08); color:var(--accent); border-color:var(--accent); }
+    #compare-month-row { padding:0 0 8px; }
+    #compare-month-row select { width:100%; padding:5px 8px; border:1px solid var(--border); border-radius:7px; background:var(--bg); color:var(--text); font-size:12px; }
+    .compare-badge { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:12px; font-size:10px; font-weight:700; background:rgba(91,94,244,.12); color:var(--accent); margin-left:6px; }
+    /* ── SKU 검색 + CSV ── */
+    .sku-search-row { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+    .sku-search-input { flex:1; padding:6px 10px; border:1px solid var(--border); border-radius:8px; font-size:12px; background:var(--bg); color:var(--text); font-family:inherit; }
+    .sku-search-input:focus { outline:none; border-color:var(--accent); }
+    .csv-btn { border:none; background:var(--surface-hover); color:var(--text-secondary); cursor:pointer; padding:6px 10px; border-radius:8px; font-size:11px; font-weight:600; white-space:nowrap; }
+    .csv-btn:hover { background:var(--accent); color:#fff; }
+    /* ── 리뷰 원문 모달 ── */
+    #review-modal { display:none; position:fixed; inset:0; z-index:800; background:rgba(0,0,0,.45); align-items:center; justify-content:center; }
+    #review-modal.open { display:flex; }
+    .review-modal-box { background:var(--card); border-radius:16px; padding:24px; max-width:560px; width:calc(100vw - 32px); max-height:80vh; overflow-y:auto; box-shadow:0 12px 48px rgba(0,0,0,.22); position:relative; }
+    .review-modal-head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
+    .review-modal-close { border:none; background:none; font-size:22px; cursor:pointer; color:var(--text-secondary); padding:0; line-height:1; }
+    .review-modal-body { font-size:13px; line-height:1.85; color:var(--text); white-space:pre-wrap; }
+    .review-card { cursor:pointer; transition:box-shadow .12s; }
+    .review-card:hover { box-shadow:0 0 0 2px var(--accent); }
+    /* ── 상품 비교 패널 ── */
+    #prod-compare-panel { display:none; position:fixed; bottom:0; left:0; right:0; z-index:700; background:var(--card); border-top:1px solid var(--border); box-shadow:0 -4px 20px rgba(0,0,0,.12); padding:12px 20px; }
+    #prod-compare-panel.open { display:block; }
+    .pc-head { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+    .pc-title { font-size:12px; font-weight:700; color:var(--text); flex:1; }
+    .pc-close { border:none; background:none; cursor:pointer; font-size:18px; color:var(--text-secondary); }
+    .pc-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .pc-col { background:var(--bg); border-radius:10px; padding:12px; }
+    .pc-col-name { font-size:11px; font-weight:700; color:var(--text); margin-bottom:8px; border-bottom:1px solid var(--border); padding-bottom:6px; }
+    .pc-row { display:flex; justify-content:space-between; align-items:center; padding:3px 0; font-size:11px; }
+    .pc-label { color:var(--text-secondary); }
+    .pc-val { font-weight:700; color:var(--text); }
+    .pc-compare-btn { border:none; background:var(--surface-hover); color:var(--text-secondary); cursor:pointer; padding:3px 8px; border-radius:6px; font-size:10px; font-weight:700; }
+    .pc-compare-btn.selected { background:rgba(91,94,244,.15); color:var(--accent); }
     /* ── 인쇄(PDF) 스타일 ── */
     @media print {
       aside, .menu-btn, .product-focus-bar, .fab-btn, .fab-menu,
@@ -299,6 +335,11 @@
     <div class="sb-selects">
       <div><label for="brand-select">브랜드</label><select id="brand-select" onchange="onBrandChange(this.value)"><option value="슬룸">슬룸</option></select></div>
       <div><label for="month-select">기간</label><select id="month-select" onchange="onMonthChange(this.value)"><option value="2026-04">2026-04</option></select></div>
+      <div style="margin-top:4px;"><button class="compare-toggle" id="compare-toggle" onclick="toggleCompareMode()">비교 모드</button></div>
+      <div class="compare-month-row" id="compare-month-row" style="display:none;margin-top:4px;">
+        <label for="compare-month-select">비교 기간</label>
+        <select id="compare-month-select" onchange="onCompareMonthChange(this.value)"></select>
+      </div>
     </div>
   </div>
   <nav>
@@ -483,6 +524,10 @@
       <button class="filter-btn" id="min50" onclick="setSKUMin(50)">50건+</button>
       <button class="filter-btn" id="min100" onclick="setSKUMin(100)">100건+</button>
     </div>
+    <div class="sku-search-row">
+      <input type="text" class="sku-search-input" id="sku-search-input" placeholder="상품명 검색..." oninput="onSKUSearch(this.value)">
+      <button class="csv-btn" onclick="downloadSKUCSV()" title="CSV 다운로드">⬇ CSV</button>
+    </div>
     <div class="card" style="padding:0;overflow:hidden;">
       <div class="table-scroll">
         <table class="sku-table">
@@ -491,7 +536,7 @@
               <th style="padding-left:16px">순위</th><th>상품명</th>
               <th class="r">리뷰수</th><th class="r">평균별점</th>
               <th class="r">긍정률</th><th class="r">부정률</th>
-              <th class="r">포토리뷰</th><th class="r" style="padding-right:16px">전월대비</th>
+              <th class="r">포토리뷰</th><th class="r">전월대비</th><th class="r" style="padding-right:16px">비교</th>
             </tr>
           </thead>
           <tbody id="sku-table-body"></tbody>
@@ -714,6 +759,30 @@
       </div>
     </div>
   </section>
+
+  <!-- 리뷰 원문 모달 -->
+  <div id="review-modal" onclick="if(event.target===this)closeReviewModal()">
+    <div class="review-modal-box">
+      <div class="review-modal-head">
+        <div>
+          <div style="font-size:13px;font-weight:700;" id="review-modal-prod"></div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;" id="review-modal-meta"></div>
+        </div>
+        <button class="review-modal-close" onclick="closeReviewModal()">×</button>
+      </div>
+      <div class="review-modal-body" id="review-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- 상품 비교 패널 (하단 고정) -->
+  <div id="prod-compare-panel">
+    <div class="pc-head">
+      <span class="pc-title">📊 상품 비교</span>
+      <span style="font-size:11px;color:var(--text-secondary);">SKU 테이블에서 최대 2개 선택</span>
+      <button class="pc-close" onclick="clearProductCompare()">×</button>
+    </div>
+    <div class="pc-grid" id="pc-grid"></div>
+  </div>
 
   <!-- FAB: 플로팅 차트 추가 버튼 -->
   <button class="chart-fab" onclick="openChartModal()" title="차트 추가">+</button>
@@ -1116,7 +1185,7 @@ function onBrandChange(v){ STATE.brand=v; populateMonths(); reload(); }
 function onMonthChange(v){ STATE.month=v; reload(); }
 async function reload(){ await loadData(STATE.brand,STATE.month); render(); }
 
-function render(){ renderHeader(); renderExec(); renderKPI(); renderTimeline(); renderSKUTable(); renderSKUCombo(); renderChangeTables(); renderVOC(); updateProductFocusBar(); updateCustomAIModelLabel(); }
+function render(){ renderHeader(); renderExec(); renderKPI(); renderTimeline(); renderSKUTable(); renderSKUCombo(); renderChangeTables(); renderVOC(); updateProductFocusBar(); updateCustomAIModelLabel(); populateCompareMonths(); }
 
 function renderHeader(){
   var p=STATE.month.split('-');
@@ -1250,13 +1319,18 @@ function renderSKUTable(){
   var sortField=STATE.skuSort||'review_count';
   var allProds=(STATE.products||REAL_DATA.products);
   if(STATE.productFocus) allProds=allProds.filter(function(p){return p.name===STATE.productFocus;});
-  var prods=allProds.filter(function(p){return p.review_count>=minRv;}).sort(function(a,b){return (b[sortField]||0)-(a[sortField]||0);});
+  var q=(($('sku-search-input')||{}).value||'').trim().toLowerCase();
+  var prods=allProds.filter(function(p){
+    return p.review_count>=minRv&&(!q||p.name.toLowerCase().indexOf(q)>=0);
+  }).sort(function(a,b){return (b[sortField]||0)-(a[sortField]||0);});
   var tb=$('sku-table-body'); if(!tb) return; tb.innerHTML='';
   prods.forEach(function(p,i){
     var rc=i===0?'gold':i===1?'silver':i===2?'bronze':'';
     var pc=p.positive_rate>=90?'pos':p.positive_rate>=80?'neu':'neg';
     var nc=p.negative_rate>=3?'neg':p.negative_rate>=2?'neu':'pos';
     var ch=i<3?'<span class="ch-up">▲</span>':i===3?'<span style="color:var(--text-secondary)">─</span>':'<span class="ch-dn">▼</span>';
+    var isSel=PROD_COMPARE.indexOf(p.name)>=0;
+    var compareBtnHtml='<button class="pc-compare-btn'+(isSel?' selected':'')+'" data-name="'+p.name+'" onclick="toggleProductCompare(\''+p.name.replace(/'/g,"\\'")+'\')" style="font-size:10px;padding:3px 8px;">'+(isSel?'비교 중':'비교')+'</button>';
     var tr=document.createElement('tr');
     tr.innerHTML='<td style="padding-left:16px"><span class="rank-badge '+rc+'">'+(i+1)+'</span></td>'+
       '<td><span class="prod-name" title="'+p.name+'">'+fmtS(p.name)+'</span></td>'+
@@ -1265,7 +1339,8 @@ function renderSKUTable(){
       '<td class="r"><span class="rate-badge '+pc+'">'+p.positive_rate.toFixed(1)+'%</span></td>'+
       '<td class="r"><span class="rate-badge '+nc+'">'+p.negative_rate.toFixed(1)+'%</span></td>'+
       '<td class="r">'+(p.photo_count||0)+'</td>'+
-      '<td class="r" style="padding-right:16px">'+ch+'</td>';
+      '<td class="r">'+ch+'</td>'+
+      '<td class="r" style="padding-right:16px">'+compareBtnHtml+'</td>';
     tb.appendChild(tr);
   });
   var base=allProds.filter(function(p){return p.review_count>=10;});
@@ -1404,11 +1479,13 @@ function renderVOC(){
   reviewSamples.slice(0,4).forEach(function(r){
     var starsHtml=''; for(var i=1;i<=5;i++) starsHtml+=i<=r.rating?'★':'☆';
     var div=document.createElement('div'); div.className='review-card';
+    div.title='클릭하면 전체 리뷰 보기';
     div.innerHTML='<div class="review-meta"><span class="review-prod">'+fmtS(r.name)+'</span>'+
       '<span class="review-stars">'+starsHtml+'</span>'+
       '<span style="font-size:10px;color:var(--text-secondary);margin-left:4px;">'+r.date+'</span>'+
       '<span class="pct-badge dn" style="margin-left:auto;font-size:10px;">부정률 '+r.negRate.toFixed(1)+'%</span></div>'+
       '<div class="review-text">'+(r.text||'리뷰 원문 없음')+'</div>';
+    (function(rv){ div.addEventListener('click',function(){ openReviewModal(rv.name,rv.rating,rv.date,rv.text,rv.negRate); }); })(r);
     cont.appendChild(div);
   });
   if(!reviewSamples.length){
@@ -1802,6 +1879,143 @@ function restoreSectionOrder() {
       if(sec) main.appendChild(sec);
     });
   }catch(e){}
+}
+
+// ── CSV 다운로드 ──
+function downloadSKUCSV(){
+  var minRv=STATE.skuMin||10;
+  var sortField=STATE.skuSort||'review_count';
+  var allProds=(STATE.products||REAL_DATA.products);
+  if(STATE.productFocus) allProds=allProds.filter(function(p){return p.name===STATE.productFocus;});
+  var q=(($('sku-search-input')||{}).value||'').trim().toLowerCase();
+  var prods=allProds.filter(function(p){
+    return p.review_count>=minRv&&(!q||p.name.toLowerCase().indexOf(q)>=0);
+  }).sort(function(a,b){return (b[sortField]||0)-(a[sortField]||0);});
+  var rows=[['순위','상품명','리뷰수','평균별점','긍정률(%)','부정률(%)','포토리뷰','전월리뷰','전월별점']];
+  prods.forEach(function(p,i){
+    rows.push([i+1,p.name,p.review_count,p.avg_rating.toFixed(2),p.positive_rate.toFixed(1),p.negative_rate.toFixed(1),p.photo_count||0,
+      p.prev_review_count!=null?p.prev_review_count:'',p.prev_avg_rating!=null?p.prev_avg_rating.toFixed(2):'']);
+  });
+  var csv=rows.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a'); a.href=url;
+  a.download='sku_'+(STATE.brand||'brand')+'_'+(STATE.month||'month')+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ── SKU 검색 필터 ──
+function onSKUSearch(){
+  renderSKUTable();
+}
+
+// ── 두 달 비교 모드 ──
+var COMPARE_STATE={active:false,month:null,data:null};
+
+function toggleCompareMode(){
+  COMPARE_STATE.active=!COMPARE_STATE.active;
+  var btn=$('compare-toggle');
+  var row=$('compare-month-row');
+  if(btn){btn.classList.toggle('active',COMPARE_STATE.active);btn.textContent=COMPARE_STATE.active?'비교 모드 ON':'비교 모드';}
+  if(row) row.style.display=COMPARE_STATE.active?'block':'none';
+  if(COMPARE_STATE.active&&COMPARE_STATE.month) loadCompareData(COMPARE_STATE.month);
+  renderKPI(); renderSKUTable();
+}
+
+function onCompareMonthChange(val){
+  COMPARE_STATE.month=val;
+  if(COMPARE_STATE.active&&val) loadCompareData(val);
+}
+
+async function loadCompareData(month){
+  if(!month) return;
+  var brand=STATE.brand||'슬룸';
+  var base=(location.hostname==='localhost'||location.hostname==='127.0.0.1')?'':(location.origin+location.pathname.replace(/\/[^\/]*$/,''));
+  try{
+    var sum=await fetchJSON(base+'/data/'+encodeURIComponent(brand)+'/'+month+'/summary.json');
+    var prods=await fetchJSON(base+'/data/'+encodeURIComponent(brand)+'/'+month+'/products.json');
+    COMPARE_STATE.data={summary:sum,products:prods,month:month};
+    renderKPI(); renderSKUTable();
+  }catch(e){ COMPARE_STATE.data=null; }
+}
+
+function populateCompareMonths(){
+  var sel=$('compare-month-select'); if(!sel) return;
+  var months=[];
+  if(STATE.index&&STATE.index.brands){
+    var bm=STATE.index.brands[STATE.brand||'슬룸'];
+    if(Array.isArray(bm)) months=bm;
+    else if(bm&&bm.months) months=bm.months;
+  }
+  sel.innerHTML='<option value="">기간 선택</option>';
+  months.filter(function(m){return m!==STATE.month;}).forEach(function(m){
+    var opt=document.createElement('option'); opt.value=m; opt.textContent=m; sel.appendChild(opt);
+  });
+}
+
+// ── 리뷰 원문 모달 ──
+function openReviewModal(name,rating,date,text,negRate){
+  var modal=$('review-modal'); if(!modal) return;
+  var starsHtml=''; for(var i=1;i<=5;i++) starsHtml+=(i<=Math.round(rating)?'★':'☆');
+  var prodEl=$('review-modal-prod'); if(prodEl) prodEl.textContent=name||'';
+  var metaEl=$('review-modal-meta');
+  if(metaEl) metaEl.textContent=(date||'')+'  '+starsHtml+(negRate!=null?'  부정률 '+negRate.toFixed(1)+'%':'');
+  var bodyEl=$('review-modal-body'); if(bodyEl) bodyEl.textContent=text||'리뷰 원문 없음';
+  modal.classList.add('open');
+}
+
+function closeReviewModal(){
+  var modal=$('review-modal'); if(modal) modal.classList.remove('open');
+}
+
+// ── 상품 비교 패널 ──
+var PROD_COMPARE=[];
+
+function toggleProductCompare(name){
+  var idx=PROD_COMPARE.indexOf(name);
+  if(idx>=0){ PROD_COMPARE.splice(idx,1); }
+  else{ if(PROD_COMPARE.length>=2) PROD_COMPARE.shift(); PROD_COMPARE.push(name); }
+  renderProductComparePanel();
+  document.querySelectorAll('.pc-compare-btn').forEach(function(btn){
+    var n=btn.getAttribute('data-name');
+    var sel=PROD_COMPARE.indexOf(n)>=0;
+    btn.classList.toggle('selected',sel);
+    btn.textContent=sel?'비교 중':'비교';
+  });
+}
+
+function clearProductCompare(){
+  PROD_COMPARE=[];
+  renderProductComparePanel();
+  document.querySelectorAll('.pc-compare-btn').forEach(function(btn){
+    btn.classList.remove('selected'); btn.textContent='비교';
+  });
+}
+
+function renderProductComparePanel(){
+  var panel=$('prod-compare-panel'); var grid=$('pc-grid');
+  if(!panel||!grid) return;
+  if(!PROD_COMPARE.length){ panel.classList.remove('open'); return; }
+  panel.classList.add('open');
+  var allProds=STATE.products||REAL_DATA.products;
+  grid.innerHTML='';
+  PROD_COMPARE.forEach(function(name){
+    var p=allProds.find(function(x){return x.name===name;}); if(!p) return;
+    var col=document.createElement('div'); col.className='pc-col';
+    var inner='<div class="pc-col-name">'+p.name+'</div>'+
+      '<div class="pc-row"><span class="pc-label">리뷰 수</span><span class="pc-val">'+fmt(p.review_count)+'건</span></div>'+
+      '<div class="pc-row"><span class="pc-label">평균 별점</span><span class="pc-val">'+p.avg_rating.toFixed(2)+'★</span></div>'+
+      '<div class="pc-row"><span class="pc-label">긍정률</span><span class="pc-val" style="color:var(--positive)">'+p.positive_rate.toFixed(1)+'%</span></div>'+
+      '<div class="pc-row"><span class="pc-label">부정률</span><span class="pc-val" style="color:var(--negative)">'+p.negative_rate.toFixed(1)+'%</span></div>'+
+      '<div class="pc-row"><span class="pc-label">포토리뷰</span><span class="pc-val">'+(p.photo_count||0)+'건</span></div>';
+    if(p.prev_review_count!=null){
+      var d=p.review_count-p.prev_review_count;
+      inner+='<div class="pc-row"><span class="pc-label">리뷰 변화</span><span class="pc-val" style="color:'+(d>=0?'var(--positive)':'var(--negative)')+'">'+(d>=0?'+':'')+d+'건</span></div>';
+    }
+    col.innerHTML=inner;
+    grid.appendChild(col);
+  });
 }
 
 // ── 초기화 ──
