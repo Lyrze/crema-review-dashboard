@@ -290,7 +290,10 @@
 <main id="main-content">
 
   <!-- 상품 탭 필터 (Syncly 스타일) -->
-  <div class="product-tab-bar" id="product-focus-bar" style="display:none;"></div>
+  <div class="product-focus-bar" id="product-focus-bar" style="display:none;">
+    <span class="product-focus-label">상품 포커스</span>
+    <select id="product-focus-select" class="product-focus-select" onchange="onProductFocusChange(this.value)"></select>
+  </div>
 
   <!-- PAGE HEADER -->
   <div class="page-header animate">
@@ -1188,28 +1191,22 @@ function updateActiveNav(){
 }
 window.addEventListener('scroll',updateActiveNav,{passive:true});
 
-// ── 상품 포커스 탭 바 (Syncly 스타일) ──
+// ── 상품 포커스 드롭다운 ──
 function updateProductFocusBar(){
   var bar=$('product-focus-bar');
-  if(!bar) return;
+  var sel=$('product-focus-select');
+  if(!bar||!sel) return;
   var prods=STATE.products||REAL_DATA.products;
   if(!prods||!prods.length){bar.style.display='none';return;}
   bar.style.display='flex';
-  bar.innerHTML='';
-  // 전체 탭
-  var allTab=document.createElement('button');
-  allTab.className='product-tab'+(STATE.productFocus?'':' active');
-  allTab.textContent='전체';
-  allTab.onclick=function(){onProductFocusChange('');};
-  bar.appendChild(allTab);
-  // 상품별 탭 (리뷰 수 상위순)
+  var cur=STATE.productFocus||'';
+  sel.innerHTML='<option value="">전체 상품</option>';
   prods.slice().sort(function(a,b){return b.review_count-a.review_count;}).forEach(function(p){
-    var tab=document.createElement('button');
-    tab.className='product-tab'+(STATE.productFocus===p.name?' active':'');
-    tab.textContent=p.name;
-    tab.title=p.name+' ('+p.review_count+'건)';
-    tab.onclick=function(){onProductFocusChange(p.name);};
-    bar.appendChild(tab);
+    var opt=document.createElement('option');
+    opt.value=p.name;
+    opt.textContent=p.name+' ('+p.review_count+'건)';
+    if(cur===p.name) opt.selected=true;
+    sel.appendChild(opt);
   });
 }
 
