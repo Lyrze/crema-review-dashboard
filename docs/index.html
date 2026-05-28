@@ -311,6 +311,20 @@
     .pc-val { font-weight:700; color:var(--text); }
     .pc-compare-btn { border:none; background:var(--surface-hover); color:var(--text-secondary); cursor:pointer; padding:3px 8px; border-radius:6px; font-size:10px; font-weight:700; }
     .pc-compare-btn.selected { background:rgba(91,94,244,.15); color:var(--accent); }
+    /* ── VOC 섹션 서브레이블 ── */
+    .voc-sub-label { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.7px; padding:4px 0 10px; display:flex; align-items:center; gap:6px; }
+    .voc-sub-label.pos { color:var(--positive); }
+    .voc-sub-label.neg { color:var(--negative); }
+    .voc-sub-label.warn { color:var(--warning); }
+    /* ── 차트 인사이트 팝업 ── */
+    #chart-insight-popup { display:none; position:fixed; z-index:600; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px; width:270px; max-width:calc(100vw - 24px); box-shadow:0 8px 28px rgba(0,0,0,.18); }
+    .cip-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .cip-title { font-size:12px; font-weight:700; color:var(--text); }
+    .cip-close { border:none; background:none; font-size:18px; cursor:pointer; color:var(--text-secondary); padding:0; line-height:1; }
+    .cip-row { display:flex; justify-content:space-between; align-items:center; padding:3px 0; font-size:11px; border-bottom:1px solid var(--border); }
+    .cip-row:last-child { border-bottom:none; }
+    .cip-label { color:var(--text-secondary); }
+    .cip-val { font-weight:700; color:var(--text); }
     /* ── 카드 인라인 AI 버튼 ── */
     .ai-card-btn { border:none; background:var(--accent-bg); color:var(--accent); cursor:pointer; padding:3px 7px; border-radius:6px; font-size:10px; font-weight:700; font-family:inherit; transition:background .12s,color .12s; flex-shrink:0; line-height:1.4; }
     .ai-card-btn:hover { background:var(--accent); color:#fff; }
@@ -547,6 +561,7 @@
       <button class="filter-btn active" id="sort-review" onclick="setSKUSort('review_count')">리뷰 수</button>
       <button class="filter-btn" id="sort-rating" onclick="setSKUSort('avg_rating')">별점</button>
       <button class="filter-btn" id="sort-pos" onclick="setSKUSort('positive_rate')">긍정률</button>
+      <button class="filter-btn" id="sort-neg" onclick="setSKUSort('negative_rate')">부정률</button>
       <div class="filter-sep"></div>
       <span style="font-size:11px;font-weight:600;color:var(--text-secondary);">최소 리뷰</span>
       <button class="filter-btn active" id="min10" onclick="setSKUMin(10)">10건+</button>
@@ -575,12 +590,12 @@
     <!-- Syncly s03 스타일: Top5 가로 막대 차트 2개 -->
     <div class="grid-2" style="margin-top:16px;">
       <div class="card" data-key="neg-top5">
-        <div class="card-header"><span class="card-title">부정 리뷰 기준 Top 5 SKU</span></div>
-        <div style="position:relative;height:200px;"><canvas id="sku-neg-top5" role="img" aria-label="부정 리뷰 Top 5 SKU"></canvas></div>
+        <div class="card-header"><span class="card-title">🔴 부정률 기준 Top 5 SKU</span><span class="badge badge-neg">부정</span></div>
+        <div style="position:relative;height:200px;"><canvas id="sku-neg-top5" role="img" aria-label="부정률 Top 5 SKU"></canvas></div>
       </div>
-      <div class="card" data-key="review-top5">
-        <div class="card-header"><span class="card-title">리뷰 수 기준 Top 5 SKU</span></div>
-        <div style="position:relative;height:200px;"><canvas id="sku-review-top5" role="img" aria-label="리뷰 수 Top 5 SKU"></canvas></div>
+      <div class="card" data-key="pos-top5">
+        <div class="card-header"><span class="card-title">🟢 긍정률 기준 Top 5 SKU</span><span class="badge badge-pos">긍정</span></div>
+        <div style="position:relative;height:200px;"><canvas id="sku-pos-top5" role="img" aria-label="긍정률 Top 5 SKU"></canvas></div>
       </div>
     </div>
     <div class="ai-panel" id="ai-panel-sku" style="display:none;">
@@ -643,19 +658,40 @@
         <div class="section-subtitle">키워드 분석 · 긍정 / 부정 / 개선 제안</div>
       </div>
     </div>
-    <!-- Syncly s08 스타일: 키워드 가로 막대 차트 3개 -->
-    <div class="grid-3" style="margin-bottom:16px;">
+    <!-- 🟢 칭찬 -->
+    <div class="voc-sub-label pos">🟢 칭찬 리뷰</div>
+    <div class="grid-2" style="margin-bottom:20px;">
+      <div class="card" data-key="voc-praise-sku">
+        <div class="card-header"><span class="card-title">칭찬 리뷰 SKU Top 10</span><span class="badge badge-pos">리뷰수 기준</span></div>
+        <div style="position:relative;height:240px;"><canvas id="praise-sku-chart" role="img" aria-label="칭찬 리뷰 SKU Top 10"></canvas></div>
+      </div>
       <div class="card" data-key="voc-praise">
-        <div class="card-header"><span class="card-title">🟢 칭찬 키워드</span><span class="badge badge-pos">긍정</span></div>
-        <div style="position:relative;height:220px;"><canvas id="praise-chart" role="img" aria-label="칭찬 키워드 차트"></canvas></div>
+        <div class="card-header"><span class="card-title">칭찬 키워드 Top 10</span><span class="badge badge-pos">키워드</span></div>
+        <div style="position:relative;height:240px;"><canvas id="praise-chart" role="img" aria-label="칭찬 키워드 차트"></canvas></div>
+      </div>
+    </div>
+    <!-- 🔴 불만 -->
+    <div class="voc-sub-label neg">🔴 불만 리뷰</div>
+    <div class="grid-2" style="margin-bottom:20px;">
+      <div class="card" data-key="voc-complaint-sku">
+        <div class="card-header"><span class="card-title">불만 리뷰 SKU Top 10</span><span class="badge badge-neg">리뷰수 기준</span></div>
+        <div style="position:relative;height:240px;"><canvas id="complaint-sku-chart" role="img" aria-label="불만 리뷰 SKU Top 10"></canvas></div>
       </div>
       <div class="card" data-key="voc-complaint">
-        <div class="card-header"><span class="card-title">🔴 불만 키워드</span><span class="badge badge-neg">부정</span></div>
-        <div style="position:relative;height:220px;"><canvas id="complaint-chart" role="img" aria-label="불만 키워드 차트"></canvas></div>
+        <div class="card-header"><span class="card-title">불만 키워드 Top 10</span><span class="badge badge-neg">키워드</span></div>
+        <div style="position:relative;height:240px;"><canvas id="complaint-chart" role="img" aria-label="불만 키워드 차트"></canvas></div>
+      </div>
+    </div>
+    <!-- 🟡 개선 제안 -->
+    <div class="voc-sub-label warn">🟡 개선 제안</div>
+    <div class="grid-2" style="margin-bottom:20px;">
+      <div class="card" data-key="voc-improve-sku">
+        <div class="card-header"><span class="card-title">개선 제안 SKU Top 10</span><span class="badge badge-warn">개선 필요도</span></div>
+        <div style="position:relative;height:240px;"><canvas id="improve-sku-chart" role="img" aria-label="개선 제안 SKU Top 10"></canvas></div>
       </div>
       <div class="card" data-key="voc-improve">
-        <div class="card-header"><span class="card-title">🟡 개선 제안</span><span class="badge badge-warn">개선</span></div>
-        <div style="position:relative;height:220px;"><canvas id="improve-chart" role="img" aria-label="개선 제안 키워드 차트"></canvas></div>
+        <div class="card-header"><span class="card-title">개선 제안 키워드 Top 10</span><span class="badge badge-warn">키워드</span></div>
+        <div style="position:relative;height:240px;"><canvas id="improve-chart" role="img" aria-label="개선 제안 키워드 차트"></canvas></div>
       </div>
     </div>
     <div class="card">
@@ -857,6 +893,15 @@
   </div>
 
 </main>
+
+<!-- 차트 인사이트 팝업 -->
+<div id="chart-insight-popup">
+  <div class="cip-head">
+    <div class="cip-title" id="cip-title">인사이트</div>
+    <button class="cip-close" onclick="closeCIP()">×</button>
+  </div>
+  <div id="cip-body"></div>
+</div>
 
 <!-- AI 분석 팝업 -->
 <div id="ai-popup">
@@ -1110,8 +1155,8 @@ function onModelChange(model){
 
 function setSKUSort(field){
   STATE.skuSort=field;
-  ['sort-review','sort-rating','sort-pos'].forEach(function(id){ var el=$(id); if(el) el.classList.remove('active'); });
-  var map={'review_count':'sort-review','avg_rating':'sort-rating','positive_rate':'sort-pos'};
+  ['sort-review','sort-rating','sort-pos','sort-neg'].forEach(function(id){ var el=$(id); if(el) el.classList.remove('active'); });
+  var map={'review_count':'sort-review','avg_rating':'sort-rating','positive_rate':'sort-pos','negative_rate':'sort-neg'};
   if($(map[field])) $(map[field]).classList.add('active');
   renderSKUTable();
 }
@@ -1420,19 +1465,21 @@ function renderSKUTable(){
             datasets:[{data:negTop5.map(function(p){return p.negative_rate;}),
               backgroundColor:'rgba(220,38,38,0.7)',borderRadius:4,maxBarThickness:20}]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        onClick:function(evt,els){if(els.length){var p=negTop5[els[0].index];showCIPProduct(p,$('sku-neg-top5'),evt);}},
         plugins:{legend:{display:false},tooltip:{enabled:true,callbacks:{label:function(c){return c.parsed.x.toFixed(1)+'%';}}}},
         scales:{x:{beginAtZero:true,ticks:{font:{size:10},callback:function(v){return v+'%';}},grid:{color:'rgba(0,0,0,.04)'}},
                 y:{ticks:{font:{size:10}},grid:{display:false}}}}});
   }
-  var rvTop5=base.slice().sort(function(a,b){return b.review_count-a.review_count;}).slice(0,5);
-  if($('sku-review-top5')){
-    ChartManager.safeInit('sku-review-top5',{type:'bar',
-      data:{labels:rvTop5.map(function(p){return fmtS(p.name);}),
-            datasets:[{data:rvTop5.map(function(p){return p.review_count;}),
-              backgroundColor:'rgba(91,94,244,0.7)',borderRadius:4,maxBarThickness:20}]},
+  var posTop5=base.slice().sort(function(a,b){return b.positive_rate-a.positive_rate;}).slice(0,5);
+  if($('sku-pos-top5')){
+    ChartManager.safeInit('sku-pos-top5',{type:'bar',
+      data:{labels:posTop5.map(function(p){return fmtS(p.name);}),
+            datasets:[{data:posTop5.map(function(p){return p.positive_rate;}),
+              backgroundColor:'rgba(22,163,74,0.7)',borderRadius:4,maxBarThickness:20}]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{enabled:true}},
-        scales:{x:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,.04)'}},
+        onClick:function(evt,els){if(els.length){var p=posTop5[els[0].index];showCIPProduct(p,$('sku-pos-top5'),evt);}},
+        plugins:{legend:{display:false},tooltip:{enabled:true,callbacks:{label:function(c){return c.parsed.x.toFixed(1)+'%';}}}},
+        scales:{x:{beginAtZero:true,ticks:{font:{size:10},callback:function(v){return v+'%';}},grid:{color:'rgba(0,0,0,.04)'}},
                 y:{ticks:{font:{size:10}},grid:{display:false}}}}});
   }
 }
@@ -1502,8 +1549,8 @@ function renderChangeTables(){
   });
 }
 
-function renderKwBar(cid,kws,color){
-  var items=(kws||[]).slice(0,8);
+function renderKwBar(cid,kws,color,onClickCb){
+  var items=(kws||[]).slice(0,10);
   if(!items.length){
     ChartManager.safeInit(cid,{type:'bar',data:{labels:['데이터 없음'],datasets:[{data:[0],backgroundColor:'rgba(148,163,184,.3)',maxBarThickness:16}]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},
@@ -1512,20 +1559,99 @@ function renderKwBar(cid,kws,color){
   }
   var labels=items.map(function(k){return k.word||k;});
   var values=items.map(function(k){return k.count||1;});
-  ChartManager.safeInit(cid,{type:'bar',
+  var clickOpt=onClickCb?{onClick:function(evt,els){
+    if(!els.length) return;
+    var i=els[0].index;
+    onClickCb(labels[i],values[i],$(cid),evt);
+  }}:{};
+  var cfg={type:'bar',
     data:{labels:labels,datasets:[{data:values,backgroundColor:color,borderRadius:4,maxBarThickness:18}]},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{enabled:true}},
       scales:{x:{beginAtZero:true,ticks:{font:{size:10},maxTicksLimit:4},grid:{color:'rgba(0,0,0,.04)'}},
-              y:{ticks:{font:{size:10}},grid:{display:false}}}}});
+              y:{ticks:{font:{size:10}},grid:{display:false}}}}};
+  cfg.options.onClick=clickOpt.onClick;
+  ChartManager.safeInit(cid,cfg);
+}
+
+function renderSkuBar(cid,prods,valueField,color,onClickCb){
+  var items=prods.slice(0,10);
+  if(!items.length) return;
+  var labels=items.map(function(p){return fmtS(p.name);});
+  var values=items.map(function(p){return p[valueField]||0;});
+  var cfg={type:'bar',
+    data:{labels:labels,datasets:[{data:values,backgroundColor:color,borderRadius:4,maxBarThickness:20}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{enabled:true,callbacks:{label:function(c){return fmt(c.parsed.x);}}}},
+      scales:{x:{beginAtZero:true,ticks:{font:{size:10},maxTicksLimit:5},grid:{color:'rgba(0,0,0,.04)'}},
+              y:{ticks:{font:{size:10}},grid:{display:false}}}}};
+  if(onClickCb) cfg.options.onClick=function(evt,els){if(els.length){var p=items[els[0].index];onClickCb(p,$(cid),evt);}};
+  ChartManager.safeInit(cid,cfg);
 }
 
 function renderVOC(){
   var kw=STATE.keywords||REAL_DATA.keywords;
   var bi=(kw&&kw.by_intent)||{};
-  renderKwBar('praise-chart',bi.praise||[],'rgba(22,163,74,0.7)');
-  renderKwBar('complaint-chart',bi.complaint||[],'rgba(220,38,38,0.7)');
-  renderKwBar('improve-chart',bi.improvement||[],'rgba(245,158,11,0.7)');
+  var allProds=(STATE.products||REAL_DATA.products).filter(function(p){return p.review_count>=5;});
+
+  // ── 칭찬 SKU Top10 ──
+  var praiseSkuProds=allProds.slice().sort(function(a,b){
+    var av=(a.sentiment&&a.sentiment.positive)||Math.round(a.review_count*(a.positive_rate||0)/100);
+    var bv=(b.sentiment&&b.sentiment.positive)||Math.round(b.review_count*(b.positive_rate||0)/100);
+    return bv-av;
+  });
+  (function(){
+    var items=praiseSkuProds.slice(0,10);
+    var labels=items.map(function(p){return fmtS(p.name);});
+    var values=items.map(function(p){return (p.sentiment&&p.sentiment.positive)||Math.round(p.review_count*(p.positive_rate||0)/100);});
+    var cfg={type:'bar',data:{labels:labels,datasets:[{data:values,backgroundColor:'rgba(22,163,74,0.65)',borderRadius:4,maxBarThickness:20}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        onClick:function(evt,els){if(els.length){showCIPProduct(items[els[0].index],$('praise-sku-chart'),evt);}},
+        plugins:{legend:{display:false},tooltip:{enabled:true,callbacks:{label:function(c){return fmt(c.parsed.x)+'건';}}}},
+        scales:{x:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:10}},grid:{display:false}}}}};
+    ChartManager.safeInit('praise-sku-chart',cfg);
+  })();
+
+  // ── 불만 SKU Top10 ──
+  var complaintSkuProds=allProds.slice().sort(function(a,b){
+    var av=(a.sentiment&&a.sentiment.negative)||Math.round(a.review_count*(a.negative_rate||0)/100);
+    var bv=(b.sentiment&&b.sentiment.negative)||Math.round(b.review_count*(b.negative_rate||0)/100);
+    return bv-av;
+  });
+  (function(){
+    var items=complaintSkuProds.slice(0,10);
+    var labels=items.map(function(p){return fmtS(p.name);});
+    var values=items.map(function(p){return (p.sentiment&&p.sentiment.negative)||Math.round(p.review_count*(p.negative_rate||0)/100);});
+    var cfg={type:'bar',data:{labels:labels,datasets:[{data:values,backgroundColor:'rgba(220,38,38,0.65)',borderRadius:4,maxBarThickness:20}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        onClick:function(evt,els){if(els.length){showCIPProduct(items[els[0].index],$('complaint-sku-chart'),evt);}},
+        plugins:{legend:{display:false},tooltip:{enabled:true,callbacks:{label:function(c){return fmt(c.parsed.x)+'건';}}}},
+        scales:{x:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:10}},grid:{display:false}}}}};
+    ChartManager.safeInit('complaint-sku-chart',cfg);
+  })();
+
+  // ── 개선 제안 SKU Top10 (부정률 × 리뷰수 = 개선 필요 점수) ──
+  var improveSkuProds=allProds.slice().sort(function(a,b){
+    var av=Math.round(a.review_count*(a.negative_rate||0)/100)*10+a.review_count*0.001;
+    var bv=Math.round(b.review_count*(b.negative_rate||0)/100)*10+b.review_count*0.001;
+    return bv-av;
+  });
+  (function(){
+    var items=improveSkuProds.slice(0,10);
+    var labels=items.map(function(p){return fmtS(p.name);});
+    var values=items.map(function(p){return Math.round(p.review_count*(p.negative_rate||0)/100);});
+    var cfg={type:'bar',data:{labels:labels,datasets:[{data:values,backgroundColor:'rgba(245,158,11,0.65)',borderRadius:4,maxBarThickness:20}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        onClick:function(evt,els){if(els.length){showCIPProduct(items[els[0].index],$('improve-sku-chart'),evt);}},
+        plugins:{legend:{display:false},tooltip:{enabled:true,callbacks:{label:function(c){return fmt(c.parsed.x)+'건';}}}},
+        scales:{x:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:10}},grid:{display:false}}}}};
+    ChartManager.safeInit('improve-sku-chart',cfg);
+  })();
+
+  // ── 키워드 차트 (onClick → 인사이트 팝업) ──
+  renderKwBar('praise-chart',bi.praise||[],'rgba(22,163,74,0.7)',function(word,cnt,el,evt){showCIPKeyword(word,cnt,'긍정',el,evt);});
+  renderKwBar('complaint-chart',bi.complaint||[],'rgba(220,38,38,0.7)',function(word,cnt,el,evt){showCIPKeyword(word,cnt,'부정',el,evt);});
+  renderKwBar('improve-chart',bi.improvement||[],'rgba(245,158,11,0.7)',function(word,cnt,el,evt){showCIPKeyword(word,cnt,'개선',el,evt);});
   var neg=STATE.products||REAL_DATA.products;
   var cont=$('negative-reviews-list'); if(!cont) return; cont.innerHTML='';
   // 부정 리뷰 샘플: top_reviews에서 별점 낮은 리뷰 우선 표시
@@ -1889,7 +2015,9 @@ function initCardDragOrder() {
     {sel:'.kpi-grid', key:'co_kpi'},
     {sel:'#sec-sku-table .grid-2', key:'co_sku_top5'},
     {sel:'#sec-sku-change .grid-2', key:'co_mom'},
-    {sel:'#sec-voc .grid-3', key:'co_voc'}
+    {sel:'#sec-voc .grid-2:nth-of-type(1)', key:'co_voc_praise'},
+    {sel:'#sec-voc .grid-2:nth-of-type(2)', key:'co_voc_complaint'},
+    {sel:'#sec-voc .grid-2:nth-of-type(3)', key:'co_voc_improve'}
   ];
   containers.forEach(function(c){
     var el = document.querySelector(c.sel);
@@ -1957,6 +2085,69 @@ function restoreSectionOrder() {
       if(sec) main.appendChild(sec);
     });
   }catch(e){}
+}
+
+// ── 차트 인사이트 팝업 ──
+function showCIP(title, bodyHtml, anchorEl, evt){
+  var popup=$('chart-insight-popup'); if(!popup) return;
+  $('cip-title').textContent=title;
+  $('cip-body').innerHTML=bodyHtml;
+  popup.style.display='block';
+  var pw=270, ph=220;
+  var rect=anchorEl?anchorEl.getBoundingClientRect():{left:evt?evt.clientX-140:200,top:evt?evt.clientY-240:200,width:0,height:0};
+  var left=Math.min(Math.max(rect.left+rect.width/2-pw/2,8),window.innerWidth-pw-8);
+  var top=rect.top-ph-10;
+  if(top<8) top=rect.bottom+10;
+  popup.style.left=left+'px';
+  popup.style.top=top+'px';
+  // 외부 클릭 닫기
+  setTimeout(function(){
+    function outsideClick(e){ if(!e.target.closest('#chart-insight-popup')){ closeCIP(); document.removeEventListener('click',outsideClick); } }
+    document.addEventListener('click',outsideClick);
+  },0);
+}
+
+function closeCIP(){
+  var popup=$('chart-insight-popup'); if(popup) popup.style.display='none';
+}
+
+function showCIPProduct(p, anchorEl, evt){
+  if(!p) return;
+  var starsHtml=''; for(var i=1;i<=5;i++) starsHtml+=i<=Math.round(p.avg_rating)?'★':'☆';
+  var posC=p.positive_rate>=90?'var(--positive)':p.positive_rate>=80?'var(--warning)':'var(--negative)';
+  var negC=p.negative_rate>=3?'var(--negative)':p.negative_rate>=1.5?'var(--warning)':'var(--positive)';
+  var html='<div class="cip-row"><span class="cip-label">리뷰 수</span><span class="cip-val">'+fmt(p.review_count)+'건</span></div>'+
+    '<div class="cip-row"><span class="cip-label">평균 별점</span><span class="cip-val" style="color:#f59e0b">'+starsHtml+' '+p.avg_rating.toFixed(2)+'</span></div>'+
+    '<div class="cip-row"><span class="cip-label">긍정률</span><span class="cip-val" style="color:'+posC+'">'+p.positive_rate.toFixed(1)+'%</span></div>'+
+    '<div class="cip-row"><span class="cip-label">부정률</span><span class="cip-val" style="color:'+negC+'">'+p.negative_rate.toFixed(2)+'%</span></div>'+
+    '<div class="cip-row"><span class="cip-label">포토리뷰</span><span class="cip-val">'+(p.photo_count||0)+'건</span></div>';
+  if(p.prev_review_count!=null){
+    var d=p.review_count-p.prev_review_count;
+    html+='<div class="cip-row"><span class="cip-label">전월 대비</span><span class="cip-val" style="color:'+(d>=0?'var(--positive)':'var(--negative)')+'">'+(d>=0?'+':'')+d+'건</span></div>';
+  }
+  showCIP(fmtS(p.name)||p.name, html, anchorEl, evt);
+}
+
+function showCIPKeyword(word, cnt, type, anchorEl, evt){
+  var allProds=STATE.products||REAL_DATA.products;
+  var typeColor=type==='긍정'?'var(--positive)':type==='부정'?'var(--negative)':'var(--warning)';
+  var kw=STATE.keywords||REAL_DATA.keywords;
+  var bi=(kw&&kw.by_intent)||{};
+  var pool=type==='긍정'?bi.praise||[]:type==='부정'?bi.complaint||[]:bi.improvement||[];
+  var total=pool.reduce(function(s,k){return s+(k.count||0);},0);
+  var pct=total>0?(cnt/total*100).toFixed(1)+'%':'—';
+  // 해당 sentiment에서 가장 연관성 높은 상품 3개 (negative rate / positive rate 기준)
+  var relProds=allProds.slice().sort(function(a,b){
+    return type==='긍정'?b.positive_rate-a.positive_rate:type==='부정'?b.negative_rate-a.negative_rate:b.negative_rate-a.negative_rate;
+  }).slice(0,3);
+  var html='<div class="cip-row"><span class="cip-label">언급 횟수</span><span class="cip-val" style="color:'+typeColor+'">'+fmt(cnt)+'건</span></div>'+
+    '<div class="cip-row"><span class="cip-label">전체 VOC 비율</span><span class="cip-val">'+pct+'</span></div>'+
+    '<div class="cip-row"><span class="cip-label">유형</span><span class="cip-val">'+type+' 키워드</span></div>'+
+    '<div style="margin-top:8px;font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">관련 주요 상품</div>'+
+    relProds.map(function(p){
+      return '<div class="cip-row"><span class="cip-label">'+fmtS(p.name)+'</span><span class="cip-val" style="color:'+typeColor+'">'+(type==='긍정'?p.positive_rate.toFixed(1)+'%':p.negative_rate.toFixed(2)+'%')+'</span></div>';
+    }).join('');
+  showCIP('"'+word+'" 키워드', html, anchorEl, evt);
 }
 
 // ── CSV 다운로드 ──
