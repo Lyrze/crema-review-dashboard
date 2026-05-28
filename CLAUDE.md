@@ -247,6 +247,52 @@ if (hasPrev) {
 
 ---
 
+### 🔴 CRITICAL: index.html JS — 단일따옴표 문자열 내 줄바꿈 금지
+
+**발생**: `var prompt='...\n...'`처럼 단일따옴표(또는 이중따옴표) 문자열 내에 **raw 줄바꿈**이 포함되어 SyntaxError: Unexpected string.
+
+**증상**: 브라우저 콘솔에 "Unexpected string" 1개, `STATE` undefined, 대시보드 전체 공백.
+
+**규칙**: JS 문자열 내 줄바꿈은 반드시 `\n` 이스케이프 사용.
+
+```javascript
+// ❌ 잘못된 패턴 (raw 줄바꿈)
+var prompt='[질문]
+'+question;
+
+// ✅ 올바른 패턴
+var prompt='[질문]\n'+question;
+```
+
+---
+
+### 🔴 CRITICAL: index.html JS — onclick 속성에서 인접 문자열 리터럴 금지
+
+**발생**: `'...onclick="fn(''+var+'')"...'` 패턴에서 단일따옴표 안에 단일따옴표가 사용되면 문자열이 조기 종료되어 인접 문자열 리터럴 `''` 발생 → SyntaxError.
+
+**규칙**: onclick 내 함수 인수에 따옴표가 필요하면 `\'` 이스케이프 사용.
+
+```javascript
+// ❌ 잘못된 패턴
+'<button onclick="fn(''+id+'')">'+
+
+// ✅ 올바른 패턴
+'<button onclick="fn(\''+id+'\')">'+
+```
+
+**검증**: 편집 후 아래 명령으로 반드시 구문 검증.
+
+```bash
+node -e "
+const fs=require('fs'),vm=require('vm'),html=fs.readFileSync('docs/index.html','utf8');
+const re=/<script(?![^>]*src)[^>]*>([\s\S]*?)<\/script>/gi;
+let m,s=[]; while((m=re.exec(html))!==null) s.push(m[1]);
+fs.writeFileSync('_t.js',s[1]);
+" && node --check _t.js && echo OK && node -e "require('fs').unlinkSync('_t.js')"
+```
+
+---
+
 ### 🟡 MEDIUM: 대시보드 index.html — 최상위 `let`/`const` 금지
 
 **규칙**: 최상위 레벨 JS 변수는 **모두 `var`** 를 사용한다. `let`/`const`는 함수 내부에서만 허용.
