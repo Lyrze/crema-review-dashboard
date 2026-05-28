@@ -248,6 +248,45 @@
     .card-menu-btn { border:none; background:none; color:var(--text-secondary); cursor:pointer; font-size:16px; padding:4px 6px; border-radius:6px; line-height:1; opacity:.6; }
     .card-menu-btn:hover { background:var(--surface-hover); opacity:1; }
     .section-actions { display:flex; align-items:center; gap:4px; }
+    /* ── 카드 컨트롤 (크기 조절 + 너비 토글) ── */
+    .card-ctrl-bar { display:flex; align-items:center; gap:4px; margin-left:auto; }
+    .card-width-btn { border:none; background:none; color:var(--text-secondary); cursor:pointer; font-size:13px; padding:2px 5px; border-radius:5px; line-height:1; opacity:.55; transition:opacity .12s; }
+    .card-width-btn:hover { background:var(--surface-hover); opacity:1; }
+    .card-resize-handle { position:absolute; bottom:4px; right:4px; width:14px; height:14px; cursor:se-resize; opacity:.35; }
+    .card-resize-handle::before { content:''; display:block; width:100%; height:100%; background:repeating-linear-gradient(135deg,var(--text-secondary) 0px,var(--text-secondary) 1.5px,transparent 1.5px,transparent 4px); }
+    .card-resize-handle:hover { opacity:.7; }
+    [data-key] { position:relative; box-sizing:border-box; min-height:140px; transition:height .15s; }
+    /* ── PDF/HTML 내보내기 ── */
+    .export-wrap { position:relative; }
+    .export-btn { border:none; background:none; color:var(--text-secondary); cursor:pointer; font-size:14px; padding:5px 7px; border-radius:7px; line-height:1; }
+    .export-btn:hover { background:var(--surface-hover); }
+    .export-menu { display:none; position:absolute; bottom:calc(100%+4px); left:0; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:5px; min-width:148px; box-shadow:var(--shadow-lg); z-index:300; }
+    .export-menu.open { display:block; }
+    .export-item { display:block; width:100%; text-align:left; border:none; background:none; color:var(--text); cursor:pointer; padding:7px 10px; border-radius:7px; font-size:12px; font-family:inherit; }
+    .export-item:hover { background:var(--surface-hover); }
+    /* ── AI 팝업 ── */
+    #ai-popup { display:none; position:fixed; z-index:600; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px; width:360px; max-width:calc(100vw - 24px); max-height:70vh; overflow-y:auto; box-shadow:0 8px 32px rgba(0,0,0,.18); }
+    .ai-popup-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    .ai-popup-title { font-size:12px; font-weight:700; color:var(--accent); }
+    .ai-popup-close { border:none; background:none; cursor:pointer; font-size:18px; line-height:1; color:var(--text-secondary); padding:0 4px; }
+    .ai-popup-body { font-size:12px; line-height:1.75; color:var(--text); white-space:pre-wrap; min-height:40px; }
+    .ai-popup-ask { margin-top:12px; border-top:1px solid var(--border); padding-top:10px; }
+    .ai-popup-input { width:100%; box-sizing:border-box; padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:11px; background:var(--bg); color:var(--text); font-family:inherit; resize:none; }
+    .ai-popup-send { margin-top:6px; width:100%; padding:7px; background:var(--accent); color:#fff; border:none; border-radius:8px; cursor:pointer; font-size:11px; font-family:inherit; }
+    .ai-popup-send:hover { opacity:.88; }
+    .ai-popup-answer { margin-top:8px; font-size:11px; line-height:1.7; color:var(--text); white-space:pre-wrap; }
+    /* ── 인쇄(PDF) 스타일 ── */
+    @media print {
+      aside, .menu-btn, .product-focus-bar, .fab-btn, .fab-menu,
+      .ai-panel, .filter-bar, .ai-analyze-btn, .export-wrap,
+      .card-ctrl-bar, .card-resize-handle, .drag-handle,
+      #ai-popup, .section-actions { display:none !important; }
+      body { background:#fff !important; }
+      main { margin:0 !important; padding:12px !important; }
+      .section { break-inside:avoid; page-break-inside:avoid; box-shadow:none !important; border:1px solid #e5e7eb; }
+      .card, .chart-card { break-inside:avoid; box-shadow:none !important; border:1px solid #f0f0f0; }
+      .kpi-grid { grid-template-columns:repeat(2,1fr) !important; }
+    }
   </style>
 </head>
 <body>
@@ -281,7 +320,16 @@
   <div class="sb-footer">
     <div class="sb-footer-row">
       <div class="ollama-badge"><div class="ollama-dot" id="ollama-dot"></div><span id="ollama-status">Ollama 확인 중</span></div>
-      <button class="theme-btn" id="theme-btn" onclick="cycleTheme()" title="테마 전환">🌙</button>
+      <div style="display:flex;gap:4px;">
+        <div class="export-wrap">
+          <button class="export-btn" onclick="toggleExportMenu()" title="보고서 내보내기">⬇</button>
+          <div class="export-menu" id="export-menu">
+            <button class="export-item" onclick="exportPDF()">📄 PDF로 저장</button>
+            <button class="export-item" onclick="exportHTML()">🗂️ HTML로 저장</button>
+          </div>
+        </div>
+        <button class="theme-btn" id="theme-btn" onclick="cycleTheme()" title="테마 전환">🌙</button>
+      </div>
     </div>
     <div class="ollama-model-row" id="ollama-model-row">
       <label>AI 모델</label>
@@ -712,6 +760,20 @@
 
 </main>
 
+<!-- AI 분석 팝업 -->
+<div id="ai-popup">
+  <div class="ai-popup-head">
+    <div class="ai-popup-title">✦ AI 분석</div>
+    <button class="ai-popup-close" onclick="closeAIPopup()">×</button>
+  </div>
+  <div class="ai-popup-body" id="ai-popup-body">분석 중...</div>
+  <div class="ai-popup-ask" id="ai-popup-ask" style="display:none;">
+    <textarea class="ai-popup-input" id="ai-popup-input" rows="2" placeholder="추가 질문을 입력하세요..."></textarea>
+    <button class="ai-popup-send" onclick="aiPopupSend()">전송</button>
+    <div class="ai-popup-answer" id="ai-popup-answer"></div>
+  </div>
+</div>
+
 <script>
 var FALLBACK_PREV = { total_reviews:2200, avg_rating:4.45, negative_rate:2.1, photo_review_count:195 };
 var REAL_DATA = {
@@ -790,6 +852,113 @@ var ChartManager = {
   }
 };
 
+// ── 내보내기 ──
+function toggleExportMenu(){
+  var m=$('export-menu'); if(!m) return;
+  m.classList.toggle('open');
+  if(m.classList.contains('open')){
+    function close(e){ if(!e.target.closest('.export-wrap')){ m.classList.remove('open'); document.removeEventListener('click',close); } }
+    setTimeout(function(){ document.addEventListener('click',close); },0);
+  }
+}
+
+function exportPDF(){
+  var m=$('export-menu'); if(m) m.classList.remove('open');
+  window.print();
+}
+
+function exportHTML(){
+  var m=$('export-menu'); if(m) m.classList.remove('open');
+  var html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+  var blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url; a.download='crema-report-'+STATE.brand+'-'+STATE.month+'.html';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); },1000);
+}
+
+// ── AI 팝업 ──
+var AI_POPUP_KEY = null;
+
+function showAIPopup(btn){
+  var popup=$('ai-popup'); if(!popup) return;
+  var rect=btn.getBoundingClientRect();
+  var pw=360, ph=400;
+  var left=rect.right+10;
+  if(left+pw>window.innerWidth-8) left=rect.left-pw-10;
+  if(left<8) left=8;
+  var top=Math.max(8, Math.min(rect.top, window.innerHeight-ph-8));
+  popup.style.left=left+'px'; popup.style.top=top+'px'; popup.style.display='block';
+}
+
+function closeAIPopup(){
+  var popup=$('ai-popup'); if(popup) popup.style.display='none';
+  AI_POPUP_KEY=null;
+}
+
+async function aiPopupSend(){
+  var inputEl=$('ai-popup-input'), ansEl=$('ai-popup-answer');
+  if(!inputEl||!ansEl) return;
+  var q=inputEl.value.trim(); if(!q){ alert('질문을 입력해주세요.'); return; }
+  if($('ollama-dot').className.indexOf('online')<0){ alert('Ollama 오프라인'); return; }
+  var prev=($('ai-popup-body')||{}).textContent||'';
+  ansEl.textContent='답변 생성 중...'; ansEl.style.display='block';
+  var prompt='[기존 분석]\n'+prev.slice(0,600)+'\n\n[추가 질문]\n'+q+'\n\n한국어로 간결하게 답변하세요.';
+  try{
+    var r=await fetch('http://localhost:11434/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:STATE.ollamaModel,prompt:prompt,stream:false}),signal:AbortSignal.timeout(60000)});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    var d=await r.json(); ansEl.textContent=d.response||'응답 없음';
+  }catch(e){ ansEl.textContent='[오류] '+e.message; }
+}
+
+// ── 카드 너비 토글 ──
+var CARD_WIDTH_STATES = {}; // key → 0|1|2
+
+function toggleCardWidth(key){
+  var card=document.querySelector('[data-key="'+key+'"]'); if(!card) return;
+  var s=((CARD_WIDTH_STATES[key]||0)+1)%3;
+  CARD_WIDTH_STATES[key]=s;
+  if(s===0){ card.style.gridColumn=''; card.style.width=''; }
+  else if(s===1){ card.style.gridColumn='span 2'; card.style.width=''; }
+  else { card.style.gridColumn='1 / -1'; card.style.width=''; }
+  setTimeout(function(){ Object.values(CHARTS).forEach(function(c){try{c.resize();}catch(e){}}) },50);
+  var btn=card.querySelector('.card-width-btn');
+  var icons=['⤢','⤡','↙↗']; if(btn) btn.textContent=icons[s];
+}
+
+// ── 카드 리사이즈 핸들 + 너비 토글 버튼 주입 ──
+function addCardControls(card){
+  if(card.dataset.ctrl) return; card.dataset.ctrl='1';
+  var key=card.dataset.key;
+  // 너비 토글 버튼 — card-header에 삽입
+  var header=card.querySelector('.card-header');
+  if(header){
+    var btn=document.createElement('button');
+    btn.className='card-width-btn'; btn.textContent='⤢'; btn.title='너비 전환 (1/2/전체)';
+    btn.setAttribute('onclick','toggleCardWidth(\''+key+'\')');
+    btn.addEventListener('mousedown',function(e){e.stopPropagation();});
+    header.appendChild(btn);
+  }
+  // 높이 리사이즈 핸들
+  var handle=document.createElement('div');
+  handle.className='card-resize-handle'; handle.title='드래그해서 높이 조절';
+  card.appendChild(handle);
+  handle.addEventListener('mousedown',function(e){
+    e.preventDefault(); e.stopPropagation();
+    var startY=e.clientY, startH=card.offsetHeight;
+    function onMove(ev){
+      var h=Math.max(140, startH+(ev.clientY-startY));
+      card.style.height=h+'px';
+      Object.values(CHARTS).forEach(function(c){try{c.resize();}catch(ex){}});
+    }
+    function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); }
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+  });
+}
+
 function cycleTheme(){
   var h=document.documentElement;
   if(h.classList.contains('theme-light')){ h.classList.replace('theme-light','theme-dark'); $('theme-btn').textContent='☀️'; }
@@ -866,56 +1035,44 @@ function toggleAIPanel(key){
 }
 
 async function aiAnalyzeSection(key){
-  var btn=$('btn-ai-'+key);
-  var panel=$('ai-panel-'+key);
-  var body=$('ai-panel-'+key+'-body');
-  if(!btn||!panel||!body) return;
-
+  var btn=$('btn-ai-'+key); if(!btn) return;
   if($('ollama-dot').className.indexOf('online')<0){
-    alert('Ollama가 오프라인 상태입니다. Ollama를 실행한 후 다시 시도하세요.');
-    return;
+    alert('Ollama가 오프라인 상태입니다. ollama serve 실행 후 재시도하세요.'); return;
   }
-
+  AI_POPUP_KEY=key;
+  var popBody=$('ai-popup-body'), popAsk=$('ai-popup-ask'), popAns=$('ai-popup-answer'), popInput=$('ai-popup-input');
+  if(popBody) popBody.textContent='데이터 분석 중입니다...';
+  if(popAsk) popAsk.style.display='none';
+  if(popAns) { popAns.textContent=''; popAns.style.display='none'; }
+  if(popInput) popInput.value='';
+  showAIPopup(btn);
   btn.disabled=true; btn.textContent='분석 중...';
-  panel.style.display='block';
-  body.classList.add('open'); body.textContent='데이터 분석 중입니다...';
-  if($('ai-panel-'+key+'-toggle')) $('ai-panel-'+key+'-toggle').textContent='▲ 접기';
 
-  var prompt='';
   var k=(STATE.summary||REAL_DATA.summary).kpis;
-
+  var prompt='';
   if(key==='kpi'){
-    prompt='다음은 '+STATE.brand+' '+STATE.month+' 월 리뷰 KPI 데이터입니다.\n'+
-      '총 리뷰: '+k.total_reviews+'건\n'+
-      '평균 별점: '+k.avg_rating+'\n'+
-      '긍정률: '+k.positive_rate.toFixed(1)+'%\n'+
-      '부정률: '+k.negative_rate.toFixed(2)+'%\n'+
-      '긍정: '+k.positive_count+'건, 중립: '+k.neutral_count+'건, 부정: '+k.negative_count+'건\n'+
-      '전월 대비 리뷰 변화: '+(k.mom_review_change_pct||'N/A')+'%\n\n'+
-      '이 데이터를 분석하여 핵심 인사이트와 개선 포인트를 3~5줄로 요약해주세요. 한국어로 작성하세요.';
+    var prod=STATE.productFocus?(STATE.products||REAL_DATA.products).find(function(p){return p.name===STATE.productFocus;}):null;
+    var kk=prod?{total_reviews:prod.review_count,avg_rating:prod.avg_rating,positive_rate:prod.positive_rate||0,negative_rate:prod.negative_rate||0,positive_count:0,neutral_count:0,negative_count:0}:k;
+    prompt=(prod?prod.name+' 상품':STATE.brand)+' '+STATE.month+' 리뷰 KPI:\n'+
+      '총리뷰: '+kk.total_reviews+'건, 평균별점: '+kk.avg_rating+', 긍정률: '+(kk.positive_rate||0).toFixed(1)+'%, 부정률: '+(kk.negative_rate||0).toFixed(2)+'%\n\n'+
+      '핵심 인사이트와 개선 포인트를 3~5줄로 한국어로 요약하세요.';
   } else if(key==='sku'){
     var prods=(STATE.products||REAL_DATA.products).filter(function(p){return p.review_count>=(STATE.skuMin||10);}).sort(function(a,b){return b.review_count-a.review_count;}).slice(0,8);
-    var prodSummary=prods.map(function(p,i){
-      return (i+1)+'. '+p.name+': 리뷰 '+p.review_count+'건, 별점 '+p.avg_rating+', 긍정률 '+(p.positive_rate||0).toFixed(1)+'%, 부정률 '+(p.negative_rate||0).toFixed(1)+'%';
-    }).join('\n');
-    prompt=STATE.brand+' '+STATE.month+' SKU별 리뷰 데이터:\n'+prodSummary+'\n\n위 데이터를 분석하여 주목할 상품, 주의가 필요한 상품, 전략적 제안을 3~5줄로 요약해주세요. 한국어로 작성하세요.';
+    prompt=STATE.brand+' '+STATE.month+' SKU 데이터:\n'+
+      prods.map(function(p,i){return (i+1)+'. '+p.name+': '+p.review_count+'건, ★'+p.avg_rating+', 긍정 '+(p.positive_rate||0).toFixed(1)+'%, 부정 '+(p.negative_rate||0).toFixed(1)+'%';}).join('\n')+
+      '\n\n주목 상품, 주의 상품, 전략 제안을 3~5줄로 한국어로 요약하세요.';
   }
 
   if(!prompt){ btn.disabled=false; btn.textContent='✦ AI 분석'; return; }
-
   try{
-    var r=await fetch('http://localhost:11434/api/generate',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:STATE.ollamaModel, prompt:prompt, stream:false}),
-      signal:AbortSignal.timeout(60000)
-    });
+    var r=await fetch('http://localhost:11434/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:STATE.ollamaModel,prompt:prompt,stream:false}),signal:AbortSignal.timeout(60000)});
     if(!r.ok) throw new Error('HTTP '+r.status);
     var d=await r.json();
-    body.textContent=d.response||'응답 없음';
-    injectAIInlineAsk('ai-panel-'+key+'-body', key);
+    if(popBody) popBody.textContent=d.response||'응답 없음';
+    if(popAsk) popAsk.style.display='block';
   }catch(e){
-    body.textContent='[오류] '+e.message+'\n\nOllama가 실행 중인지 확인하고, 모델이 설치되어 있는지 확인해주세요.';
+    if(popBody) popBody.textContent='[오류] '+e.message+'\n\nOllama가 실행 중인지 확인하세요.';
   }
   btn.disabled=false; btn.textContent='✦ AI 분석';
 }
@@ -1583,6 +1740,7 @@ function initCardDragOrder() {
     var el = document.querySelector(c.sel);
     restoreCardOrder(el, c.key);
     initCardDragInContainer(el, c.key);
+    if(el) Array.from(el.children).filter(function(x){return x.dataset&&x.dataset.key;}).forEach(addCardControls);
   });
 }
 
