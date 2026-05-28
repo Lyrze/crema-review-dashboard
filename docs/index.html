@@ -81,10 +81,28 @@
     .sec-num { width:22px; height:22px; background:var(--accent); color:#fff; border-radius:6px; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
     .section-subtitle { font-size:12px; color:var(--text-secondary); margin-top:3px; }
     .section-desc { font-size:11.5px; color:var(--text-secondary); font-style:italic; margin-top:10px; }
-    .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; box-shadow:var(--card-shadow); }
-    .card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
-    .card-title { font-size:13px; font-weight:700; }
-    .card-sub { font-size:11px; color:var(--text-secondary); margin-top:2px; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:20px; box-shadow:var(--card-shadow); position:relative; display:flex; flex-direction:column; }
+    .card-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; gap:10px; }
+    .card-header-left { flex:1; min-width:0; }
+    .card-title { font-size:13.5px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:6px; line-height:1.3; }
+    .card-sub { font-size:11px; color:var(--text-secondary); margin-top:3px; }
+    /* 카드 액션 (Syncly: ✦ + ⋯) */
+    .card-actions { display:flex; align-items:center; gap:4px; flex-shrink:0; }
+    .card-icon-btn { width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; border:none; background:transparent; border-radius:6px; cursor:pointer; color:var(--text-secondary); font-size:14px; transition:background .12s,color .12s; font-family:inherit; padding:0; line-height:1; }
+    .card-icon-btn:hover { background:var(--surface-hover); color:var(--text); }
+    .card-icon-btn.ai { color:#16a34a; }
+    .card-icon-btn.ai:hover { background:rgba(22,163,74,.1); color:#15803d; }
+    /* 카드 푸터 (Syncly: Custom + Compare 버튼) */
+    .card-footer { display:flex; align-items:center; gap:8px; margin-top:14px; padding-top:0; }
+    .card-footer-btn { border:1px solid var(--border); background:transparent; color:var(--text-secondary); padding:5px 12px; border-radius:7px; font-size:11px; font-weight:600; cursor:pointer; font-family:inherit; transition:all .12s; }
+    .card-footer-btn:hover { background:var(--surface-hover); color:var(--text); border-color:var(--text-secondary); }
+    .card-footer-btn:disabled { opacity:.4; cursor:not-allowed; }
+    /* 카드 ⋯ 드롭다운 */
+    .card-menu-pop { display:none; position:absolute; right:0; top:32px; background:var(--card); border:1px solid var(--border); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.12); padding:4px; z-index:50; min-width:160px; }
+    .card-menu-pop.open { display:block; }
+    .card-menu-item { display:flex; align-items:center; gap:8px; width:100%; padding:7px 10px; background:none; border:none; cursor:pointer; font-size:12px; color:var(--text); border-radius:5px; text-align:left; font-family:inherit; }
+    .card-menu-item:hover { background:var(--surface-hover); }
+    .card-menu-item .ic { font-size:13px; width:16px; text-align:center; }
     .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
     .kpi-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; box-shadow:var(--card-shadow); display:flex; flex-direction:column; gap:6px; }
     .kpi-card-top { display:flex; align-items:center; justify-content:space-between; }
@@ -386,6 +404,49 @@
     /* CIP View Insight 버튼 */
     .cip-insight-btn { width:100%; margin-top:10px; padding:7px; background:var(--accent); color:#fff; border:none; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; font-family:inherit; transition:opacity .15s; }
     .cip-insight-btn:hover { opacity:.88; }
+    /* ── Syncly 스타일 상단 필터 칩 바 ── */
+    .sync-filter-bar { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+    .sync-filter-left { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .sync-filter-right { display:flex; align-items:center; gap:8px; }
+    .filter-chip { display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border:1px solid var(--border); background:var(--card); border-radius:24px; font-size:12px; font-weight:600; color:var(--text); cursor:pointer; transition:all .15s; font-family:inherit; }
+    .filter-chip:hover { background:var(--surface-hover); border-color:var(--text-secondary); }
+    .filter-chip.add { color:var(--text-secondary); border-style:dashed; }
+    .filter-chip.add:hover { color:var(--accent); border-color:var(--accent); background:var(--accent-bg); }
+    .filter-chip.active { background:var(--accent-bg); border-color:var(--accent); color:var(--accent); }
+    .filter-chip .chip-remove { width:14px; height:14px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; background:var(--surface-hover); font-size:9px; cursor:pointer; transition:background .12s; }
+    .filter-chip .chip-remove:hover { background:var(--negative-bg); color:var(--negative); }
+    .filter-chip .chip-label { font-size:10px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.4px; }
+    .filter-chip .chip-val { font-weight:700; }
+    /* 칩 드롭다운 */
+    .chip-pop { display:none; position:absolute; background:var(--card); border:1px solid var(--border); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.16); padding:6px; z-index:500; min-width:200px; max-height:300px; overflow-y:auto; }
+    .chip-pop.open { display:block; }
+    .chip-pop-item { display:block; width:100%; padding:7px 12px; background:none; border:none; cursor:pointer; font-size:12px; color:var(--text); border-radius:6px; text-align:left; font-family:inherit; }
+    .chip-pop-item:hover { background:var(--surface-hover); }
+    .chip-pop-item.selected { background:var(--accent-bg); color:var(--accent); font-weight:700; }
+    .chip-pop-search { width:100%; padding:7px 10px; border:1px solid var(--border); border-radius:7px; font-size:12px; margin-bottom:6px; outline:none; font-family:inherit; background:var(--bg); color:var(--text); }
+    /* ── 구매경험 VOC 카반 카드 ── */
+    .pvoc-kanban { display:flex; gap:14px; overflow-x:auto; padding-bottom:8px; scrollbar-width:thin; }
+    .pvoc-k-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px; min-width:280px; max-width:320px; flex-shrink:0; display:flex; flex-direction:column; box-shadow:var(--card-shadow); }
+    .pvoc-k-head { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:10px; }
+    .pvoc-k-cat { font-size:10px; font-weight:700; padding:2px 9px; border-radius:20px; text-transform:uppercase; letter-spacing:.5px; display:inline-flex; align-items:center; gap:4px; width:fit-content; }
+    .pvoc-k-cat.pre { background:rgba(91,94,244,.1); color:var(--accent); }
+    .pvoc-k-cat.post { background:rgba(245,158,11,.12); color:#d97706; }
+    .pvoc-k-cat.exp { background:rgba(22,163,74,.1); color:#16a34a; }
+    .pvoc-k-cat.issue { background:rgba(220,38,38,.1); color:#dc2626; }
+    .pvoc-k-actions { display:flex; gap:4px; }
+    .pvoc-k-title { font-size:14px; font-weight:800; color:var(--text); margin-bottom:14px; line-height:1.3; }
+    .pvoc-k-divider { height:1px; background:var(--border); margin-bottom:12px; }
+    .pvoc-k-item { display:flex; align-items:flex-start; gap:9px; margin-bottom:11px; }
+    .pvoc-k-item:last-child { margin-bottom:0; }
+    .pvoc-k-num { width:18px; height:18px; border-radius:5px; background:var(--accent-bg); color:var(--accent); font-size:10.5px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; }
+    .pvoc-k-text { font-size:12.5px; color:var(--text); line-height:1.55; flex:1; }
+    .pvoc-k-text strong { font-weight:700; color:var(--text); }
+    .pvoc-k-cnt { display:inline-flex; align-items:center; gap:4px; padding:1px 7px; background:var(--surface-hover); color:var(--text-secondary); border-radius:20px; font-size:10px; font-weight:700; margin-left:4px; }
+    .pvoc-k-footer { margin-top:auto; padding-top:14px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+    .pvoc-k-ts { font-size:10.5px; color:var(--text-secondary); }
+    .pvoc-k-vote { display:flex; gap:3px; }
+    .pvoc-k-vote button { width:24px; height:24px; border-radius:5px; border:none; background:transparent; cursor:pointer; color:var(--text-secondary); font-size:12px; transition:background .12s; }
+    .pvoc-k-vote button:hover { background:var(--surface-hover); }
     /* ── 인쇄(PDF) 스타일 ── */
     @media print {
       aside, .menu-btn, .product-focus-bar, .fab-btn, .fab-menu,
@@ -456,7 +517,30 @@
 
 <main id="main-content">
 
-  <!-- 상품 탭 필터 (Syncly 스타일) -->
+  <!-- ── Syncly 스타일 상단 필터 칩 바 ── -->
+  <div class="sync-filter-bar" id="sync-filter-bar">
+    <div class="sync-filter-left">
+      <button class="filter-chip add" id="chip-add-btn" onclick="toggleAddFilterPop(event)">+ Filter</button>
+      <div class="filter-chip" id="chip-brand" onclick="toggleBrandPop(event)" style="position:relative;">
+        <span class="chip-label">브랜드</span><span class="chip-val" id="chip-brand-val">슬룸</span>
+      </div>
+      <div class="filter-chip" id="chip-month" onclick="toggleMonthPop(event)" style="position:relative;">
+        <span class="chip-label">기간</span><span class="chip-val" id="chip-month-val">2026-04</span>
+      </div>
+      <div class="filter-chip" id="chip-product" style="display:none;position:relative;" onclick="toggleProductPop(event)">
+        <span class="chip-label">상품</span><span class="chip-val" id="chip-product-val">전체</span>
+        <span class="chip-remove" onclick="event.stopPropagation();clearProductFilter()" title="제거">×</span>
+      </div>
+    </div>
+    <div class="sync-filter-right">
+      <button class="filter-chip" id="chip-compare" onclick="toggleCompareMode()" title="두 달 비교 모드">📊 비교 모드</button>
+      <button class="filter-chip" id="chip-override" title="모든 섹션 기간 재정의">📅 Override date filter</button>
+    </div>
+  </div>
+  <!-- 칩 드롭다운 (재사용) -->
+  <div class="chip-pop" id="chip-pop" style="position:absolute;"></div>
+
+  <!-- 기존 상품 포커스 바 (하위 호환용, 숨김) -->
   <div class="product-focus-bar" id="product-focus-bar" style="display:none;">
     <span class="product-focus-label">상품 포커스</span>
     <select id="product-focus-select" class="product-focus-select" onchange="onProductFocusChange(this.value)"></select>
@@ -646,11 +730,11 @@
     <!-- Syncly s03 스타일: Top5 가로 막대 차트 2개 -->
     <div class="grid-2" style="margin-top:16px;">
       <div class="card" data-key="neg-top5">
-        <div class="card-header"><span class="card-title">🔴 부정률 기준 Top 5 SKU</span><span class="badge badge-neg">부정</span></div>
+        <div class="card-header"><span class="card-title">🔴 부정률 기준 Top 5 SKU</span></div>
         <div style="position:relative;height:200px;"><canvas id="sku-neg-top5" role="img" aria-label="부정률 Top 5 SKU"></canvas></div>
       </div>
       <div class="card" data-key="pos-top5">
-        <div class="card-header"><span class="card-title">🟢 긍정률 기준 Top 5 SKU</span><span class="badge badge-pos">긍정</span></div>
+        <div class="card-header"><span class="card-title">🟢 긍정률 기준 Top 5 SKU</span></div>
         <div style="position:relative;height:200px;"><canvas id="sku-pos-top5" role="img" aria-label="긍정률 Top 5 SKU"></canvas></div>
       </div>
     </div>
@@ -718,11 +802,11 @@
     <div class="voc-sub-label pos">🟢 칭찬 리뷰</div>
     <div class="grid-2" style="margin-bottom:20px;">
       <div class="card" data-key="voc-praise-sku">
-        <div class="card-header"><span class="card-title">칭찬 리뷰 SKU Top 10</span><span class="badge badge-pos">리뷰수 기준</span></div>
+        <div class="card-header"><span class="card-title">칭찬 리뷰 SKU Top 10</span></div>
         <div style="position:relative;height:240px;"><canvas id="praise-sku-chart" role="img" aria-label="칭찬 리뷰 SKU Top 10"></canvas></div>
       </div>
       <div class="card" data-key="voc-praise">
-        <div class="card-header"><span class="card-title">칭찬 키워드 Top 10</span><span class="badge badge-pos">키워드</span></div>
+        <div class="card-header"><span class="card-title">칭찬 키워드 Top 10</span></div>
         <div style="position:relative;height:240px;"><canvas id="praise-chart" role="img" aria-label="칭찬 키워드 차트"></canvas></div>
       </div>
     </div>
@@ -730,11 +814,11 @@
     <div class="voc-sub-label neg">🔴 불만 리뷰</div>
     <div class="grid-2" style="margin-bottom:20px;">
       <div class="card" data-key="voc-complaint-sku">
-        <div class="card-header"><span class="card-title">불만 리뷰 SKU Top 10</span><span class="badge badge-neg">리뷰수 기준</span></div>
+        <div class="card-header"><span class="card-title">불만 리뷰 SKU Top 10</span></div>
         <div style="position:relative;height:240px;"><canvas id="complaint-sku-chart" role="img" aria-label="불만 리뷰 SKU Top 10"></canvas></div>
       </div>
       <div class="card" data-key="voc-complaint">
-        <div class="card-header"><span class="card-title">불만 키워드 Top 10</span><span class="badge badge-neg">키워드</span></div>
+        <div class="card-header"><span class="card-title">불만 키워드 Top 10</span></div>
         <div style="position:relative;height:240px;"><canvas id="complaint-chart" role="img" aria-label="불만 키워드 차트"></canvas></div>
       </div>
     </div>
@@ -742,11 +826,11 @@
     <div class="voc-sub-label warn">🟡 개선 제안</div>
     <div class="grid-2" style="margin-bottom:20px;">
       <div class="card" data-key="voc-improve-sku">
-        <div class="card-header"><span class="card-title">개선 제안 SKU Top 10</span><span class="badge badge-warn">개선 필요도</span></div>
+        <div class="card-header"><span class="card-title">개선 제안 SKU Top 10</span></div>
         <div style="position:relative;height:240px;"><canvas id="improve-sku-chart" role="img" aria-label="개선 제안 SKU Top 10"></canvas></div>
       </div>
       <div class="card" data-key="voc-improve">
-        <div class="card-header"><span class="card-title">개선 제안 키워드 Top 10</span><span class="badge badge-warn">키워드</span></div>
+        <div class="card-header"><span class="card-title">개선 제안 키워드 Top 10</span></div>
         <div style="position:relative;height:240px;"><canvas id="improve-chart" role="img" aria-label="개선 제안 키워드 차트"></canvas></div>
       </div>
     </div>
@@ -764,75 +848,10 @@
         <div class="section-subtitle">구매 전 / 후 경험 분류 분석</div>
       </div>
     </div>
-    <div class="pvoc-grid">
-      <div class="pvoc-card">
-        <div class="pvoc-lbl">구매 전 경험</div>
-        <div class="pvoc-title">구매 동기 &amp; 광고 반응</div>
-        <div class="kw-cloud">
-          <span class="kw-pill kw-pos">유튜버 협찬 <span class="kw-cnt">34</span></span>
-          <span class="kw-pill kw-pos">목·허리 통증 <span class="kw-cnt">28</span></span>
-          <span class="kw-pill kw-pos">효도 선물 <span class="kw-cnt">22</span></span>
-          <span class="kw-pill kw-pos">재구매 <span class="kw-cnt">19</span></span>
-          <span class="kw-pill kw-pos">구독자 할인 <span class="kw-cnt">15</span></span>
-          <span class="kw-pill kw-neg">광고 과장 <span class="kw-cnt">5</span></span>
-        </div>
-        <div class="pvoc-div"></div>
-        <div class="insight" style="margin-top:0;">
-          <div class="insight-title">주요 구매 동기</div>
-          <ul>
-            <li>유튜버 협찬 영상 시청 후 구매 다수</li>
-            <li>목·허리 통증 해결 목적의 구매</li>
-            <li>부모님 효도 선물 니즈 강함</li>
-            <li>기존 제품 고장 → 재구매 패턴 존재</li>
-          </ul>
-        </div>
-      </div>
-      <div class="pvoc-card">
-        <div class="pvoc-lbl">구매 전 경험</div>
-        <div class="pvoc-title">상세페이지 반응</div>
-        <div class="kw-cloud">
-          <span class="kw-pill kw-pos">에어백 구조 <span class="kw-cnt">18</span></span>
-          <span class="kw-pill kw-pos">상세 설명 <span class="kw-cnt">14</span></span>
-          <span class="kw-pill kw-pos">온열 기능 <span class="kw-cnt">12</span></span>
-          <span class="kw-pill kw-neg">구성품 누락 문의 <span class="kw-cnt">7</span></span>
-          <span class="kw-pill kw-neg">어댑터 별매 <span class="kw-cnt">5</span></span>
-          <span class="kw-pill kw-imp">상세 명시 필요 <span class="kw-cnt">4</span></span>
-        </div>
-        <div class="pvoc-div"></div>
-        <div class="insight" style="margin-top:0;">
-          <div class="insight-title">상세페이지 반응</div>
-          <ul>
-            <li>에어백 구조 이해 후 신뢰 형성</li>
-            <li>구성품 확인 필요 — 누락 문의 발생</li>
-            <li>어댑터/케이블 별매 상세 명시 필요</li>
-            <li>기능 상세 설명이 구매 전환 기여</li>
-          </ul>
-        </div>
-      </div>
-      <div class="pvoc-card">
-        <div class="pvoc-lbl">구매 후 경험</div>
-        <div class="pvoc-title">배송 / CS / 반품</div>
-        <div class="kw-cloud">
-          <span class="kw-pill kw-pos">빠른 배송 <span class="kw-cnt">72</span></span>
-          <span class="kw-pill kw-pos">AS 우수 <span class="kw-cnt">18</span></span>
-          <span class="kw-pill kw-pos">신제품 교환 <span class="kw-cnt">9</span></span>
-          <span class="kw-pill kw-neg">반품 30일 제한 <span class="kw-cnt">8</span></span>
-          <span class="kw-pill kw-neg">CS 연결 불편 <span class="kw-cnt">5</span></span>
-          <span class="kw-pill kw-imp">환불 정책 개선 <span class="kw-cnt">4</span></span>
-        </div>
-        <div class="pvoc-div"></div>
-        <div class="insight" style="margin-top:0;">
-          <div class="insight-title">구매 후 경험</div>
-          <ul>
-            <li>빠른 배송 만족도 높음 — 당일 출고</li>
-            <li>AS 대응 우수 — 신제품 교환 칭찬</li>
-            <li>반품 30일 제한 → 불만 핵심 포인트</li>
-            <li>CS 채널 연결 용이성 개선 필요</li>
-          </ul>
-        </div>
-      </div>
+    <div class="pvoc-kanban" id="pvoc-kanban">
+      <!-- JS로 동적 생성 -->
     </div>
-    <div class="section-desc">* 구매경험 VOC는 리뷰 텍스트에서 구매 전/후 경험 관련 언급을 분류한 결과입니다.</div>
+    <div class="section-desc">* 구매경험 VOC는 리뷰 텍스트에서 구매 전/후 경험 관련 언급을 분류한 결과입니다. 가로로 스크롤하여 모든 카드를 확인하세요.</div>
   </section>
 
   <!-- ⑧ AI 커스텀 질문 -->
@@ -1386,7 +1405,7 @@ function onBrandChange(v){ STATE.brand=v; populateMonths(); reload(); }
 function onMonthChange(v){ STATE.month=v; reload(); }
 async function reload(){ await loadData(STATE.brand,STATE.month); render(); }
 
-function render(){ renderHeader(); renderExec(); renderKPI(); renderTimeline(); renderSKUTable(); renderSKUCombo(); renderChangeTables(); renderVOC(); updateProductFocusBar(); updateCustomAIModelLabel(); populateCompareMonths(); updateCompareBanner(); }
+function render(){ renderHeader(); renderExec(); renderKPI(); renderTimeline(); renderSKUTable(); renderSKUCombo(); renderChangeTables(); renderVOC(); updateProductFocusBar(); updateCustomAIModelLabel(); populateCompareMonths(); updateCompareBanner(); renderPVOCKanban(); syncChipBarFromState(); setTimeout(enhanceCardActions,50); }
 
 function renderHeader(){
   var p=STATE.month.split('-');
@@ -2566,6 +2585,254 @@ function renderProductComparePanel(){
   });
 }
 
+// ── Syncly 스타일 상단 필터 칩 ──
+function syncChipBarFromState(){
+  var bv=$('chip-brand-val'); if(bv) bv.textContent=STATE.brand||'슬룸';
+  var mv=$('chip-month-val'); if(mv) mv.textContent=STATE.month||'2026-04';
+  var pc=$('chip-product');
+  if(STATE.productFocus){
+    pc.style.display='inline-flex';
+    $('chip-product-val').textContent=fmtS(STATE.productFocus)||STATE.productFocus;
+  }else if(pc){
+    pc.style.display='none';
+  }
+  // 비교 모드 active 상태
+  var cmpChip=$('chip-compare');
+  if(cmpChip){
+    if(COMPARE_STATE&&COMPARE_STATE.active) cmpChip.classList.add('active');
+    else cmpChip.classList.remove('active');
+  }
+}
+
+function closeChipPop(){
+  var pop=$('chip-pop'); if(pop) pop.classList.remove('open');
+}
+
+function showChipPop(anchorEl, html){
+  var pop=$('chip-pop'); if(!pop) return;
+  pop.innerHTML=html;
+  pop.classList.add('open');
+  var rect=anchorEl.getBoundingClientRect();
+  pop.style.position='fixed';
+  pop.style.left=rect.left+'px';
+  pop.style.top=(rect.bottom+6)+'px';
+  setTimeout(function(){
+    function outside(e){
+      if(!e.target.closest('#chip-pop')&&!e.target.closest('.filter-chip')){
+        closeChipPop(); document.removeEventListener('click',outside);
+      }
+    }
+    document.addEventListener('click',outside);
+  },0);
+}
+
+function toggleBrandPop(e){
+  e.stopPropagation();
+  if($('chip-pop').classList.contains('open')){closeChipPop();return;}
+  var idx=STATE.index;
+  var brands=idx?Object.values(idx.brands||{}).map(function(b){return b.display_name;}):['슬룸'];
+  var html=brands.map(function(b){
+    var sel=b===STATE.brand?' selected':'';
+    return '<button class="chip-pop-item'+sel+'" onclick="onBrandChange(\''+b.replace(/'/g,"\\'")+'\');syncChipBarFromState();closeChipPop();">'+b+'</button>';
+  }).join('');
+  showChipPop(e.currentTarget, html);
+}
+
+function toggleMonthPop(e){
+  e.stopPropagation();
+  if($('chip-pop').classList.contains('open')){closeChipPop();return;}
+  var months=['2026-04'];
+  if(STATE.index){
+    var b=Object.values(STATE.index.brands||{}).find(function(x){return x.display_name===STATE.brand;});
+    if(b&&b.months) months=[].concat(b.months).reverse();
+  }
+  var html=months.map(function(m){
+    var sel=m===STATE.month?' selected':'';
+    return '<button class="chip-pop-item'+sel+'" onclick="onMonthChange(\''+m+'\');syncChipBarFromState();closeChipPop();">'+m+'</button>';
+  }).join('');
+  showChipPop(e.currentTarget, html);
+}
+
+function toggleProductPop(e){
+  e.stopPropagation();
+  if($('chip-pop').classList.contains('open')){closeChipPop();return;}
+  var prods=(STATE.products||REAL_DATA.products).slice().sort(function(a,b){return b.review_count-a.review_count;});
+  var html='<input type="text" class="chip-pop-search" placeholder="상품 검색..." oninput="filterProductPop(this.value)" onclick="event.stopPropagation();" />';
+  html+='<div id="chip-pop-prods">';
+  html+='<button class="chip-pop-item" onclick="clearProductFilter();closeChipPop();">전체 상품 보기</button>';
+  prods.forEach(function(p){
+    var nm=p.name; var dn=fmtS(nm)||nm;
+    var sel=nm===STATE.productFocus?' selected':'';
+    html+='<button class="chip-pop-item'+sel+'" data-nm="'+nm.toLowerCase()+'" onclick="setProductFilter(\''+nm.replace(/'/g,"\\'")+'\');closeChipPop();">'+dn+' <span style="color:var(--text-secondary);font-weight:400;">('+p.review_count+')</span></button>';
+  });
+  html+='</div>';
+  showChipPop(e.currentTarget, html);
+}
+
+function filterProductPop(q){
+  q=(q||'').trim().toLowerCase();
+  var items=document.querySelectorAll('#chip-pop-prods .chip-pop-item');
+  items.forEach(function(it){
+    var nm=it.getAttribute('data-nm')||'';
+    if(!nm) return; // "전체 보기" 버튼
+    it.style.display=(!q||nm.indexOf(q)>=0)?'block':'none';
+  });
+}
+
+function setProductFilter(name){
+  STATE.productFocus=name;
+  if($('product-focus-select')){
+    var sel=$('product-focus-select');
+    var hasOpt=Array.from(sel.options).some(function(o){return o.value===name;});
+    if(!hasOpt){ var o=document.createElement('option'); o.value=name; o.textContent=fmtS(name)||name; sel.appendChild(o); }
+    sel.value=name;
+  }
+  syncChipBarFromState();
+  render();
+}
+
+function clearProductFilter(){
+  STATE.productFocus=null;
+  if($('product-focus-select')) $('product-focus-select').value='';
+  syncChipBarFromState();
+  render();
+}
+
+function toggleAddFilterPop(e){
+  e.stopPropagation();
+  if($('chip-pop').classList.contains('open')){closeChipPop();return;}
+  var html='<button class="chip-pop-item" onclick="toggleProductPop({currentTarget:document.getElementById(\'chip-add-btn\'),stopPropagation:function(){}});">🛒 상품 필터 추가</button>'+
+           '<button class="chip-pop-item" onclick="toggleCompareMode();closeChipPop();">📊 비교 모드 켜기</button>';
+  showChipPop(e.currentTarget, html);
+}
+
+// ── 구매경험 VOC 카반 동적 렌더 ──
+function renderPVOCKanban(){
+  var container=$('pvoc-kanban');
+  if(!container) return;
+  var kw=STATE.keywords||REAL_DATA.keywords||{};
+  var bi=kw.by_intent||{};
+  var praise=bi.praise||[], complaint=bi.complaint||[], improvement=bi.improvement||[];
+  var ts=new Date().toLocaleString('ko-KR',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+
+  // 카드 정의: 카테고리 / 색상 / 제목 / 데이터 셀렉터
+  var cards=[
+    {cat:'pre', catLbl:'구매 전 경험', title:'주요 구매 동기 & 광고 반응',
+     data: praise.filter(function(k){var w=k.word||'';return /협찬|추천|광고|영상|선물|효도|구독|할인/.test(w);}).slice(0,6),
+     fallback: [{word:'유튜버 협찬 영상 시청 후 구매 다수',count:34},{word:'목·허리 통증 해결 목적의 구매',count:28},{word:'부모님 효도 선물 니즈',count:22},{word:'기존 제품 고장 → 재구매 패턴',count:19}]
+    },
+    {cat:'pre', catLbl:'구매 전 경험', title:'상세페이지 & 상담 반응',
+     data: praise.filter(function(k){var w=k.word||'';return /상세|구조|설명|에어백|기능|구성|어댑터/.test(w);}).slice(0,6),
+     fallback: [{word:'에어백 구조 이해 후 신뢰 형성',count:18},{word:'구성품 확인 필요 — 누락 문의 발생',count:7},{word:'어댑터·케이블 별매 상세 명시 필요',count:5},{word:'기능 상세 설명이 구매 전환 기여',count:14}]
+    },
+    {cat:'post', catLbl:'구매 후 경험', title:'배송 / CS / 반품',
+     data: praise.filter(function(k){var w=k.word||'';return /배송|cs|as|반품|환불|교환|연결/i.test(w);}).slice(0,6),
+     fallback: [{word:'빠른 배송 만족도 높음 — 당일 출고',count:72},{word:'AS 대응 우수 — 신제품 교환 칭찬',count:18},{word:'반품 30일 제한 → 불만 핵심 포인트',count:8},{word:'CS 채널 연결 용이성 개선 필요',count:5}]
+    },
+    {cat:'exp', catLbl:'사용 경험', title:'긍정 키워드 Top',
+     data: praise.slice(0,7),
+     fallback: [{word:'온열 기능 만족',count:362},{word:'에어백 마사지 좋음',count:356},{word:'효과 체감 우수',count:329}]
+    },
+    {cat:'issue', catLbl:'개선 영역', title:'주요 불만 & 페인 포인트',
+     data: complaint.slice(0,7),
+     fallback: [{word:'소음 / 시끄러움',count:13},{word:'반품 불가 정책',count:9},{word:'진동 두룸',count:6}]
+    },
+    {cat:'issue', catLbl:'개선 영역', title:'사용자 요청 사항',
+     data: improvement.slice(0,7),
+     fallback: [{word:'강도 강화 요청',count:81},{word:'경량화',count:15},{word:'소음 개선',count:9}]
+    }
+  ];
+
+  container.innerHTML=cards.map(function(c, idx){
+    // 데이터가 4개 미만이면 fallback으로 보충
+    var items=(c.data||[]).slice();
+    if(items.length<4 && c.fallback){
+      var have={}; items.forEach(function(it){have[(it.word||it)]=1;});
+      c.fallback.forEach(function(fb){ if(items.length<6 && !have[fb.word]) items.push(fb); });
+    }
+    if(items.length===0) items=c.fallback||[];
+    items=items.slice(0,7);
+    var bulletsHtml=items.map(function(it, i){
+      var w=it.word||it; var cnt=it.count!=null?it.count:'';
+      return '<div class="pvoc-k-item">'+
+        '<span class="pvoc-k-num">'+(i+1)+'</span>'+
+        '<div class="pvoc-k-text">'+w+(cnt!==''?'<span class="pvoc-k-cnt">'+cnt+'</span>':'')+'</div>'+
+        '</div>';
+    }).join('');
+    return '<div class="pvoc-k-card">'+
+      '<div class="pvoc-k-head">'+
+        '<div class="pvoc-k-cat '+c.cat+'">'+c.catLbl+'</div>'+
+        '<div class="pvoc-k-actions">'+
+          '<button class="card-icon-btn ai" title="AI 분석" onclick="aiAnalyzeSection(\'pvoc-card-'+idx+'\')">✦</button>'+
+          '<button class="card-icon-btn" title="더 보기">⋯</button>'+
+        '</div>'+
+      '</div>'+
+      '<div class="pvoc-k-title">'+c.title+'</div>'+
+      '<div class="pvoc-k-divider"></div>'+
+      bulletsHtml+
+      '<div class="pvoc-k-footer">'+
+        '<span class="pvoc-k-ts">Updated on '+ts+'</span>'+
+        '<div class="pvoc-k-vote"><button title="좋아요">👍</button><button title="별로">👎</button></div>'+
+      '</div>'+
+      '</div>';
+  }).join('');
+}
+
+// ── 카드 액션 자동 인젝터 (Syncly: ✦ + ⋯) ──
+function enhanceCardActions(){
+  // .card 와 .chart-card 의 card-header에 액션 영역 자동 주입
+  document.querySelectorAll('.card .card-header, .chart-card .card-header').forEach(function(hdr){
+    if(hdr.querySelector('.card-actions')) return; // 이미 처리
+    if(hdr.closest('.pvoc-k-card')) return;        // 카반 카드 제외
+    if(hdr.closest('#sec-ai-custom')) return;      // AI 질문 카드 제외
+    var existingBtn=hdr.querySelector('.ai-card-btn'); // 이미 ✦ 버튼이 있으면 그대로
+    var actions=document.createElement('div'); actions.className='card-actions';
+    if(existingBtn){
+      // ✦ 버튼을 actions 안으로 이동
+      actions.appendChild(existingBtn);
+    }
+    // ⋯ 메뉴 추가 (이미 없으면)
+    if(!hdr.querySelector('.card-menu-btn')){
+      var moreBtn=document.createElement('button');
+      moreBtn.className='card-icon-btn card-menu-btn';
+      moreBtn.title='더 보기';
+      moreBtn.textContent='⋯';
+      moreBtn.onclick=function(e){ e.stopPropagation(); toggleCardMenu(this); };
+      actions.appendChild(moreBtn);
+    }
+    hdr.appendChild(actions);
+  });
+}
+
+function toggleCardMenu(btn){
+  // 모든 메뉴 닫기
+  document.querySelectorAll('.card-menu-pop.open').forEach(function(m){
+    if(m!==btn.nextElementSibling) m.classList.remove('open');
+  });
+  var card=btn.closest('.card, .chart-card');
+  var existing=card?card.querySelector('.card-menu-pop'):null;
+  if(existing){
+    existing.classList.toggle('open');
+    return;
+  }
+  var pop=document.createElement('div');
+  pop.className='card-menu-pop open';
+  pop.innerHTML='<button class="card-menu-item" onclick="this.closest(\'.card-menu-pop\').classList.remove(\'open\');alert(\'커스텀 차트로 복제 기능 (구현 예정)\');"><span class="ic">📋</span>Custom 차트로 복제</button>'+
+    '<button class="card-menu-item" onclick="this.closest(\'.card-menu-pop\').classList.remove(\'open\');window.print();"><span class="ic">🖨</span>인쇄 / PDF</button>'+
+    '<button class="card-menu-item" onclick="this.closest(\'.card-menu-pop\').classList.remove(\'open\');"><span class="ic">✕</span>닫기</button>';
+  card.style.position='relative';
+  btn.parentElement.appendChild(pop);
+  setTimeout(function(){
+    function outside(e){
+      if(!e.target.closest('.card-menu-pop')&&!e.target.closest('.card-menu-btn')){
+        pop.classList.remove('open');
+        document.removeEventListener('click',outside);
+      }
+    }
+    document.addEventListener('click',outside);
+  },0);
+}
+
 // ── 초기화 ──
 document.addEventListener('DOMContentLoaded', async function(){
   restoreSectionOrder();
@@ -2573,12 +2840,16 @@ document.addEventListener('DOMContentLoaded', async function(){
   initCardDragOrder();
   pingOllama();
   await loadIndex();
+  syncChipBarFromState();
+  renderPVOCKanban();
+  enhanceCardActions();
   setInterval(pingOllama, 30000);
   // ESC 키로 패널/모달 닫기
   document.addEventListener('keydown', function(e){
     if(e.key==='Escape'){
       if($('insight-modal')&&$('insight-modal').classList.contains('open')) closeInsightModal();
       else if($('product-detail-panel')&&$('product-detail-panel').classList.contains('open')) closeProductPanel();
+      else if($('chip-pop')&&$('chip-pop').classList.contains('open')) closeChipPop();
     }
   });
 });
