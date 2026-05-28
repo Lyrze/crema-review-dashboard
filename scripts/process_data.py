@@ -1026,7 +1026,7 @@ def run_pipeline(args: argparse.Namespace) -> None:
 
     # ── 5. 상품별 집계
     logger.info("상품별 데이터 계산 중...")
-    products_list = calc_products(df, prev_df=prev_df)
+    products_list = calc_products(df, prev_df=prev_df, top_review_count=30)
     products_data = {"products": products_list}
 
     # ── 6. 키워드 분석

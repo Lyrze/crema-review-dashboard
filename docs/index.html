@@ -426,6 +426,11 @@
     .im-card-vote button:hover { background:var(--surface-hover); }
     .im-card-vote button.active { background:var(--accent-bg); color:var(--accent); }
     /* 리뷰 샘플 섹션 */
+    .im-review-controls { display:flex; gap:14px; align-items:center; flex-wrap:wrap; font-size:11.5px; font-weight:600; }
+    .im-rev-filter-group, .im-rev-count-group { display:inline-flex; gap:4px; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:3px; }
+    .im-rev-filter, .im-rev-count { padding:4px 10px; background:transparent; border:none; border-radius:6px; cursor:pointer; font-size:11px; font-weight:600; color:var(--text-secondary); font-family:inherit; transition:all .12s; }
+    .im-rev-filter:hover, .im-rev-count:hover { background:var(--surface-hover); color:var(--text); }
+    .im-rev-filter.active, .im-rev-count.active { background:var(--accent); color:#fff; }
     .im-reviews { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px; margin-top:8px; }
     .im-review { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 16px; }
     .im-review-meta { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
@@ -1224,7 +1229,24 @@
       <div class="im-cards" id="im-cards"></div>
 
       <!-- 리뷰 샘플 섹션 -->
-      <div class="im-section-head" style="margin-top:28px;">📝 대표 리뷰 샘플</div>
+      <div class="im-section-head" style="margin-top:28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <span>📝 리뷰 샘플</span>
+        <div class="im-review-controls">
+          <div class="im-rev-filter-group">
+            <button class="im-rev-filter active" data-rev-filter="all" onclick="imSetReviewFilter('all')">전체</button>
+            <button class="im-rev-filter" data-rev-filter="pos" onclick="imSetReviewFilter('pos')">🟢 긍정만</button>
+            <button class="im-rev-filter" data-rev-filter="neg" onclick="imSetReviewFilter('neg')">🔴 부정만</button>
+          </div>
+          <div class="im-rev-count-group">
+            <span style="font-size:11px;color:var(--text-secondary);font-weight:600;">개수:</span>
+            <button class="im-rev-count active" data-rev-count="4" onclick="imSetReviewCount(4)">대표 4건</button>
+            <button class="im-rev-count" data-rev-count="10" onclick="imSetReviewCount(10)">10건</button>
+            <button class="im-rev-count" data-rev-count="30" onclick="imSetReviewCount(30)">30건</button>
+            <button class="im-rev-count" data-rev-count="all" onclick="imSetReviewCount('all')">전체</button>
+          </div>
+        </div>
+      </div>
+      <div id="im-review-count-info" style="font-size:11.5px;color:var(--text-secondary);margin-bottom:10px;"></div>
       <div class="im-reviews" id="im-reviews"></div>
     </div>
   </div>
@@ -2501,6 +2523,10 @@ function openInsightModal(name){
   $('im-subtitle').textContent='리뷰 '+fmt(p.review_count)+'건 · '+STATE.month+' · ★'+p.avg_rating.toFixed(2)+' · 생성: '+now;
 
   modal.classList.add('open');
+  // 필터/카운트 기본값 리셋
+  IM_REV_FILTER='all'; IM_REV_COUNT=4;
+  document.querySelectorAll('.im-rev-filter').forEach(function(b){b.classList.toggle('active', b.getAttribute('data-rev-filter')==='all');});
+  document.querySelectorAll('.im-rev-count').forEach(function(b){b.classList.toggle('active', b.getAttribute('data-rev-count')==='4');});
 
   // 차트 렌더는 모달 표시 후 (canvas 크기 측정 위해)
   setTimeout(function(){
@@ -2755,31 +2781,101 @@ function imBuildSummaryCard(p){
   return card;
 }
 
-// 리뷰 샘플 섹션 (긍정 + 부정)
+// 리뷰 샘플 섹션 (긍정 + 부정) — 필터/개수 동적
+var IM_REV_FILTER='all'; // 'all'|'pos'|'neg'
+var IM_REV_COUNT=4;      // 4|10|30|'all'
+
+function imSetReviewFilter(f){
+  IM_REV_FILTER=f;
+  document.querySelectorAll('.im-rev-filter').forEach(function(b){
+    b.classList.toggle('active', b.getAttribute('data-rev-filter')===f);
+  });
+  imRenderReviewSamples(IM_CURRENT_PRODUCT);
+}
+
+function imSetReviewCount(n){
+  IM_REV_COUNT=n;
+  document.querySelectorAll('.im-rev-count').forEach(function(b){
+    b.classList.toggle('active', b.getAttribute('data-rev-count')===String(n));
+  });
+  imRenderReviewSamples(IM_CURRENT_PRODUCT);
+}
+
 function imRenderReviewSamples(p){
+  if(!p) return;
   var cont=$('im-reviews');
+  var infoEl=$('im-review-count-info');
   if(!cont) return;
   cont.innerHTML='';
-  var posTop=(p.top_reviews||[]).slice(0,2);
-  var negTop=(p.bottom_reviews||[]).slice(0,2);
-  posTop.forEach(function(r){ cont.appendChild(imBuildReview(r, 'pos')); });
-  negTop.forEach(function(r){ cont.appendChild(imBuildReview(r, 'neg')); });
-  if(posTop.length===0 && negTop.length===0){
-    cont.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--text-secondary);font-size:12px;">리뷰 샘플 데이터가 없습니다.</div>';
+
+  var posAll=(p.top_reviews||[]).map(function(r){return {r:r,type:'pos'};});
+  var negAll=(p.bottom_reviews||[]).map(function(r){return {r:r,type:'neg'};});
+
+  var pool=[];
+  if(IM_REV_FILTER==='all'){
+    // 긍정/부정 균등 인터리브
+    var maxLen=Math.max(posAll.length, negAll.length);
+    for(var i=0;i<maxLen;i++){
+      if(i<negAll.length) pool.push(negAll[i]); // 부정 먼저 (눈에 띄게)
+      if(i<posAll.length) pool.push(posAll[i]);
+    }
+  }else if(IM_REV_FILTER==='pos'){
+    pool=posAll;
+  }else if(IM_REV_FILTER==='neg'){
+    pool=negAll;
   }
+
+  var total=pool.length;
+  var limit=IM_REV_COUNT==='all'?total:Math.min(IM_REV_COUNT, total);
+  var shown=pool.slice(0, limit);
+
+  // 정보 표시
+  if(infoEl){
+    var filterLabel=IM_REV_FILTER==='all'?'전체':IM_REV_FILTER==='pos'?'긍정':'부정';
+    var brName=fmtS(p.name)||p.name;
+    var actualReviewTotal=p.review_count||0;
+    if(IM_REV_COUNT==='all' && total < actualReviewTotal && IM_REV_FILTER==='all'){
+      infoEl.innerHTML='<strong>'+brName+'</strong> · '+filterLabel+' 리뷰 <strong>'+limit+'</strong>건 표시 (저장된 샘플 '+total+'건 / 총 리뷰 '+fmt(actualReviewTotal)+'건) <span style="color:var(--accent);">💡 더 많이 보려면 process_data.py의 top_review_count를 늘리세요</span>';
+    }else{
+      infoEl.innerHTML='<strong>'+brName+'</strong> · '+filterLabel+' 리뷰 <strong>'+limit+'</strong> / '+total+'건 표시 (총 리뷰 '+fmt(actualReviewTotal)+'건)';
+    }
+  }
+
+  if(shown.length===0){
+    cont.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--text-secondary);font-size:12px;">'+
+      (IM_REV_FILTER==='neg'?'부정 리뷰 샘플이 없습니다. (별점 ≤2 리뷰가 없음)':IM_REV_FILTER==='pos'?'긍정 리뷰 샘플이 없습니다.':'리뷰 샘플이 없습니다.')+
+      '</div>';
+    return;
+  }
+  shown.forEach(function(item){ cont.appendChild(imBuildReview(item.r, item.type)); });
 }
 
 function imBuildReview(r, type){
   var div=document.createElement('div');
   div.className='im-review';
   var stars=''; for(var i=1;i<=5;i++) stars+=i<=r.rating?'★':'☆';
+  var text=r.text||'리뷰 원문 없음';
+  // 긴 리뷰는 "더 보기" 토글 (200자 초과)
+  var truncated=text.length>200;
+  var displayText=truncated?text.slice(0,200)+'...':text;
+  var fullId='rev-full-'+Math.random().toString(36).slice(2,9);
   div.innerHTML='<div class="im-review-meta">'+
     '<span class="im-review-stars">'+stars+'</span>'+
     '<span class="im-review-date">'+(r.date||'')+'</span>'+
     '<span class="im-review-tag '+type+'">'+(type==='pos'?'긍정':'부정')+'</span>'+
     '</div>'+
-    '<div class="im-review-text">'+(r.text||'리뷰 원문 없음')+'</div>';
+    '<div class="im-review-text" id="'+fullId+'-short">'+displayText+
+      (truncated?' <button onclick="imToggleReview(\''+fullId+'\',true)" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:11px;font-weight:700;padding:0;font-family:inherit;">더 보기</button>':'')+
+    '</div>'+
+    (truncated?'<div class="im-review-text" id="'+fullId+'-full" style="display:none;">'+text+
+      ' <button onclick="imToggleReview(\''+fullId+'\',false)" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:11px;font-weight:700;padding:0;font-family:inherit;">접기</button>'+
+    '</div>':'');
   return div;
+}
+
+function imToggleReview(id, expand){
+  var s=document.getElementById(id+'-short'), f=document.getElementById(id+'-full');
+  if(s&&f){ s.style.display=expand?'none':'block'; f.style.display=expand?'block':'none'; }
 }
 
 // 카드별 AI 심층 분석 (Ollama 호출)
