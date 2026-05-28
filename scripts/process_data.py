@@ -593,6 +593,28 @@ def calc_products(
                 "date": date_str,
             })
 
+        # 부정 리뷰 샘플 (별점 ≤2 우선, 부족하면 ≤3 보충, 최대 5건)
+        bottom_reviews: List[dict] = []
+        low = group[group["rating"] <= 2].sort_values(
+            ["rating", "review_date"], ascending=[True, False]
+        ).head(top_review_count)
+        if len(low) < 3:
+            extra = group[(group["rating"] <= 3) & (group["rating"] > 2)].sort_values(
+                ["rating", "review_date"], ascending=[True, False]
+            ).head(top_review_count - len(low))
+            low = pd.concat([low, extra], ignore_index=True)
+        for row in low.itertuples(index=False):
+            date_str = ""
+            rv_date = getattr(row, "review_date", None)
+            if rv_date is not None and pd.notna(rv_date):
+                date_str = pd.Timestamp(rv_date).strftime("%Y-%m-%d")
+            bottom_reviews.append({
+                "review_id": str(getattr(row, "review_id", "")),
+                "text": str(getattr(row, "body", ""))[:300],
+                "rating": int(getattr(row, "rating", 0)),
+                "date": date_str,
+            })
+
         total = len(group)
         pos_r = round(sentiment["positive"] / total * 100, 2) if total > 0 else 0.0
         neg_r = round(sentiment["negative"] / total * 100, 2) if total > 0 else 0.0
@@ -612,6 +634,7 @@ def calc_products(
             "prev_review_count": prev_lookup[product_name]["review_count"] if product_name in prev_lookup else None,
             "prev_avg_rating": prev_lookup[product_name]["avg_rating"] if product_name in prev_lookup else None,
             "top_reviews": top_reviews,
+            "bottom_reviews": bottom_reviews,
         })
 
     products.sort(key=lambda x: x["review_count"], reverse=True)

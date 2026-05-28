@@ -447,6 +447,60 @@
     .pvoc-k-vote { display:flex; gap:3px; }
     .pvoc-k-vote button { width:24px; height:24px; border-radius:5px; border:none; background:transparent; cursor:pointer; color:var(--text-secondary); font-size:12px; transition:background .12s; }
     .pvoc-k-vote button:hover { background:var(--surface-hover); }
+    /* ── AI 챗 풀 사이드 패널 (Hey Syncly 스타일) ── */
+    #ai-chat-panel { display:none; position:fixed; top:0; right:0; width:420px; max-width:100vw; height:100vh; z-index:750; background:var(--card); border-left:1px solid var(--border); box-shadow:-8px 0 32px rgba(0,0,0,.18); flex-direction:column; }
+    #ai-chat-panel.open { display:flex; }
+    .aic-header { padding:18px 20px 14px; border-bottom:1px solid var(--border); display:flex; align-items:flex-start; justify-content:space-between; flex-shrink:0; }
+    .aic-title-wrap { flex:1; min-width:0; }
+    .aic-title { font-size:15px; font-weight:800; color:var(--text); display:flex; align-items:center; gap:6px; }
+    .aic-subtitle { font-size:11px; color:var(--text-secondary); margin-top:3px; }
+    .aic-close { border:none; background:none; font-size:22px; cursor:pointer; color:var(--text-secondary); padding:0; line-height:1; flex-shrink:0; }
+    .aic-context { padding:10px 20px; border-bottom:1px solid var(--border); display:flex; gap:6px; flex-wrap:wrap; flex-shrink:0; background:var(--bg); }
+    .aic-ctx-chip { font-size:10px; padding:3px 8px; background:var(--surface); border:1px solid var(--border); border-radius:12px; color:var(--text-secondary); }
+    .aic-ctx-chip.active { background:var(--accent-bg); color:var(--accent); border-color:var(--accent); }
+    .aic-messages { flex:1; overflow-y:auto; padding:18px 20px; display:flex; flex-direction:column; gap:14px; scrollbar-width:thin; }
+    .aic-msg { display:flex; gap:10px; max-width:100%; }
+    .aic-msg.user { flex-direction:row-reverse; }
+    .aic-avatar { width:28px; height:28px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; }
+    .aic-msg.bot .aic-avatar { background:rgba(91,94,244,.12); color:var(--accent); }
+    .aic-msg.user .aic-avatar { background:var(--surface-hover); color:var(--text); }
+    .aic-bubble { background:var(--surface); padding:11px 14px; border-radius:14px; font-size:13px; line-height:1.6; color:var(--text); max-width:320px; white-space:pre-wrap; word-break:break-word; }
+    .aic-msg.user .aic-bubble { background:var(--accent); color:#fff; }
+    .aic-msg.thinking .aic-bubble { color:var(--text-secondary); font-style:italic; }
+    .aic-time { font-size:10px; color:var(--text-secondary); margin-top:4px; }
+    .aic-suggestions { padding:8px 20px 4px; flex-shrink:0; display:flex; gap:6px; flex-wrap:wrap; }
+    .aic-suggestion { font-size:11px; padding:5px 10px; background:var(--surface); border:1px solid var(--border); border-radius:14px; cursor:pointer; transition:all .12s; color:var(--text-secondary); font-family:inherit; }
+    .aic-suggestion:hover { background:var(--accent-bg); border-color:var(--accent); color:var(--accent); }
+    .aic-input-area { padding:12px 16px 16px; border-top:1px solid var(--border); flex-shrink:0; }
+    .aic-input-row { display:flex; gap:8px; align-items:flex-end; background:var(--bg); border:1px solid var(--border); border-radius:14px; padding:8px 8px 8px 12px; transition:border-color .12s; }
+    .aic-input-row:focus-within { border-color:var(--accent); }
+    .aic-input { flex:1; border:none; background:none; resize:none; outline:none; font-family:inherit; font-size:13px; color:var(--text); min-height:22px; max-height:120px; line-height:1.4; padding:4px 0; }
+    .aic-send { width:32px; height:32px; border:none; background:var(--accent); color:#fff; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px; transition:opacity .15s; flex-shrink:0; }
+    .aic-send:hover { opacity:.88; }
+    .aic-send:disabled { opacity:.4; cursor:not-allowed; }
+    .aic-model-row { display:flex; justify-content:space-between; align-items:center; font-size:10.5px; color:var(--text-secondary); margin-top:8px; padding:0 4px; }
+    .aic-clear { background:none; border:none; color:var(--text-secondary); font-size:10.5px; cursor:pointer; padding:2px 6px; border-radius:4px; font-family:inherit; }
+    .aic-clear:hover { background:var(--surface-hover); color:var(--negative); }
+    /* ── 날짜 범위 선택 팝업 ── */
+    .date-range-pop { display:none; position:fixed; background:var(--card); border:1px solid var(--border); border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.16); padding:16px; z-index:550; min-width:280px; }
+    .date-range-pop.open { display:block; }
+    .date-range-pop h4 { font-size:13px; font-weight:700; color:var(--text); margin:0 0 12px; }
+    .date-range-row { display:flex; gap:8px; margin-bottom:10px; }
+    .date-range-field { flex:1; }
+    .date-range-field label { display:block; font-size:10.5px; color:var(--text-secondary); margin-bottom:4px; font-weight:600; }
+    .date-range-field input { width:100%; padding:7px 9px; border:1px solid var(--border); border-radius:7px; font-size:12px; background:var(--bg); color:var(--text); font-family:inherit; outline:none; }
+    .date-range-field input:focus { border-color:var(--accent); }
+    .date-range-presets { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+    .date-preset-btn { font-size:10.5px; padding:4px 9px; background:var(--surface); border:1px solid var(--border); border-radius:14px; cursor:pointer; color:var(--text-secondary); font-family:inherit; transition:all .12s; }
+    .date-preset-btn:hover { background:var(--accent-bg); color:var(--accent); border-color:var(--accent); }
+    .date-range-actions { display:flex; gap:6px; justify-content:flex-end; }
+    .date-range-actions button { padding:6px 12px; border-radius:7px; font-size:11.5px; font-weight:700; cursor:pointer; font-family:inherit; transition:opacity .12s; }
+    .date-range-apply { border:none; background:var(--accent); color:#fff; }
+    .date-range-clear { border:1px solid var(--border); background:transparent; color:var(--text-secondary); }
+    .date-range-apply:hover { opacity:.88; }
+    .date-range-clear:hover { background:var(--surface-hover); color:var(--text); }
+    /* Override 적용 시 chip 강조 */
+    .filter-chip.override-active { background:var(--accent-bg); border-color:var(--accent); color:var(--accent); }
     /* ── 인쇄(PDF) 스타일 ── */
     @media print {
       aside, .menu-btn, .product-focus-bar, .fab-btn, .fab-menu,
@@ -533,8 +587,9 @@
       </div>
     </div>
     <div class="sync-filter-right">
+      <button class="filter-chip" id="chip-aichat" onclick="toggleAIChatPanel()" title="AI 채팅 패널 열기" style="background:rgba(91,94,244,.08);border-color:var(--accent);color:var(--accent);">✦ Hey Sloom</button>
       <button class="filter-chip" id="chip-compare" onclick="toggleCompareMode()" title="두 달 비교 모드">📊 비교 모드</button>
-      <button class="filter-chip" id="chip-override" title="모든 섹션 기간 재정의">📅 Override date filter</button>
+      <button class="filter-chip" id="chip-override" onclick="toggleDateOverridePop(event)" title="기간 재정의">📅 <span id="chip-override-val">Override date filter</span></button>
     </div>
   </div>
   <!-- 칩 드롭다운 (재사용) -->
@@ -1009,6 +1064,71 @@
   </div>
 </div>
 
+<!-- ── AI 챗 풀 사이드 패널 (Hey Syncly 스타일) ── -->
+<div id="ai-chat-panel">
+  <div class="aic-header">
+    <div class="aic-title-wrap">
+      <div class="aic-title">✦ Hey Sloom</div>
+      <div class="aic-subtitle">데이터 기반 AI 어시스턴트</div>
+    </div>
+    <button class="aic-close" onclick="closeAIChatPanel()">×</button>
+  </div>
+  <div class="aic-context">
+    <span class="aic-ctx-chip active" data-ctx="all">전체</span>
+    <span class="aic-ctx-chip" data-ctx="kpi">KPI</span>
+    <span class="aic-ctx-chip" data-ctx="sku">SKU</span>
+    <span class="aic-ctx-chip" data-ctx="voc">VOC 키워드</span>
+    <span class="aic-ctx-chip" data-ctx="product" id="aic-ctx-product" style="display:none;"></span>
+  </div>
+  <div class="aic-messages" id="aic-messages">
+    <div class="aic-msg bot">
+      <div class="aic-avatar">✦</div>
+      <div><div class="aic-bubble">안녕하세요! 이번 달 리뷰 데이터에 대해 무엇이든 물어보세요. 추천 질문을 클릭하거나 직접 입력해보세요.</div></div>
+    </div>
+  </div>
+  <div class="aic-suggestions">
+    <button class="aic-suggestion" onclick="aicSuggest(this)">이번 달 가장 부정 리뷰가 많은 상품은?</button>
+    <button class="aic-suggestion" onclick="aicSuggest(this)">전월 대비 핵심 변화 요약</button>
+    <button class="aic-suggestion" onclick="aicSuggest(this)">개선이 시급한 SKU와 이유는?</button>
+    <button class="aic-suggestion" onclick="aicSuggest(this)">긍정 리뷰 핵심 키워드 분석</button>
+  </div>
+  <div class="aic-input-area">
+    <div class="aic-input-row">
+      <textarea class="aic-input" id="aic-input" placeholder="질문을 입력하세요... (Enter: 전송, Shift+Enter: 줄바꿈)" rows="1" onkeydown="aicInputKey(event)" oninput="aicInputResize(this)"></textarea>
+      <button class="aic-send" id="aic-send-btn" onclick="aicSend()" title="전송">▶</button>
+    </div>
+    <div class="aic-model-row">
+      <span>모델: <span id="aic-model-label">—</span></span>
+      <button class="aic-clear" onclick="aicClearHistory()">🗑 대화 초기화</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 날짜 범위 선택 팝업 ── -->
+<div class="date-range-pop" id="date-range-pop">
+  <h4>📅 기간 재정의 (Override date filter)</h4>
+  <div class="date-range-presets">
+    <button class="date-preset-btn" onclick="applyDatePreset(7)">최근 7일</button>
+    <button class="date-preset-btn" onclick="applyDatePreset(14)">최근 14일</button>
+    <button class="date-preset-btn" onclick="applyDatePreset(30)">최근 30일</button>
+    <button class="date-preset-btn" onclick="applyDatePreset('thismonth')">이번 달</button>
+  </div>
+  <div class="date-range-row">
+    <div class="date-range-field">
+      <label>시작일</label>
+      <input type="date" id="date-range-from" />
+    </div>
+    <div class="date-range-field">
+      <label>종료일</label>
+      <input type="date" id="date-range-to" />
+    </div>
+  </div>
+  <div class="date-range-actions">
+    <button class="date-range-clear" onclick="clearDateOverride()">초기화</button>
+    <button class="date-range-apply" onclick="applyDateOverride()">적용</button>
+  </div>
+</div>
+
 <!-- ── 인사이트 모달 ── -->
 <div id="insight-modal" onclick="insightModalOutsideClick(event)">
   <div class="im-container">
@@ -1084,7 +1204,7 @@ var REAL_DATA = {
   ]
 };
 
-var STATE = { brand:'슬룸', month:'2026-04', index:null, summary:null, products:null, keywords:null, ollamaModel: localStorage.getItem('ollamaModel') || 'exaone3.5:7.8b', skuSort:'review_count', skuMin:10, productFocus:null };
+var STATE = { brand:'슬룸', month:'2026-04', index:null, summary:null, products:null, keywords:null, ollamaModel: localStorage.getItem('ollamaModel') || 'exaone3.5:7.8b', skuSort:'review_count', skuMin:10, productFocus:null, dateOverride:null /* {from:'YYYY-MM-DD',to:'YYYY-MM-DD'} */ };
 var CUSTOM_CHARTS = {};
 var customChartIdx = 0;
 var CHARTS = {};
@@ -1524,6 +1644,7 @@ function renderTimeline(){
     }
   }
   var tl=(STATE.summary||REAL_DATA.summary).timeline;
+  tl=filterTimelineByOverride(tl);
   var dates=tl.map(function(d){return d.date.slice(5);}),counts=tl.map(function(d){return d.count;}),ratings=tl.map(function(d){return d.avg_rating;});
   ChartManager.safeInit('timeline-chart',{type:'bar',data:{labels:dates,datasets:[
     {type:'bar',label:'리뷰수',data:counts,backgroundColor:'rgba(91,94,244,0.35)',yAxisID:'y',borderRadius:3,maxBarThickness:18},
@@ -1759,34 +1880,32 @@ function renderVOC(){
   renderKwBar('complaint-chart',bi.complaint||[],'rgba(220,38,38,0.7)',function(word,cnt,el,evt){showCIPKeyword(word,cnt,'부정',el,evt);});
   renderKwBar('improve-chart',bi.improvement||[],'rgba(245,158,11,0.7)',function(word,cnt,el,evt){showCIPKeyword(word,cnt,'개선',el,evt);});
   var neg=STATE.products||REAL_DATA.products;
+  if(STATE.productFocus) neg=neg.filter(function(p){return p.name===STATE.productFocus;});
   var cont=$('negative-reviews-list'); if(!cont) return; cont.innerHTML='';
-  // 부정 리뷰 샘플: top_reviews에서 별점 낮은 리뷰 우선 표시
+  // 부정 리뷰 샘플: bottom_reviews 우선 사용, 없으면 top_reviews 별점 ≤3 fallback
   var reviewSamples=[];
-  // 1차: 별점 ≤2 리뷰만 수집
-  neg.filter(function(p){return p.review_count>=5&&p.negative_rate>0;})
-    .sort(function(a,b){return b.negative_rate-a.negative_rate;}).slice(0,8)
+  neg.filter(function(p){return p.review_count>=3;})
+    .sort(function(a,b){return b.negative_rate-a.negative_rate;}).slice(0,12)
     .forEach(function(p){
-      if(p.top_reviews&&p.top_reviews.length){
-        p.top_reviews.filter(function(r){return r.rating<=2;}).slice(0,2).forEach(function(r){
-          reviewSamples.push({name:p.name,rating:r.rating,text:r.text,date:r.date,negRate:p.negative_rate});
+      if(p.bottom_reviews&&p.bottom_reviews.length){
+        p.bottom_reviews.slice(0,2).forEach(function(r){
+          if(!reviewSamples.some(function(s){return s.text===r.text;}))
+            reviewSamples.push({name:p.name,rating:r.rating,text:r.text,date:r.date,negRate:p.negative_rate});
         });
       }
     });
-  // 2차 fallback: 별점 ≤3 (긍정 리뷰 혼입 방지를 위해 rating 3 이하만)
+  // fallback: 데이터 부족 시 top_reviews에서 별점 ≤3
   if(reviewSamples.length<3){
-    neg.filter(function(p){return p.review_count>=5&&p.negative_rate>0;})
-      .sort(function(a,b){return b.negative_rate-a.negative_rate;}).slice(0,8)
+    neg.filter(function(p){return p.review_count>=5;})
       .forEach(function(p){
-        if(reviewSamples.length>=4) return;
-        if(p.top_reviews&&p.top_reviews.length){
-          p.top_reviews.filter(function(r){return r.rating<=3;}).slice(0,1).forEach(function(r){
-            if(!reviewSamples.some(function(s){return s.text===r.text;}))
-              reviewSamples.push({name:p.name,rating:r.rating,text:r.text,date:r.date,negRate:p.negative_rate});
-          });
-        }
+        if(reviewSamples.length>=6) return;
+        (p.top_reviews||[]).filter(function(r){return r.rating<=3;}).slice(0,1).forEach(function(r){
+          if(!reviewSamples.some(function(s){return s.text===r.text;}))
+            reviewSamples.push({name:p.name,rating:r.rating,text:r.text,date:r.date,negRate:p.negative_rate});
+        });
       });
   }
-  reviewSamples.slice(0,4).forEach(function(r){
+  reviewSamples.slice(0,6).forEach(function(r){
     var starsHtml=''; for(var i=1;i<=5;i++) starsHtml+=i<=r.rating?'★':'☆';
     var div=document.createElement('div'); div.className='review-card';
     div.title='클릭하면 전체 리뷰 보기';
@@ -2701,9 +2820,315 @@ function clearProductFilter(){
 function toggleAddFilterPop(e){
   e.stopPropagation();
   if($('chip-pop').classList.contains('open')){closeChipPop();return;}
-  var html='<button class="chip-pop-item" onclick="toggleProductPop({currentTarget:document.getElementById(\'chip-add-btn\'),stopPropagation:function(){}});">🛒 상품 필터 추가</button>'+
-           '<button class="chip-pop-item" onclick="toggleCompareMode();closeChipPop();">📊 비교 모드 켜기</button>';
+  var prodLabel=STATE.productFocus?'상품 필터 변경':'🛒 상품 필터 추가';
+  var dateLabel=STATE.dateOverride?'📅 기간 변경':'📅 기간 재정의 추가';
+  var html='<button class="chip-pop-item" onclick="closeChipPop();setTimeout(function(){toggleProductPop({currentTarget:document.getElementById(\'chip-add-btn\'),stopPropagation:function(){}});},10);">'+prodLabel+'</button>'+
+           '<button class="chip-pop-item" onclick="closeChipPop();setTimeout(function(){toggleDateOverridePop({currentTarget:document.getElementById(\'chip-override\'),stopPropagation:function(){}});},10);">'+dateLabel+'</button>'+
+           '<button class="chip-pop-item" onclick="toggleCompareMode();closeChipPop();">📊 비교 모드 토글</button>'+
+           '<button class="chip-pop-item" onclick="toggleAIChatPanel();closeChipPop();">✦ AI 챗 패널 열기</button>';
   showChipPop(e.currentTarget, html);
+}
+
+// ── 📅 Override date filter ──
+function toggleDateOverridePop(e){
+  e.stopPropagation();
+  var pop=$('date-range-pop');
+  if(!pop) return;
+  if(pop.classList.contains('open')){pop.classList.remove('open');return;}
+  var rect=e.currentTarget.getBoundingClientRect();
+  pop.style.position='fixed';
+  pop.style.right=(window.innerWidth-rect.right)+'px';
+  pop.style.top=(rect.bottom+6)+'px';
+  pop.style.left='auto';
+  // 현재 값 채우기
+  if(STATE.dateOverride){
+    $('date-range-from').value=STATE.dateOverride.from||'';
+    $('date-range-to').value=STATE.dateOverride.to||'';
+  }else{
+    // 기본값: 현재 월의 1일~말일
+    var p=STATE.month.split('-');
+    var lastDay=new Date(parseInt(p[0]),parseInt(p[1]),0).getDate();
+    $('date-range-from').value=STATE.month+'-01';
+    $('date-range-to').value=STATE.month+'-'+String(lastDay).padStart(2,'0');
+  }
+  pop.classList.add('open');
+  setTimeout(function(){
+    function outside(ev){
+      if(!ev.target.closest('#date-range-pop')&&!ev.target.closest('#chip-override')){
+        pop.classList.remove('open'); document.removeEventListener('click',outside);
+      }
+    }
+    document.addEventListener('click',outside);
+  },0);
+}
+
+function applyDatePreset(p){
+  var now=STATE.summary&&STATE.summary.timeline&&STATE.summary.timeline.length
+    ? new Date(STATE.summary.timeline[STATE.summary.timeline.length-1].date)
+    : new Date();
+  var from, to;
+  to=new Date(now);
+  if(p==='thismonth'){
+    from=new Date(now.getFullYear(), now.getMonth(), 1);
+  }else{
+    from=new Date(now); from.setDate(from.getDate()-(p-1));
+  }
+  $('date-range-from').value=fmtDateInput(from);
+  $('date-range-to').value=fmtDateInput(to);
+}
+
+function fmtDateInput(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function applyDateOverride(){
+  var from=$('date-range-from').value, to=$('date-range-to').value;
+  if(!from||!to){ alert('시작일과 종료일을 모두 선택하세요.'); return; }
+  if(from>to){ alert('시작일이 종료일보다 늦을 수 없습니다.'); return; }
+  STATE.dateOverride={from:from,to:to};
+  $('date-range-pop').classList.remove('open');
+  $('chip-override').classList.add('override-active');
+  $('chip-override-val').textContent=from.slice(5)+' ~ '+to.slice(5);
+  render();
+}
+
+function clearDateOverride(){
+  STATE.dateOverride=null;
+  $('date-range-pop').classList.remove('open');
+  $('chip-override').classList.remove('override-active');
+  $('chip-override-val').textContent='Override date filter';
+  render();
+}
+
+// 타임라인 필터링 — 일별 데이터 필터링용 헬퍼
+function filterTimelineByOverride(timeline){
+  if(!STATE.dateOverride||!timeline) return timeline;
+  var f=STATE.dateOverride.from, t=STATE.dateOverride.to;
+  return timeline.filter(function(d){ return d.date>=f && d.date<=t; });
+}
+
+// ── 카드 ⋯ 메뉴 실제 기능 구현 ──
+function cardMenuExportPNG(btn){
+  var card=btn.closest('.card, .chart-card');
+  if(!card) return;
+  var canvas=card.querySelector('canvas');
+  if(canvas){
+    var url=canvas.toDataURL('image/png');
+    var a=document.createElement('a');
+    a.href=url; a.download='chart_'+Date.now()+'.png';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }else{
+    // html2canvas 없이 인쇄용 새 창
+    var w=window.open('','_blank','width=900,height=700');
+    w.document.write('<html><head><title>차트 내보내기</title><style>body{font-family:sans-serif;margin:20px;}'+document.querySelector('style').textContent+'</style></head><body>'+card.outerHTML+'</body></html>');
+    w.document.close();
+    setTimeout(function(){w.print();},250);
+  }
+  closeCardMenus();
+}
+
+function cardMenuOpenNewWindow(btn){
+  var card=btn.closest('.card, .chart-card');
+  if(!card) return;
+  var w=window.open('','_blank','width=900,height=700');
+  w.document.write('<html><head><title>'+(card.querySelector('.card-title')?.textContent||'카드 보기')+'</title>'+
+    '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"><\/script>'+
+    '<style>body{font-family:sans-serif;margin:20px;background:'+getComputedStyle(document.body).background+';}'+document.querySelector('style').textContent+'</style></head><body>'+card.outerHTML+'</body></html>');
+  w.document.close();
+  closeCardMenus();
+}
+
+function cardMenuDownloadCSV(btn){
+  var card=btn.closest('.card, .chart-card');
+  if(!card) return;
+  // 차트가 있으면 차트 데이터 CSV, 테이블이 있으면 테이블 CSV
+  var rows=[];
+  var canvas=card.querySelector('canvas');
+  if(canvas&&canvas.chart){
+    var c=canvas.chart;
+    rows.push(['label'].concat(c.data.datasets.map(function(ds,i){return ds.label||'series'+(i+1);})));
+    (c.data.labels||[]).forEach(function(lbl,idx){
+      var row=[lbl];
+      c.data.datasets.forEach(function(ds){row.push(ds.data[idx]);});
+      rows.push(row);
+    });
+  }else{
+    var tbl=card.querySelector('table');
+    if(tbl){
+      tbl.querySelectorAll('tr').forEach(function(tr){
+        var r=[]; tr.querySelectorAll('th,td').forEach(function(c){r.push(c.textContent.trim().replace(/\s+/g,' '));});
+        rows.push(r);
+      });
+    }
+  }
+  if(!rows.length){ alert('내보낼 데이터가 없습니다.'); return; }
+  var csv=rows.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a'); a.href=url; a.download='card_'+Date.now()+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  closeCardMenus();
+}
+
+function cardMenuAskAI(btn){
+  var card=btn.closest('.card, .chart-card');
+  if(!card) return;
+  var title=card.querySelector('.card-title')?.textContent||'이 카드';
+  openAIChatPanel();
+  setTimeout(function(){
+    $('aic-input').value=title.trim()+' 데이터에 대해 분석해줘';
+    aicInputResize($('aic-input'));
+    $('aic-input').focus();
+  },200);
+  closeCardMenus();
+}
+
+function closeCardMenus(){
+  document.querySelectorAll('.card-menu-pop.open').forEach(function(m){m.classList.remove('open');});
+}
+
+// ── AI 챗 풀 사이드 패널 ──
+var AIC_HISTORY=[]; // {role:'user'|'bot', text, ts}
+var AIC_CTX='all';
+
+function openAIChatPanel(){
+  $('ai-chat-panel').classList.add('open');
+  updateAICCtx();
+  var ml=$('aic-model-label'); if(ml) ml.textContent=STATE.ollamaModel||'—';
+  // 상품 컨텍스트 칩 표시/숨김
+  var pCtx=$('aic-ctx-product');
+  if(STATE.productFocus){
+    pCtx.style.display='inline-flex';
+    pCtx.textContent='🛒 '+(fmtS(STATE.productFocus)||STATE.productFocus);
+  }else{
+    pCtx.style.display='none';
+  }
+}
+
+function closeAIChatPanel(){
+  $('ai-chat-panel').classList.remove('open');
+}
+
+function toggleAIChatPanel(){
+  if($('ai-chat-panel').classList.contains('open')) closeAIChatPanel();
+  else openAIChatPanel();
+}
+
+function updateAICCtx(){
+  document.querySelectorAll('.aic-ctx-chip').forEach(function(c){
+    c.classList.toggle('active', c.getAttribute('data-ctx')===AIC_CTX);
+    if(!c.onclick && c.getAttribute('data-ctx')){
+      c.onclick=function(){ AIC_CTX=this.getAttribute('data-ctx'); updateAICCtx(); };
+      c.style.cursor='pointer';
+    }
+  });
+}
+
+function aicInputResize(el){
+  el.style.height='auto';
+  el.style.height=Math.min(120, el.scrollHeight)+'px';
+}
+
+function aicInputKey(e){
+  if(e.key==='Enter'&&!e.shiftKey){
+    e.preventDefault();
+    aicSend();
+  }
+}
+
+function aicSuggest(btn){
+  $('aic-input').value=btn.textContent;
+  aicInputResize($('aic-input'));
+  aicSend();
+}
+
+function aicAddMessage(role, text){
+  var msgsEl=$('aic-messages');
+  var wrap=document.createElement('div');
+  wrap.className='aic-msg '+role+(text==='...'?' thinking':'');
+  wrap.innerHTML='<div class="aic-avatar">'+(role==='user'?'나':'✦')+'</div>'+
+    '<div><div class="aic-bubble">'+(text||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>'+
+    '<div class="aic-time">'+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})+'</div></div>';
+  msgsEl.appendChild(wrap);
+  msgsEl.scrollTop=msgsEl.scrollHeight;
+  AIC_HISTORY.push({role:role,text:text,ts:Date.now()});
+  return wrap;
+}
+
+function aicBuildContext(){
+  var k=(STATE.summary||REAL_DATA.summary).kpis;
+  var prods=(STATE.products||REAL_DATA.products);
+  var prod=STATE.productFocus?prods.find(function(p){return p.name===STATE.productFocus;}):null;
+  var kw=STATE.keywords||REAL_DATA.keywords;
+  var bi=(kw&&kw.by_intent)||{};
+  var ctx=[];
+  ctx.push('[데이터] 브랜드: '+STATE.brand+' / 기간: '+STATE.month+(STATE.dateOverride?' (재정의: '+STATE.dateOverride.from+'~'+STATE.dateOverride.to+')':''));
+  if(prod) ctx.push('[상품 포커스] '+prod.name+' (리뷰 '+prod.review_count+'건, ★'+prod.avg_rating+', 긍정 '+(prod.positive_rate||0).toFixed(1)+'%, 부정 '+(prod.negative_rate||0).toFixed(2)+'%)');
+  if(AIC_CTX==='all'||AIC_CTX==='kpi'){
+    var kk=prod?{tr:prod.review_count,ar:prod.avg_rating,pr:prod.positive_rate||0,nr:prod.negative_rate||0}:{tr:k.total_reviews,ar:k.avg_rating,pr:k.positive_rate||0,nr:k.negative_rate||0};
+    ctx.push('[KPI] 총리뷰: '+kk.tr+'건, 평균별점: '+kk.ar+', 긍정률: '+kk.pr.toFixed(1)+'%, 부정률: '+kk.nr.toFixed(2)+'%');
+  }
+  if(AIC_CTX==='all'||AIC_CTX==='sku'){
+    var skuTop=prods.slice().sort(function(a,b){return b.review_count-a.review_count;}).slice(0,5);
+    ctx.push('[SKU Top5] '+skuTop.map(function(p){return p.name+'('+p.review_count+'건, 긍'+(p.positive_rate||0).toFixed(1)+'%/부'+(p.negative_rate||0).toFixed(2)+'%)';}).join(' | '));
+    var skuNeg=prods.filter(function(p){return p.review_count>=10;}).sort(function(a,b){return b.negative_rate-a.negative_rate;}).slice(0,3);
+    ctx.push('[부정률 상위3] '+skuNeg.map(function(p){return p.name+'('+p.negative_rate.toFixed(2)+'%)';}).join(' | '));
+  }
+  if(AIC_CTX==='all'||AIC_CTX==='voc'){
+    if(bi.praise) ctx.push('[칭찬키워드] '+bi.praise.slice(0,6).map(function(k){return k.word+'('+k.count+')';}).join(', '));
+    if(bi.complaint) ctx.push('[불만키워드] '+bi.complaint.slice(0,6).map(function(k){return k.word+'('+k.count+')';}).join(', '));
+    if(bi.improvement) ctx.push('[개선요청] '+bi.improvement.slice(0,6).map(function(k){return k.word+'('+k.count+')';}).join(', '));
+  }
+  return ctx.join('\n');
+}
+
+async function aicSend(){
+  var inputEl=$('aic-input');
+  var q=(inputEl.value||'').trim();
+  if(!q) return;
+  inputEl.value=''; aicInputResize(inputEl);
+  aicAddMessage('user', q);
+  $('aic-send-btn').disabled=true;
+  var botMsg=aicAddMessage('bot', '...');
+  var bubble=botMsg.querySelector('.aic-bubble');
+
+  var online=$('ollama-dot').className.indexOf('online')>=0;
+  if(!online){
+    bubble.textContent='⚠️ Ollama가 오프라인입니다. `ollama serve` 실행 후 다시 시도해주세요.';
+    botMsg.classList.remove('thinking');
+    $('aic-send-btn').disabled=false;
+    return;
+  }
+
+  var ctx=aicBuildContext();
+  // 대화 히스토리 (최근 6턴)
+  var historyText=AIC_HISTORY.slice(-7,-1).filter(function(m){return m.text!=='...';})
+    .map(function(m){return (m.role==='user'?'사용자: ':'AI: ')+m.text;}).join('\n');
+  var prompt=ctx+'\n\n'+(historyText?'[이전 대화]\n'+historyText+'\n\n':'')+'[질문] '+q+'\n\n위 데이터를 바탕으로 한국어로 친절하게 답변하세요. 핵심만 3-6줄로.';
+
+  try{
+    var r=await fetch('http://localhost:11434/api/generate',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:STATE.ollamaModel||'exaone3.5:7.8b', prompt:prompt, stream:false}),
+      signal:AbortSignal.timeout(60000)
+    });
+    var data=await r.json();
+    bubble.textContent=data.response||'(응답 없음)';
+    botMsg.classList.remove('thinking');
+    // AIC_HISTORY 마지막 항목 업데이트
+    if(AIC_HISTORY.length>0) AIC_HISTORY[AIC_HISTORY.length-1].text=data.response||'';
+  }catch(err){
+    bubble.textContent='❌ 오류: '+err.message;
+    botMsg.classList.remove('thinking');
+  }
+  $('aic-send-btn').disabled=false;
+}
+
+function aicClearHistory(){
+  if(!confirm('대화 기록을 모두 삭제하시겠습니까?')) return;
+  AIC_HISTORY=[];
+  $('aic-messages').innerHTML='<div class="aic-msg bot"><div class="aic-avatar">✦</div><div><div class="aic-bubble">대화가 초기화되었습니다. 새 질문을 입력하세요.</div></div></div>';
 }
 
 // ── 구매경험 VOC 카반 동적 렌더 ──
@@ -2817,9 +3242,11 @@ function toggleCardMenu(btn){
   }
   var pop=document.createElement('div');
   pop.className='card-menu-pop open';
-  pop.innerHTML='<button class="card-menu-item" onclick="this.closest(\'.card-menu-pop\').classList.remove(\'open\');alert(\'커스텀 차트로 복제 기능 (구현 예정)\');"><span class="ic">📋</span>Custom 차트로 복제</button>'+
-    '<button class="card-menu-item" onclick="this.closest(\'.card-menu-pop\').classList.remove(\'open\');window.print();"><span class="ic">🖨</span>인쇄 / PDF</button>'+
-    '<button class="card-menu-item" onclick="this.closest(\'.card-menu-pop\').classList.remove(\'open\');"><span class="ic">✕</span>닫기</button>';
+  pop.innerHTML='<button class="card-menu-item" onclick="cardMenuAskAI(this)"><span class="ic">✦</span>AI에게 분석 요청</button>'+
+    '<button class="card-menu-item" onclick="cardMenuExportPNG(this)"><span class="ic">🖼</span>PNG로 저장</button>'+
+    '<button class="card-menu-item" onclick="cardMenuDownloadCSV(this)"><span class="ic">📊</span>CSV 다운로드</button>'+
+    '<button class="card-menu-item" onclick="cardMenuOpenNewWindow(this)"><span class="ic">🪟</span>새 창으로 보기</button>'+
+    '<button class="card-menu-item" onclick="window.print();this.closest(\'.card-menu-pop\').classList.remove(\'open\');"><span class="ic">🖨</span>인쇄 / PDF</button>';
   card.style.position='relative';
   btn.parentElement.appendChild(pop);
   setTimeout(function(){
@@ -2844,12 +3271,16 @@ document.addEventListener('DOMContentLoaded', async function(){
   renderPVOCKanban();
   enhanceCardActions();
   setInterval(pingOllama, 30000);
+  // 모델 라벨 동기화
+  var aicMl=$('aic-model-label'); if(aicMl) aicMl.textContent=STATE.ollamaModel||'—';
   // ESC 키로 패널/모달 닫기
   document.addEventListener('keydown', function(e){
     if(e.key==='Escape'){
       if($('insight-modal')&&$('insight-modal').classList.contains('open')) closeInsightModal();
+      else if($('ai-chat-panel')&&$('ai-chat-panel').classList.contains('open')) closeAIChatPanel();
       else if($('product-detail-panel')&&$('product-detail-panel').classList.contains('open')) closeProductPanel();
       else if($('chip-pop')&&$('chip-pop').classList.contains('open')) closeChipPop();
+      else if($('date-range-pop')&&$('date-range-pop').classList.contains('open')) $('date-range-pop').classList.remove('open');
     }
   });
 });
