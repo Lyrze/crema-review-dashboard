@@ -200,6 +200,35 @@
     .cb-select { padding:6px 24px 6px 10px; border:1px solid var(--border); border-radius:7px; font-size:12px; color:var(--text); background:var(--bg); cursor:pointer; font-family:inherit; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 8px center; }
     .add-chart-btn { padding:6px 14px; background:var(--accent); color:#fff; border:none; border-radius:7px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; }
     .add-chart-btn:hover { opacity:.88; }
+    /* FAB 차트 추가 버튼 */
+    .chart-fab { position:fixed; bottom:32px; right:32px; width:52px; height:52px; border-radius:50%; background:var(--accent); color:#fff; font-size:24px; cursor:pointer; border:none; box-shadow:0 4px 16px rgba(0,0,0,.25); z-index:1000; transition:transform .15s; display:flex; align-items:center; justify-content:center; line-height:1; }
+    .chart-fab:hover { transform:scale(1.1); }
+    /* 차트 모달 */
+    .chart-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:2000; display:flex; align-items:center; justify-content:center; }
+    .chart-modal-box { background:var(--bg); border:1px solid var(--border); border-radius:16px; padding:28px 28px 24px; min-width:360px; max-width:480px; box-shadow:0 8px 32px rgba(0,0,0,.18); }
+    .chart-modal-box h3 { font-size:16px; font-weight:800; margin-bottom:18px; }
+    .chart-modal-row { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+    .chart-modal-row label { font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.5px; }
+    .chart-modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:8px; }
+    .modal-btn-primary { padding:8px 20px; background:var(--accent); color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
+    .modal-btn-primary:hover { opacity:.88; }
+    .modal-btn-cancel { padding:8px 16px; background:var(--surface); color:var(--text-secondary); border:1px solid var(--border); border-radius:8px; font-size:13px; cursor:pointer; font-family:inherit; }
+    .modal-btn-cancel:hover { background:var(--surface-hover); }
+    /* AI 인라인 질문 */
+    .ai-inline-ask { margin-top:14px; padding-top:12px; border-top:1px dashed var(--border); }
+    .ai-inline-ask-label { font-size:11px; font-weight:600; color:var(--text-secondary); margin-bottom:4px; }
+    .ai-inline-ask-row { display:flex; gap:6px; margin-top:4px; align-items:flex-start; }
+    .ai-inline-input { flex:1; padding:7px 10px; border:1px solid var(--border); border-radius:7px; font-size:12px; font-family:inherit; color:var(--text); background:var(--bg); resize:none; line-height:1.5; }
+    .ai-inline-input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-bg); }
+    .ai-inline-send { padding:7px 12px; background:var(--accent-bg); color:var(--accent); border:1px solid var(--accent); border-radius:7px; font-size:11px; font-weight:700; cursor:pointer; font-family:inherit; white-space:nowrap; flex-shrink:0; }
+    .ai-inline-send:hover { background:var(--accent); color:#fff; }
+    .ai-inline-send:disabled { opacity:.5; cursor:wait; }
+    .ai-inline-answer { margin-top:10px; padding:10px 12px; background:var(--surface); border:1px solid var(--border); border-radius:7px; font-size:12px; color:var(--text); white-space:pre-wrap; line-height:1.65; display:none; }
+    /* 드래그 핸들 */
+    .drag-handle { cursor:grab; color:var(--text-secondary); font-size:16px; opacity:.45; transition:opacity .12s; user-select:none; padding:2px 4px; margin-right:2px; }
+    .drag-handle:hover { opacity:1; }
+    section[id][draggable="true"] { transition:opacity .15s; }
+    section[id].drag-over { outline:2px dashed var(--accent); outline-offset:2px; border-radius:12px; }
   </style>
 </head>
 <body>
@@ -272,7 +301,7 @@
   <section class="section animate delay-1" id="sec-exec" aria-label="Executive Summary">
     <div class="section-header">
       <div>
-        <div class="section-title"><span class="sec-num">1</span>Executive Summary</div>
+        <div class="section-title"><span class="drag-handle" title="드래그해서 이동">⠿</span><span class="sec-num">1</span>Executive Summary</div>
         <div class="section-subtitle">핵심 성과 지표 요약</div>
       </div>
     </div>
@@ -312,7 +341,7 @@
   <section class="section animate delay-2" id="sec-kpi" aria-label="리뷰 지표 통합">
     <div class="section-header">
       <div>
-        <div class="section-title"><span class="sec-num">2</span>리뷰 지표 통합</div>
+        <div class="section-title"><span class="drag-handle" title="드래그해서 이동">⠿</span><span class="sec-num">2</span>리뷰 지표 통합</div>
         <div class="section-subtitle">전월 대비 핵심 지표 비교</div>
       </div>
       <button class="ai-analyze-btn" id="btn-ai-kpi" onclick="aiAnalyzeSection('kpi')">✦ AI 분석</button>
@@ -370,7 +399,7 @@
   <section class="section animate delay-3" id="sec-sku-table" aria-label="SKU별 데이터">
     <div class="section-header">
       <div>
-        <div class="section-title"><span class="sec-num">3</span>SKU별 데이터</div>
+        <div class="section-title"><span class="drag-handle" title="드래그해서 이동">⠿</span><span class="sec-num">3</span>SKU별 데이터</div>
         <div class="section-subtitle">리뷰 수 기준 정렬 · 리뷰 10건 이상 상품</div>
       </div>
       <button class="ai-analyze-btn" id="btn-ai-sku" onclick="aiAnalyzeSection('sku')">✦ AI 분석</button>
@@ -414,7 +443,7 @@
   <section class="section animate delay-3" id="sec-sku-combo" aria-label="SKU 콤보차트">
     <div class="section-header">
       <div>
-        <div class="section-title"><span class="sec-num">4</span>SKU 콤보차트</div>
+        <div class="section-title"><span class="drag-handle" title="드래그해서 이동">⠿</span><span class="sec-num">4</span>SKU 콤보차트</div>
         <div class="section-subtitle">상품별 리뷰 수(막대) + 평균 별점(라인) · 상위 6개 SKU</div>
       </div>
     </div>
@@ -426,7 +455,7 @@
   <section class="section animate delay-4" id="sec-sku-change" aria-label="SKU 변화">
     <div class="section-header">
       <div>
-        <div class="section-title"><span class="sec-num">5</span>SKU 변화 테이블</div>
+        <div class="section-title"><span class="drag-handle" title="드래그해서 이동">⠿</span><span class="sec-num">5</span>SKU 변화 테이블</div>
         <div class="section-subtitle">전월 대비 리뷰 수 &amp; 별점 변화 (MoM)</div>
       </div>
     </div>
@@ -456,7 +485,7 @@
   <section class="section animate delay-4" id="sec-voc" aria-label="상품 VOC">
     <div class="section-header">
       <div>
-        <div class="section-title"><span class="sec-num">6</span>상품 VOC <span class="ai-tag">✦ AI</span></div>
+        <div class="section-title"><span class="drag-handle" title="드래그해서 이동">⠿</span><span class="sec-num">6</span>상품 VOC <span class="ai-tag">✦ AI</span></div>
         <div class="section-subtitle">키워드 분석 · 긍정 / 부정 / 개선 제안</div>
       </div>
     </div>
@@ -511,7 +540,7 @@
   <section class="section animate delay-5" id="sec-pvoc" aria-label="구매경험 VOC">
     <div class="section-header">
       <div>
-        <div class="section-title"><span class="sec-num">7</span>구매경험 VOC</div>
+        <div class="section-title"><span class="drag-handle" title="드래그해서 이동">⠿</span><span class="sec-num">7</span>구매경험 VOC</div>
         <div class="section-subtitle">구매 전 / 후 경험 분류 분석</div>
       </div>
     </div>
@@ -590,7 +619,7 @@
   <section class="section animate delay-5" id="sec-ai-custom" aria-label="AI 커스텀 질문">
     <div class="section-header">
       <div>
-        <div class="section-title"><span class="sec-num">8</span>AI 커스텀 질문</div>
+        <div class="section-title"><span class="drag-handle" title="드래그해서 이동">⠿</span><span class="sec-num">8</span>AI 커스텀 질문</div>
         <div class="section-subtitle">데이터를 기반으로 자유롭게 질문하세요</div>
       </div>
     </div>
@@ -617,39 +646,63 @@
     </div>
   </section>
 
-  <!-- ⑨ 커스텀 차트 빌더 -->
+  <!-- ⑨ 커스텀 차트 -->
   <section class="section animate delay-5" id="sec-custom-chart" aria-label="커스텀 차트">
     <div class="section-header">
       <div>
-        <div class="section-title"><span class="sec-num">9</span>커스텀 차트</div>
-        <div class="section-subtitle">원하는 지표와 상품 범위를 선택해 차트를 직접 구성하세요</div>
+        <div class="section-title"><span class="drag-handle" title="드래그해서 이동">⠿</span><span class="sec-num">9</span>커스텀 차트</div>
+        <div class="section-subtitle">우하단 <strong>+</strong> 버튼으로 차트를 추가하세요</div>
       </div>
     </div>
-    <div class="card" style="margin-bottom:0;">
-      <div class="chart-builder-row">
-        <select class="cb-select" id="cb-metric">
+    <div class="custom-chart-grid" id="custom-chart-grid">
+      <div data-placeholder="1" style="grid-column:1/-1;text-align:center;padding:40px 0;color:var(--text-secondary);font-size:13px;">
+        우하단 <strong style="color:var(--accent)">+</strong> 버튼을 눌러 차트를 추가하세요
+      </div>
+    </div>
+  </section>
+
+  <!-- FAB: 플로팅 차트 추가 버튼 -->
+  <button class="chart-fab" onclick="openChartModal()" title="차트 추가">+</button>
+
+  <!-- 차트 추가 모달 -->
+  <div class="chart-modal-overlay" id="chart-modal" style="display:none" onclick="onModalOverlayClick(event)">
+    <div class="chart-modal-box" onclick="event.stopPropagation()">
+      <h3>📊 차트 추가</h3>
+      <div class="chart-modal-row">
+        <label>메트릭</label>
+        <select class="cb-select" id="modal-metric" style="width:100%">
           <option value="review_count">📝 리뷰 수</option>
           <option value="avg_rating">⭐ 평균 별점</option>
           <option value="positive_rate">👍 긍정률</option>
           <option value="negative_rate">👎 부정률</option>
         </select>
-        <select class="cb-select" id="cb-range">
+      </div>
+      <div class="chart-modal-row">
+        <label>범위</label>
+        <select class="cb-select" id="modal-range" style="width:100%">
           <option value="5">상위 5개</option>
           <option value="10">상위 10개</option>
           <option value="all">전체 상품</option>
         </select>
-        <select class="cb-select" id="cb-type">
-          <option value="bar">막대 차트</option>
-          <option value="hbar">가로 막대</option>
-          <option value="line">라인 차트</option>
-          <option value="doughnut">도넛 차트</option>
-        </select>
-        <button class="add-chart-btn" onclick="addCustomChart()">+ 차트 추가</button>
       </div>
-      <div style="font-size:11px;color:var(--text-secondary);margin-top:8px;">현재 로드된 데이터 기준으로 렌더링됩니다. 데이터 변경 후 새로 추가하세요.</div>
+      <div class="chart-modal-row">
+        <label>차트 타입</label>
+        <select class="cb-select" id="modal-type" style="width:100%">
+          <option value="bar">막대 (Bar)</option>
+          <option value="hbar">가로 막대 (Horizontal Bar)</option>
+          <option value="line">라인 (Line)</option>
+          <option value="area">영역 (Area)</option>
+          <option value="dotted">점선 (Dotted)</option>
+          <option value="doughnut">도넛 (Doughnut)</option>
+          <option value="radar">레이더 (Radar)</option>
+        </select>
+      </div>
+      <div class="chart-modal-actions">
+        <button class="modal-btn-cancel" onclick="closeChartModal()">닫기</button>
+        <button class="modal-btn-primary" onclick="addCustomChartFromModal()">+ 차트 추가</button>
+      </div>
     </div>
-    <div class="custom-chart-grid" id="custom-chart-grid"></div>
-  </section>
+  </div>
 
 </main>
 
@@ -741,7 +794,7 @@ function toggleMenu(){ $('sidebar').classList.toggle('open'); }
 
 async function pingOllama(){
   try{
-    var r=await fetch('http://localhost:11434/',{signal:AbortSignal.timeout(1500)});
+    var r=await fetch('http://localhost:11434/',{signal:AbortSignal.timeout(3000)});
     if(r.ok){
       $('ollama-dot').className='ollama-dot online';
       $('ollama-status').textContent='Ollama 연결됨';
@@ -854,6 +907,7 @@ async function aiAnalyzeSection(key){
     if(!r.ok) throw new Error('HTTP '+r.status);
     var d=await r.json();
     body.textContent=d.response||'응답 없음';
+    injectAIInlineAsk('ai-panel-'+key+'-body', key);
   }catch(e){
     body.textContent='[오류] '+e.message+'\n\nOllama가 실행 중인지 확인하고, 모델이 설치되어 있는지 확인해주세요.';
   }
@@ -871,6 +925,7 @@ async function loadIndex(){
     sel.value=STATE.brand;
   }catch(e){ $('brand-select').innerHTML='<option value="슬룸">슬룸</option>'; }
   populateMonths();
+  await reload();
 }
 
 function populateMonths(){
@@ -1178,6 +1233,7 @@ async function aiCustomQuestion(){
     if(!r.ok) throw new Error('HTTP '+r.status);
     var d=await r.json();
     body.textContent=d.response||'응답 없음';
+    injectAIInlineAsk('ai-panel-custom-body', 'custom');
   }catch(e){
     body.textContent='[오류] '+e.message+'\n\nOllama가 실행 중인지 확인하세요.';
   }
@@ -1185,20 +1241,52 @@ async function aiCustomQuestion(){
 }
 
 // ── 커스텀 차트 빌더 ──
-function addCustomChart(){
-  var metric=$('cb-metric')?$('cb-metric').value:'review_count';
-  var rangeVal=$('cb-range')?$('cb-range').value:'5';
-  var ctype=$('cb-type')?$('cb-type').value:'bar';
+var CHART_TYPE_LABELS = {bar:'막대',hbar:'가로막대',line:'라인',area:'영역',dotted:'점선',doughnut:'도넛',radar:'레이더'};
+var CHART_METRIC_LABELS = {review_count:'리뷰 수',avg_rating:'평균 별점',positive_rate:'긍정률 (%)',negative_rate:'부정률 (%)'};
+
+function buildCustomChartCfg(ctype, labels, values, mLabel, accent) {
+  var cfg;
+  if(ctype==='doughnut'){
+    var dc=labels.map(function(_,i){return 'hsl('+(200+i*28)%360+',55%,55%)';});
+    cfg={type:'doughnut',data:{labels:labels,datasets:[{data:values,backgroundColor:dc,borderWidth:2}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}},tooltip:{enabled:true}}}};
+  } else if(ctype==='radar'){
+    cfg={type:'radar',data:{labels:labels,datasets:[{label:mLabel,data:values,borderColor:accent,backgroundColor:accent+'33',pointBackgroundColor:accent,borderWidth:2,pointRadius:3}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:true}},
+        scales:{r:{ticks:{font:{size:10},backdropColor:'transparent'},grid:{color:'rgba(0,0,0,.07)'},angleLines:{color:'rgba(0,0,0,.07)'}}}}};
+  } else if(ctype==='area'){
+    cfg={type:'line',data:{labels:labels,datasets:[{label:mLabel,data:values,borderColor:accent,backgroundColor:accent+'22',borderWidth:2,tension:0.4,fill:true,pointRadius:3,pointBackgroundColor:accent}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:true}},
+        scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10}}}}}};
+  } else if(ctype==='dotted'){
+    cfg={type:'line',data:{labels:labels,datasets:[{label:mLabel,data:values,borderColor:accent,backgroundColor:'transparent',borderWidth:2,borderDash:[6,4],tension:0,fill:false,pointRadius:4,pointBackgroundColor:accent}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:true}},
+        scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10}}}}}};
+  } else {
+    var isH=ctype==='hbar';
+    cfg={type:'bar',data:{labels:labels,datasets:[{label:mLabel,data:values,backgroundColor:accent+'88',borderColor:accent,borderWidth:1,borderRadius:4,tension:0.3,fill:false}]},
+      options:{indexAxis:isH?'y':'x',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:true}},
+        scales:{x:{grid:{color:'rgba(0,0,0,.04)'}},y:{grid:{color:'rgba(0,0,0,.04)'}}}}};
+    if(ctype==='line') cfg.data.datasets[0].type='line';
+  }
+  return cfg;
+}
+
+function _doAddChart(metric, rangeVal, ctype) {
   var prods=(STATE.products||REAL_DATA.products).slice().sort(function(a,b){return b.review_count-a.review_count;});
   var limit=rangeVal==='all'?prods.length:parseInt(rangeVal);
   var filtered=prods.filter(function(p){return p.review_count>=5;}).slice(0,limit);
+  if(ctype==='radar') filtered=filtered.slice(0,8);
   if(!filtered.length){alert('표시할 데이터가 없습니다.');return;}
-  var mL={review_count:'리뷰 수',avg_rating:'평균 별점',positive_rate:'긍정률 (%)',negative_rate:'부정률 (%)'};
-  var tL={bar:'막대',hbar:'가로막대',line:'라인',doughnut:'도넛'};
-  var title=(mL[metric]||metric)+' — '+(tL[ctype]||ctype);
+  var mLabel=CHART_METRIC_LABELS[metric]||metric;
+  var tLabel=CHART_TYPE_LABELS[ctype]||ctype;
+  var title=mLabel+' — '+tLabel;
   customChartIdx++;
   var cid='ccc-'+customChartIdx;
   var grid=$('custom-chart-grid'); if(!grid) return;
+  // Remove placeholder if present
+  var placeholder=grid.querySelector('[data-placeholder]');
+  if(placeholder) placeholder.remove();
   var card=document.createElement('div'); card.className='custom-chart-card'; card.id='card-'+cid;
   card.innerHTML='<div class="custom-chart-head"><span class="custom-chart-title">'+title+'</span>'+
     '<button class="custom-chart-remove" onclick="removeCustomChart(''+cid+'')" title="제거">✕</button>'+
@@ -1207,18 +1295,7 @@ function addCustomChart(){
   var labels=filtered.map(function(p){return p.name.length>10?p.name.slice(0,9)+'…':p.name;});
   var values=filtered.map(function(p){return p[metric]||0;});
   var accent=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#5b5ef4';
-  var cfg;
-  if(ctype==='doughnut'){
-    var dc=filtered.map(function(_,i){return 'hsl('+(200+i*28)%360+',55%,55%)';});
-    cfg={type:'doughnut',data:{labels:labels,datasets:[{data:values,backgroundColor:dc,borderWidth:2}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}},tooltip:{enabled:true}}}};
-  } else {
-    var isH=ctype==='hbar';
-    cfg={type:'bar',data:{labels:labels,datasets:[{label:mL[metric]||metric,data:values,backgroundColor:accent+'88',borderColor:accent,borderWidth:1,borderRadius:4,tension:0.3,fill:false}]},
-      options:{indexAxis:isH?'y':'x',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:true}},
-        scales:{x:{grid:{color:'rgba(0,0,0,.04)'}},y:{grid:{color:'rgba(0,0,0,.04)'}}}}};
-    if(ctype==='line') cfg.data.datasets[0].type='line';
-  }
+  var cfg=buildCustomChartCfg(ctype, labels, values, mLabel, accent);
   if(typeof Chart!=='undefined'){
     if(CUSTOM_CHARTS[cid]){try{CUSTOM_CHARTS[cid].destroy();}catch(e){}}
     var cvs=document.getElementById(cid);
@@ -1226,16 +1303,168 @@ function addCustomChart(){
   }
 }
 
+// 모달에서 차트 추가
+function openChartModal(){
+  var m=$('chart-modal'); if(m) m.style.display='flex';
+}
+function closeChartModal(){
+  var m=$('chart-modal'); if(m) m.style.display='none';
+}
+function onModalOverlayClick(e){
+  if(e.target.id==='chart-modal') closeChartModal();
+}
+function addCustomChartFromModal(){
+  var metric=$('modal-metric')?$('modal-metric').value:'review_count';
+  var rangeVal=$('modal-range')?$('modal-range').value:'5';
+  var ctype=$('modal-type')?$('modal-type').value:'bar';
+  _doAddChart(metric, rangeVal, ctype);
+  closeChartModal();
+  // Scroll to chart section
+  var sec=$('sec-custom-chart');
+  if(sec) sec.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
 function removeCustomChart(cid){
   if(CUSTOM_CHARTS[cid]){try{CUSTOM_CHARTS[cid].destroy();}catch(e){} delete CUSTOM_CHARTS[cid];}
   var card=$('card-'+cid); if(card) card.remove();
 }
 
+// ── AI 인라인 질문 ──
+function injectAIInlineAsk(panelBodyId, sectionType) {
+  var body=document.getElementById(panelBodyId);
+  if(!body) return;
+  if(body.querySelector('.ai-inline-ask')) return; // 이미 주입됨
+  var askId='inline-ask-'+panelBodyId;
+  var answerId='inline-ans-'+panelBodyId;
+  var sendId='inline-send-'+panelBodyId;
+  var div=document.createElement('div');
+  div.className='ai-inline-ask';
+  div.innerHTML='<div class="ai-inline-ask-label">💬 추가 질문</div>'+
+    '<div class="ai-inline-ask-row">'+
+      '<textarea class="ai-inline-input" id="'+askId+'" rows="2" placeholder="이 분석에 대해 추가로 질문하세요..."></textarea>'+
+      '<button class="ai-inline-send" id="'+sendId+'" onclick="aiInlineQuestion(''+panelBodyId+'',''+sectionType+'')">전송</button>'+
+    '</div>'+
+    '<div class="ai-inline-answer" id="'+answerId+'"></div>';
+  body.appendChild(div);
+}
+
+async function aiInlineQuestion(panelBodyId, sectionType) {
+  var askId='inline-ask-'+panelBodyId;
+  var answerId='inline-ans-'+panelBodyId;
+  var sendId='inline-send-'+panelBodyId;
+  var inputEl=document.getElementById(askId);
+  var ansEl=document.getElementById(answerId);
+  var sendBtn=document.getElementById(sendId);
+  if(!inputEl||!ansEl) return;
+  var question=inputEl.value.trim();
+  if(!question){alert('질문을 입력해주세요.');return;}
+
+  if($('ollama-dot').className.indexOf('online')<0){
+    alert('Ollama가 오프라인입니다. ollama serve 실행 후 재시도하세요.');return;
+  }
+
+  var body=document.getElementById(panelBodyId);
+  var existingText=body ? (body.childNodes[0]?body.childNodes[0].textContent||'':'') : '';
+  // Get text content excluding the inline-ask div
+  var tempDiv=document.createElement('div');
+  tempDiv.innerHTML=body?body.innerHTML:'';
+  var inlineAsk=tempDiv.querySelector('.ai-inline-ask');
+  if(inlineAsk) inlineAsk.remove();
+  var prevAnalysis=tempDiv.textContent.trim().slice(0,800);
+
+  if(sendBtn){sendBtn.disabled=true; sendBtn.textContent='전송 중...';}
+  ansEl.style.display='block';
+  ansEl.textContent='답변 생성 중...';
+
+  var prompt='[기존 분석 내용]
+'+prevAnalysis+'
+
+[추가 질문]
+'+question+'
+
+한국어로 간결하게 답변해주세요.';
+  try{
+    var r=await fetch('http://localhost:11434/api/generate',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:STATE.ollamaModel,prompt:prompt,stream:false}),
+      signal:AbortSignal.timeout(60000)
+    });
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    var d=await r.json();
+    ansEl.textContent=d.response||'응답 없음';
+  }catch(e){
+    ansEl.textContent='[오류] '+e.message;
+  }
+  if(sendBtn){sendBtn.disabled=false; sendBtn.textContent='전송';}
+}
+
+// ── 섹션 드래그 리오더 ──
+var dragSrc = null;
+
+function initDragOrder() {
+  var secs = document.querySelectorAll('section[id]');
+  secs.forEach(function(sec) {
+    sec.setAttribute('draggable', 'true');
+    sec.addEventListener('dragstart', function(e) {
+      dragSrc = sec;
+      sec.style.opacity = '0.4';
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', sec.id);
+    });
+    sec.addEventListener('dragend', function() {
+      sec.style.opacity = '1';
+      document.querySelectorAll('section[id]').forEach(function(s){ s.classList.remove('drag-over'); });
+      saveSectionOrder();
+    });
+    sec.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      document.querySelectorAll('section[id]').forEach(function(s){ s.classList.remove('drag-over'); });
+      sec.classList.add('drag-over');
+    });
+    sec.addEventListener('dragleave', function() {
+      sec.classList.remove('drag-over');
+    });
+    sec.addEventListener('drop', function(e) {
+      e.preventDefault();
+      sec.classList.remove('drag-over');
+      if(dragSrc && dragSrc !== sec) {
+        var main = document.getElementById('main-content');
+        var nodes = Array.from(main.querySelectorAll('section[id]'));
+        var srcIdx = nodes.indexOf(dragSrc);
+        var dstIdx = nodes.indexOf(sec);
+        if(srcIdx < dstIdx) main.insertBefore(dragSrc, sec.nextSibling);
+        else main.insertBefore(dragSrc, sec);
+        saveSectionOrder();
+      }
+    });
+  });
+}
+
+function saveSectionOrder() {
+  var order = Array.from(document.querySelectorAll('section[id]')).map(function(s){ return s.id; });
+  try{ localStorage.setItem('sectionOrder', JSON.stringify(order)); }catch(e){}
+}
+
+function restoreSectionOrder() {
+  try{
+    var order = JSON.parse(localStorage.getItem('sectionOrder') || 'null');
+    if(!order) return;
+    var main = document.getElementById('main-content');
+    order.forEach(function(id) {
+      var sec = document.getElementById(id);
+      if(sec) main.appendChild(sec);
+    });
+  }catch(e){}
+}
+
 // ── 초기화 ──
-document.addEventListener('DOMContentLoaded',async function(){
+document.addEventListener('DOMContentLoaded', async function(){
+  restoreSectionOrder();
+  initDragOrder();
   pingOllama();
   await loadIndex();
-  setInterval(pingOllama,30000);
+  setInterval(pingOllama, 30000);
 });
 </script>
 </body>
