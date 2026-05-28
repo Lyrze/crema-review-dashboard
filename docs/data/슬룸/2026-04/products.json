@@ -2,7 +2,7 @@
   "products": [
     {
       "id": "909",
-      "name": "목 마사지 베개 V2 경추 마사지기 베개",
+      "name": "목마사지베개 V2",
       "raw_name": "목 마사지 베개 V2 경추 마사지기 베개",
       "price": 109000,
       "review_count": 1300,
@@ -92,26 +92,26 @@
     },
     {
       "id": "291",
-      "name": "목베개 플러스 경추 목 마사지기 베개",
+      "name": "목베개플러스",
       "raw_name": "목베개 플러스 경추 목 마사지기 베개",
       "price": 89000,
-      "review_count": 177,
-      "avg_rating": 4.15,
+      "review_count": 198,
+      "avg_rating": 4.18,
       "rating_distribution": {
-        "1": 18,
-        "2": 2,
-        "3": 23,
-        "4": 27,
-        "5": 107
+        "1": 19,
+        "2": 3,
+        "3": 24,
+        "4": 29,
+        "5": 123
       },
-      "photo_count": 66,
+      "photo_count": 70,
       "sentiment": {
-        "positive": 134,
-        "neutral": 23,
-        "negative": 20
+        "positive": 152,
+        "neutral": 24,
+        "negative": 22
       },
-      "positive_rate": 75.71,
-      "negative_rate": 11.3,
+      "positive_rate": 76.77,
+      "negative_rate": 11.11,
       "prev_review_count": null,
       "prev_avg_rating": null,
       "top_reviews": [
@@ -136,27 +136,27 @@
       ]
     },
     {
-      "id": "925",
-      "name": "구독자 한정 역대급 할인",
-      "raw_name": "★7일 특별 연장★ 덤순이X슬룸 구독자 한정 역대급 할인",
+      "id": "905",
+      "name": "(기타 프로모션)",
+      "raw_name": "[예나러브x슬룸] 구독자 전용 ★초특가★ 할인",
       "price": 98800,
-      "review_count": 52,
-      "avg_rating": 4.67,
+      "review_count": 69,
+      "avg_rating": 4.71,
       "rating_distribution": {
         "1": 2,
         "2": 1,
-        "3": 1,
-        "4": 4,
-        "5": 44
+        "3": 2,
+        "4": 5,
+        "5": 59
       },
-      "photo_count": 29,
+      "photo_count": 36,
       "sentiment": {
-        "positive": 48,
-        "neutral": 1,
+        "positive": 64,
+        "neutral": 2,
         "negative": 3
       },
-      "positive_rate": 92.31,
-      "negative_rate": 5.77,
+      "positive_rate": 92.75,
+      "negative_rate": 4.35,
       "prev_review_count": null,
       "prev_avg_rating": null,
       "top_reviews": [
@@ -167,41 +167,41 @@
           "date": "2026-04-30"
         },
         {
-          "review_id": "111720",
-          "text": "허리가점점편해지는느낌 좋아용",
+          "review_id": "111952",
+          "text": "좋은 할인 이벤트 받아서 부모님 선물드렸는디 너무 만족하시네요 어버이날 선물로 너무 만족스럽습니다.",
           "rating": 5,
-          "date": "2026-04-28"
+          "date": "2026-04-30"
         },
         {
-          "review_id": "111610",
-          "text": "허리디스크 손상으로 몇달째 걷기운동만 하고 있던 중에 덤순이 유튜브를 보게 되었습니다. 병원에서 소개한 허리 유연화 운동인 맥켄지 운동이 번거로와서 못하고 있었는데 잠자기 전에 침대위에 뉴워서  이걸로 비슷한 효과를 거둘 수 있어요.",
+          "review_id": "111933",
+          "text": "괜찮아요 부모님이 만족하세요 ",
           "rating": 5,
-          "date": "2026-04-28"
+          "date": "2026-04-29"
         }
       ]
     },
     {
       "id": "636",
-      "name": "허리편한케어 V2 허리 마사지기",
+      "name": "허리편한케어 V2",
       "raw_name": "허리편한케어 V2 허리 마사지기",
       "price": 129000,
-      "review_count": 52,
-      "avg_rating": 4.58,
+      "review_count": 56,
+      "avg_rating": 4.61,
       "rating_distribution": {
         "1": 1,
         "2": 0,
         "3": 4,
         "4": 10,
-        "5": 37
+        "5": 41
       },
-      "photo_count": 14,
+      "photo_count": 15,
       "sentiment": {
-        "positive": 47,
+        "positive": 51,
         "neutral": 4,
         "negative": 1
       },
-      "positive_rate": 90.38,
-      "negative_rate": 1.92,
+      "positive_rate": 91.07,
+      "negative_rate": 1.79,
       "prev_review_count": null,
       "prev_avg_rating": null,
       "top_reviews": [
@@ -272,7 +272,7 @@
     },
     {
       "id": "874",
-      "name": "발편한케어 프로 프리미엄 발 마사지기",
+      "name": "발편한케어 V2",
       "raw_name": "발편한케어 프로 프리미엄 발 마사지기",
       "price": 109000,
       "review_count": 19,
@@ -317,26 +317,26 @@
     },
     {
       "id": "100",
-      "name": "허리편한케어 V1 허리 마사지기",
+      "name": "허리편한케어 V1",
       "raw_name": "허리편한케어 V1 허리 마사지기",
       "price": 129000,
-      "review_count": 15,
-      "avg_rating": 4.6,
+      "review_count": 18,
+      "avg_rating": 4.67,
       "rating_distribution": {
         "1": 1,
         "2": 0,
         "3": 0,
         "4": 2,
-        "5": 12
+        "5": 15
       },
       "photo_count": 4,
       "sentiment": {
-        "positive": 14,
+        "positive": 17,
         "neutral": 0,
         "negative": 1
       },
-      "positive_rate": 93.33,
-      "negative_rate": 6.67,
+      "positive_rate": 94.44,
+      "negative_rate": 5.56,
       "prev_review_count": null,
       "prev_avg_rating": null,
       "top_reviews": [
@@ -362,7 +362,7 @@
     },
     {
       "id": "912",
-      "name": "목편한케어 목 마사지기",
+      "name": "목편한케어",
       "raw_name": "[힐링특가] 목편한케어 목 마사지기",
       "price": 61000,
       "review_count": 14,
@@ -406,71 +406,26 @@
       ]
     },
     {
-      "id": "724",
-      "name": "목베개 플러스",
-      "raw_name": "★최대할인 비밀링크★ 목베개 플러스 특가",
-      "price": 89000,
-      "review_count": 13,
-      "avg_rating": 4.23,
-      "rating_distribution": {
-        "1": 1,
-        "2": 1,
-        "3": 1,
-        "4": 1,
-        "5": 9
-      },
-      "photo_count": 4,
-      "sentiment": {
-        "positive": 10,
-        "neutral": 1,
-        "negative": 2
-      },
-      "positive_rate": 76.92,
-      "negative_rate": 15.38,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
-      "top_reviews": [
-        {
-          "review_id": "111935",
-          "text": "사용해보니 효과있는것같아서 하나더 재구매하려구요",
-          "rating": 5,
-          "date": "2026-04-29"
-        },
-        {
-          "review_id": "111588",
-          "text": "열어보고 한번 테스트해봤는데 맘에 안들어서 받은날 바로 당일 반품신청했는데 안받아줌 30일 써보고 반품하라고? 난 지금당장 반품해야겠는데 어쩔.. 일정이 있어서 30일후에 반품할 시간이 없어서 그냥 구매확정. 이런 서비스 정말 맘에 안듬",
-          "rating": 5,
-          "date": "2026-04-27"
-        },
-        {
-          "review_id": "109332",
-          "text": "배송 빠르고 제품 사용하니깐 시원한것같아요",
-          "rating": 5,
-          "date": "2026-04-11"
-        }
-      ]
-    },
-    {
       "id": "757",
-      "name": "발편한케어 V1 프리미엄 발 마사지기",
+      "name": "발편한케어 V1",
       "raw_name": "★최대할인 비밀링크★ 발편한케어 V1 프리미엄 발 마사지기",
       "price": 89000,
-      "review_count": 12,
-      "avg_rating": 4.67,
+      "review_count": 13,
+      "avg_rating": 4.69,
       "rating_distribution": {
         "1": 0,
         "2": 0,
         "3": 1,
         "4": 2,
-        "5": 9
+        "5": 10
       },
       "photo_count": 6,
       "sentiment": {
-        "positive": 11,
+        "positive": 12,
         "neutral": 1,
         "negative": 0
       },
-      "positive_rate": 91.67,
+      "positive_rate": 92.31,
       "negative_rate": 0.0,
       "prev_review_count": null,
       "prev_avg_rating": null,
@@ -492,96 +447,6 @@
           "text": "생각보다 자극이 강하고 괜찮습니다",
           "rating": 5,
           "date": "2026-04-21"
-        }
-      ]
-    },
-    {
-      "id": "905",
-      "name": "구독자 전용 할인",
-      "raw_name": "[예나러브x슬룸] 구독자 전용 ★초특가★ 할인",
-      "price": 94900,
-      "review_count": 10,
-      "avg_rating": 4.7,
-      "rating_distribution": {
-        "1": 0,
-        "2": 0,
-        "3": 1,
-        "4": 1,
-        "5": 8
-      },
-      "photo_count": 3,
-      "sentiment": {
-        "positive": 9,
-        "neutral": 1,
-        "negative": 0
-      },
-      "positive_rate": 90.0,
-      "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
-      "top_reviews": [
-        {
-          "review_id": "111321",
-          "text": "기격대 성능비 좋아요. 추천.",
-          "rating": 5,
-          "date": "2026-04-24"
-        },
-        {
-          "review_id": "110451",
-          "text": "아주 만족스럽게 잘 쓰고있습니다",
-          "rating": 5,
-          "date": "2026-04-17"
-        },
-        {
-          "review_id": "110012",
-          "text": "요즘어깨가 많이아프고 자고일어나면 목도 아파서 힘들었는데 구매후 사용해보니 너무 좋아요. 전에 어깨에 걸치고 팔로 지지하고 사용하던 안마기보다 좋아요.",
-          "rating": 5,
-          "date": "2026-04-14"
-        }
-      ]
-    },
-    {
-      "id": "878",
-      "name": "목베개 플러스 프리미엄 목 마사지 계절베개",
-      "raw_name": "목베개 플러스 프리미엄 목 마사지 계절베개",
-      "price": 89000,
-      "review_count": 8,
-      "avg_rating": 4.88,
-      "rating_distribution": {
-        "1": 0,
-        "2": 0,
-        "3": 0,
-        "4": 1,
-        "5": 7
-      },
-      "photo_count": 0,
-      "sentiment": {
-        "positive": 8,
-        "neutral": 0,
-        "negative": 0
-      },
-      "positive_rate": 100.0,
-      "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
-      "top_reviews": [
-        {
-          "review_id": "111729",
-          "text": "쵝오.목의뻐근함이하라져요 ㅋㅋ 온열기능때문인지 \n  잠사 사르르 ",
-          "rating": 5,
-          "date": "2026-04-29"
-        },
-        {
-          "review_id": "110889",
-          "text": "버튼을 눌러 작동하는 부분이 고장이 나서 \nAS 신청했더니 신제품으로 교환해 주었습니다.\n잘 쓰겠습니다.",
-          "rating": 5,
-          "date": "2026-04-20"
-        },
-        {
-          "review_id": "110467",
-          "text": "목과 어깨가 너무 아팠는데 정말 좋아졌어요!\n강추합니다.",
-          "rating": 5,
-          "date": "2026-04-18"
         }
       ]
     },
@@ -627,51 +492,6 @@
           "text": "아주좋아용 미니사이즈 ㅎㅍ",
           "rating": 5,
           "date": "2026-04-25"
-        }
-      ]
-    },
-    {
-      "id": "917",
-      "name": "구독자 한정 역대급 대박 할인",
-      "raw_name": "★[사라패밀리x슬룸] 구독자 한정 역대급 대박 할인★",
-      "price": 87900,
-      "review_count": 4,
-      "avg_rating": 5.0,
-      "rating_distribution": {
-        "1": 0,
-        "2": 0,
-        "3": 0,
-        "4": 0,
-        "5": 4
-      },
-      "photo_count": 3,
-      "sentiment": {
-        "positive": 4,
-        "neutral": 0,
-        "negative": 0
-      },
-      "positive_rate": 100.0,
-      "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
-      "top_reviews": [
-        {
-          "review_id": "111081",
-          "text": "의자나 쇼파에서 앉아서 또는 누워서 사용할수 있어서 편하네요. 맛사지도 적당한 압력으로 눌러주면서 뭉친근육을 잘 풀어주네요. 세일할때 저렴하게 샀는데 만족합니다.",
-          "rating": 5,
-          "date": "2026-04-22"
-        },
-        {
-          "review_id": "110479",
-          "text": "생각보다 강도 좋고 하네요",
-          "rating": 5,
-          "date": "2026-04-19"
-        },
-        {
-          "review_id": "110221",
-          "text": "허리협착에 좋을듯해서 구매했는데 써보니 좋네요 계속사용하면좋을듯~^^",
-          "rating": 5,
-          "date": "2026-04-15"
         }
       ]
     },
@@ -722,7 +542,7 @@
     },
     {
       "id": "785",
-      "name": "넥숄더 힐링케어 V2 목 어깨 마사지기",
+      "name": "넥숄더 힐링케어 V2",
       "raw_name": "넥숄더 힐링케어 V2 목 어깨 마사지기",
       "price": 109800,
       "review_count": 4,
@@ -812,7 +632,7 @@
     },
     {
       "id": "184",
-      "name": "목편한케어 플라잉 목 마사지기",
+      "name": "목편한케어 플라잉",
       "raw_name": "목편한케어 플라잉 목 마사지기",
       "price": 102000,
       "review_count": 4,
@@ -946,51 +766,6 @@
       ]
     },
     {
-      "id": "969",
-      "name": "어버이날 선물 찬스!",
-      "raw_name": "[배말랭x슬룸] 어버이날 ★최저가★ 선물 찬스!",
-      "price": 99000,
-      "review_count": 3,
-      "avg_rating": 5.0,
-      "rating_distribution": {
-        "1": 0,
-        "2": 0,
-        "3": 0,
-        "4": 0,
-        "5": 3
-      },
-      "photo_count": 1,
-      "sentiment": {
-        "positive": 3,
-        "neutral": 0,
-        "negative": 0
-      },
-      "positive_rate": 100.0,
-      "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
-      "top_reviews": [
-        {
-          "review_id": "111952",
-          "text": "좋은 할인 이벤트 받아서 부모님 선물드렸는디 너무 만족하시네요 어버이날 선물로 너무 만족스럽습니다.",
-          "rating": 5,
-          "date": "2026-04-30"
-        },
-        {
-          "review_id": "111933",
-          "text": "괜찮아요 부모님이 만족하세요 ",
-          "rating": 5,
-          "date": "2026-04-29"
-        },
-        {
-          "review_id": "111711",
-          "text": ":) 어버이날 선물로 구매했는데\n구매하자마자 당일 출고 너무 좋아요!\n\n아버님한테 배말랭 영상보내드리면서 이거 샀다고 하니 \n아버님한테 딱 필요한거였다며 너무 좋아하셨어요",
-          "rating": 5,
-          "date": "2026-04-28"
-        }
-      ]
-    },
-    {
       "id": "39",
       "name": "허리베개 허리 편안 베개",
       "raw_name": "허리베개 허리 편안 베개",
@@ -1032,96 +807,6 @@
           "text": "아들이 허리 디스크 때문에 힘들어 하는데 베게 넣고 자고 나니 더 낫다고 합니다.",
           "rating": 5,
           "date": "2026-04-03"
-        }
-      ]
-    },
-    {
-      "id": "376",
-      "name": "허리편한케어 V1 전용 케이블",
-      "raw_name": "허리편한케어 V1 전용 케이블",
-      "price": 5000,
-      "review_count": 3,
-      "avg_rating": 5.0,
-      "rating_distribution": {
-        "1": 0,
-        "2": 0,
-        "3": 0,
-        "4": 0,
-        "5": 3
-      },
-      "photo_count": 0,
-      "sentiment": {
-        "positive": 3,
-        "neutral": 0,
-        "negative": 0
-      },
-      "positive_rate": 100.0,
-      "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
-      "top_reviews": [
-        {
-          "review_id": "109996",
-          "text": "빠른 배송 좋습니다~",
-          "rating": 5,
-          "date": "2026-04-14"
-        },
-        {
-          "review_id": "108892",
-          "text": "이사중 잃어버렸는데 케이블만 따로 살 수 있어서 좋습니다",
-          "rating": 5,
-          "date": "2026-04-08"
-        },
-        {
-          "review_id": "96975",
-          "text": "빠른시간내에 \n잘 도착했습니다 \n감사합니다 ",
-          "rating": 5,
-          "date": "2026-04-04"
-        }
-      ]
-    },
-    {
-      "id": "745",
-      "name": "허리편한케어 V2 + 목베개 플러스",
-      "raw_name": "[코어 밸런스 세트] 허리편한케어 V2 + 목베개 플러스",
-      "price": 236000,
-      "review_count": 3,
-      "avg_rating": 5.0,
-      "rating_distribution": {
-        "1": 0,
-        "2": 0,
-        "3": 0,
-        "4": 0,
-        "5": 3
-      },
-      "photo_count": 1,
-      "sentiment": {
-        "positive": 3,
-        "neutral": 0,
-        "negative": 0
-      },
-      "positive_rate": 100.0,
-      "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
-      "top_reviews": [
-        {
-          "review_id": "110236",
-          "text": "제품은 이쁘고 좋은데 소음이 좀심해요.\n아파트라 진동음이 층간소음이 안될지 궁금해요.\n잘쓸께요",
-          "rating": 5,
-          "date": "2026-04-16"
-        },
-        {
-          "review_id": "97000",
-          "text": "경추와 요추 디스크 초기 증상이 있어 평소 목과 허리가 불편했는데  리뷰보고 구매했어요  한달 사용후기 작성할게요",
-          "rating": 5,
-          "date": "2026-04-05"
-        },
-        {
-          "review_id": "96922",
-          "text": "슬룸 허리편한케어 구매하면 허리베개 증정 아닌가요?",
-          "rating": 5,
-          "date": "2026-04-01"
         }
       ]
     },
@@ -1200,6 +885,45 @@
           "text": "노인들 사용하기가 좀 무겁고 조작버튼헷갈려요 기대보다 시원하지 않음",
           "rating": 3,
           "date": "2026-04-30"
+        }
+      ]
+    },
+    {
+      "id": "872",
+      "name": "종아리편한케어",
+      "raw_name": "종아리편한케어 프리미엄 종아리 마사지기",
+      "price": 192950,
+      "review_count": 2,
+      "avg_rating": 5.0,
+      "rating_distribution": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 2
+      },
+      "photo_count": 1,
+      "sentiment": {
+        "positive": 2,
+        "neutral": 0,
+        "negative": 0
+      },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
+      "top_reviews": [
+        {
+          "review_id": "111719",
+          "text": "아주 만족합니다 ㅎㅎ",
+          "rating": 5,
+          "date": "2026-04-28"
+        },
+        {
+          "review_id": "96972",
+          "text": "선물하려고 하나더 구매했어요",
+          "rating": 5,
+          "date": "2026-04-04"
         }
       ]
     },
@@ -1348,39 +1072,6 @@
       ]
     },
     {
-      "id": "698",
-      "name": "발편한케어 V1 족저근막염 슬리퍼 발 마사지기",
-      "raw_name": "발편한케어 V1 족저근막염 슬리퍼 발 마사지기",
-      "price": 99900,
-      "review_count": 1,
-      "avg_rating": 5.0,
-      "rating_distribution": {
-        "1": 0,
-        "2": 0,
-        "3": 0,
-        "4": 0,
-        "5": 1
-      },
-      "photo_count": 0,
-      "sentiment": {
-        "positive": 1,
-        "neutral": 0,
-        "negative": 0
-      },
-      "positive_rate": 100.0,
-      "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
-      "top_reviews": [
-        {
-          "review_id": "109341",
-          "text": "좌우 구분이 없어서 처음에 잘못배송된 줄 알았으나 그게 정상이더라구요 다만 자석이 좀 강력했으면 어떨까 싶어요 한 번씩 볼때마다 기기가 떨어져있어서 찾으러 다녀야해요 그리고 ems마사지기기라고는 하지만 그래도 밑창이 있었으면 하는 바람이 있습니다",
-          "rating": 5,
-          "date": "2026-04-12"
-        }
-      ]
-    },
-    {
       "id": "756",
       "name": "손편한케어 프리미엄 손 마사지기",
       "raw_name": "손편한케어 프리미엄 손 마사지기",
@@ -1410,72 +1101,6 @@
           "text": "디자인 굿 . 슬룸꺼라 믿고 써요",
           "rating": 5,
           "date": "2026-04-22"
-        }
-      ]
-    },
-    {
-      "id": "963",
-      "name": "종아리편한케어 + 발편한케어 V1",
-      "raw_name": "[하체 집중 케어 세트] 종아리편한케어 + 발편한케어 V1",
-      "price": 236900,
-      "review_count": 1,
-      "avg_rating": 5.0,
-      "rating_distribution": {
-        "1": 0,
-        "2": 0,
-        "3": 0,
-        "4": 0,
-        "5": 1
-      },
-      "photo_count": 0,
-      "sentiment": {
-        "positive": 1,
-        "neutral": 0,
-        "negative": 0
-      },
-      "positive_rate": 100.0,
-      "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
-      "top_reviews": [
-        {
-          "review_id": "111719",
-          "text": "아주 만족합니다 ㅎㅎ",
-          "rating": 5,
-          "date": "2026-04-28"
-        }
-      ]
-    },
-    {
-      "id": "872",
-      "name": "종아리편한케어 프리미엄 종아리 마사지기",
-      "raw_name": "종아리편한케어 프리미엄 종아리 마사지기",
-      "price": 149000,
-      "review_count": 1,
-      "avg_rating": 5.0,
-      "rating_distribution": {
-        "1": 0,
-        "2": 0,
-        "3": 0,
-        "4": 0,
-        "5": 1
-      },
-      "photo_count": 1,
-      "sentiment": {
-        "positive": 1,
-        "neutral": 0,
-        "negative": 0
-      },
-      "positive_rate": 100.0,
-      "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
-      "top_reviews": [
-        {
-          "review_id": "96972",
-          "text": "선물하려고 하나더 구매했어요",
-          "rating": 5,
-          "date": "2026-04-04"
         }
       ]
     },
@@ -1542,39 +1167,6 @@
           "text": "무거운 카메라 들고 다니는 사진작가인데 팔꿈치 과사용으로 통증이 생겼어요. 작업 특성상 손목이랑 팔꿈치에 계속 하중이 가는데 이 제품 쓰면서 일과 후 회복이 훨씬 빨라진 것 같아요. 리모컨으로 강도 조절하기 편하고 착용하면서 팔을 자유롭게 움직일 수 있어서 불편하지 않아요. 무선이라 이동하면서도 쓸 수 있는 게 장점이에요.",
           "rating": 5,
           "date": "2026-04-30"
-        }
-      ]
-    },
-    {
-      "id": "626",
-      "name": "허리편한케어 V2 + 목편한케어 플라잉",
-      "raw_name": "[시그니처 세트] 허리편한케어 V2 + 목편한케어 플라잉",
-      "price": 256000,
-      "review_count": 1,
-      "avg_rating": 5.0,
-      "rating_distribution": {
-        "1": 0,
-        "2": 0,
-        "3": 0,
-        "4": 0,
-        "5": 1
-      },
-      "photo_count": 0,
-      "sentiment": {
-        "positive": 1,
-        "neutral": 0,
-        "negative": 0
-      },
-      "positive_rate": 100.0,
-      "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
-      "top_reviews": [
-        {
-          "review_id": "110891",
-          "text": "현재 허리 어깨 등 통증이 심한 상태여서, 사용시 조금 불편한 느낌이 있긴합니다. 척추 등은 평소에 관리를 해야 하나봐요ㅜㅜ\n열감으로 찜질하고, 상하좌우 안마를 하니 조금씩 풀리는거 같고요..",
-          "rating": 5,
-          "date": "2026-04-20"
         }
       ]
     }

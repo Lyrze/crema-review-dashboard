@@ -14,7 +14,7 @@ import time
 from collections import Counter, defaultdict
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Tuple, Optional, Dict
 
 import pandas as pd
 
@@ -125,11 +125,114 @@ PROMO_PATTERNS: List[str] = [
     # 기간/회차 접두사: "7일 특별 연장" 같은 패턴
     r"^\d+일\s+특별\s+연장\s*",
     r"^[0-9]+차[!!\s]*\s*",
+    # 구독자 전용/한정 프로모션 블록 (앞부분)
+    r"^구독자\s*(한정|전용)\s*",
+    r"^단독공구\s*",
+    # 숫자% 할인 블록
+    r"\d+%\s*할인[!！]*",
+    # 계절/이벤트 프로모션 (어버이날, 설날 등)
+    r"^(어버이날|설날|추석|크리스마스|블랙프라이데이)\s*",
+    # 수식어 접두사: "역대급", "대박", "설레는"
+    r"^(역대급|대박|설레는|찬스)\s*",
 ]
+
+# 결과가 프로모션 전용 문구인지 감지하는 패턴 (정규화 후에도 프로모 문구만 남은 경우)
+_PROMO_ONLY_RE: re.Pattern = re.compile(
+    r"^(구독자|역대급|대박|설레는|단독공구|어버이날|선물\s*찬스|할인|특가|이벤트|찬스)[가-힣\w\s!！%]*$",
+    re.IGNORECASE,
+)
 
 COMPILED_PROMO: List[re.Pattern] = [
     re.compile(p, re.IGNORECASE) for p in PROMO_PATTERNS
 ]
+
+# ────────────────────────────────────────────
+# 제품명 유의어 → 표준명 매핑
+# 마케팅 잔재 제거 후 2차 표준화에 사용
+# ────────────────────────────────────────────
+SYNONYM_ENTRIES: List[Tuple[re.Pattern, str]] = []
+
+_RAW_SYNONYMS: List[Tuple[List[str], str]] = [
+    # ── 목 마사지 베개 플러스 (V1) ──
+    (["목베게플러스", "목베게+", "경추 목 마사지기 베개", "경추목베개", "목베개",
+      "고밀도 프리미엄 경추 마사지 베개", "목베개 플러스 프리미엄", "목마사지베개",
+      "경추 마사지기 베개", "목베개 플러스", "목베개플러스"], "목베개플러스"),
+    # ── 목 마사지 베개 V2 ──
+    (["목베개2", "목베개 V2", "목마사지V2", "목마사지베개 브이투",
+      "목 마사지 베개 V2"], "목마사지베개 V2"),
+    # ── 허리편한케어 V2 ──
+    (["허리V2", "허리 마사지기 브이투", "허리편한케어V2+", "허리케어V2",
+      "허리편한s2", "허리편한케어S2", "허리편한케어 V2",
+      "허리편한케어 V2 허리", "허리편한케어V2 허리"], "허리편한케어 V2"),
+    # ── 허리편한케어 V1 ──
+    (["허리 V1", "허리 마사지기 브이원", "허리편한케어 플러스", "허리편한케어+",
+      "허리케어V1", "SL23EQ02", "허리편한케어 V1",
+      "허리편한케어 V1 허리"], "허리편한케어 V1"),
+    # ── 발편한케어 V2 ──
+    (["발V2", "발 마사지기 브이투", "발편한케어V2+", "발케어V2", "발편한케어 V2",
+      "발편한케어 프로", "발편한케어 V2 발"], "발편한케어 V2"),
+    # ── 발편한케어 V1 ──
+    (["발 V1", "발 마사지기 브이원", "발편한케어 플러스", "발편한케어+",
+      "발케어V1", "발편한케어 V1",
+      "발편한케어 V1 프리미엄"], "발편한케어 V1"),
+    # ── 어댑터 ──
+    (["충전기", "어댑터"], "어댑터"),
+    # ── 케이블 ──
+    (["충전선", "충전기선", "연결선", "전선", "케이블"], "케이블"),
+    # ── 넥숄더 힐링케어 V2 ──
+    (["넥숄더V2", "목 어깨 마사지기 V2", "넥숄더 힐링케어 V2",
+      "넥숄더 힐링케어 V2 목"], "넥숄더 힐링케어 V2"),
+    # ── 하루수면 ──
+    (["하루수면+", "하루수면"], "하루수면"),
+    # ── 에어리프팅 ──
+    (["에어마사지", "에어리프팅"], "에어리프팅"),
+    # ── 목편한케어 ──
+    (["목편한개어", "목변한개어", "변한개어", "목편한케어플러스", "목편한케어",
+      "목편한케어 목"], "목편한케어"),
+    # ── 목편한케어 플라잉 ──
+    (["MDSD", "MSDS 서류"], "MSDS 서류"),
+    (["SL24EQ04", "목편한케어 플라잉", "목편한케어 플라잉 목"], "목편한케어 플라잉"),
+    # ── 골반케어 ──
+    (["골반 케어", "골반케어", "골반편한케어"], "골반케어"),
+    # ── 눈편한케어 ──
+    (["눈편한케어", "눈 마사지기"], "눈편한케어"),
+    # ── 종아리편한케어 ──
+    (["종아리편한케어", "종아리 마사지기", "종아리케어"], "종아리편한케어"),
+]
+
+for _synonyms, _canonical in _RAW_SYNONYMS:
+    for _syn in _synonyms:
+        _pat = re.compile(r"^" + re.escape(_syn) + r"$", re.IGNORECASE)
+        SYNONYM_ENTRIES.append((_pat, _canonical))
+
+
+def apply_synonym_map(name: str) -> str:
+    """
+    정규화된 상품명을 표준 제품명으로 변환한다.
+
+    1단계: 정확히 일치하는 패턴 (^pattern$)
+    2단계: 접두어 매칭 (name이 synonym으로 시작하는 경우, min 6자)
+            예: "목베개 플러스 경추 목 마사지기 베개" → "목베개플러스"
+    """
+    name_s = name.strip()
+    name_lower = name_s.lower()
+
+    # 1단계: 정확 매칭
+    for pattern, canonical in SYNONYM_ENTRIES:
+        if pattern.match(name_s):
+            return canonical
+
+    # 2단계: 접두어 매칭 (normalized name이 synonym으로 시작)
+    for synonyms, canonical in _RAW_SYNONYMS:
+        for syn in synonyms:
+            syn_l = syn.lower().strip()
+            if len(syn_l) < 6:
+                continue  # 너무 짧은 패턴은 오탐 방지
+            # name이 "syn " 또는 "syn_" 이후 공백/특수문자로 이어지면 매칭
+            if name_lower == syn_l or name_lower.startswith(syn_l + " ") or name_lower.startswith(syn_l + "_"):
+                return canonical
+
+    return name_s
 
 # 쓸모없는 마케팅 잔재 접미사/접두사 제거
 TRAILING_NOISE_RE: re.Pattern = re.compile(
@@ -176,7 +279,16 @@ def normalize_product_name(raw_name: str) -> str:
     name = _SEPARATOR_RE.sub("", name)
 
     # 빈 문자열이 되면 원본 반환
-    return name if name else raw_name.strip()
+    result = name if name else raw_name.strip()
+
+    # 유의어 매핑 적용
+    mapped = apply_synonym_map(result)
+
+    # 정규화 후에도 프로모션 전용 문구만 남은 경우 → "(기타 프로모션)" 그룹으로 통합
+    if _PROMO_ONLY_RE.match(mapped):
+        return "(기타 프로모션)"
+
+    return mapped
 
 
 def get_product_group_key(normalized_name: str) -> str:
@@ -948,96 +1060,68 @@ def run_pipeline(args: argparse.Namespace) -> None:
     try:
         out_dir = resolve_safe_output_dir(docs_root, brand, month)
     except ValueError as exc:
-        logger.error("출력 경로 검증 실패: %s", exc)
+        logger.error("출력 경오류: %s", exc)
         sys.exit(1)
 
-    logger.info("출력 디렉토리: %s", out_dir)
+    # ── 저장
     save_json(summary, out_dir / "summary.json")
     save_json(products_data, out_dir / "products.json")
     save_json(keywords_data, out_dir / "keywords.json")
-
-    if ai_analysis:
+    if ai_analysis is not None:
         save_json(ai_analysis, out_dir / "ai_analysis.json")
-    else:
-        empty_ai: dict = {
-            "smart_brief": None,
-            "product_briefs": [],
-            "sentiment_summary": {
-                "positive": kpis.get("positive_count", 0),
-                "neutral": kpis.get("neutral_count", 0),
-                "negative": kpis.get("negative_count", 0),
-                "positive_rate": kpis.get("positive_rate", 0),
-                "negative_rate": kpis.get("negative_rate", 0),
-            },
-            "generated_at": datetime.now().isoformat(),
-            "model": None,
-        }
-        save_json(empty_ai, out_dir / "ai_analysis.json")
 
-    # ── 9. index.json 업데이트
+    # ── index.json 업데이트
     update_index_json(brand, month, docs_root)
 
     elapsed = time.monotonic() - t_start
     logger.info("=" * 60)
-    logger.info("  파이프라인 완료. 소요시간: %.1f초", elapsed)
-    logger.info("  출력 경로: %s", out_dir)
-    logger.info("=" * 60)
+    logger.info("  ✅ 완료! 처리 시간: %.1fs", elapsed)
 
 
-# ────────────────────────────────────────────
-# CLI
-# ────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+# CLI 진입점
+# ─────────────────────────────────────────────────────────────
 
 def parse_args() -> argparse.Namespace:
-    """CLI 인수 파싱."""
-    parser = argparse.ArgumentParser(
-        description="크리마 리뷰 CSV → GitHub Pages 대시보드 JSON 생성기",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    """CLI 인수 파싱 (CLAUDE.md: 진입점 함수명은 반드시 parse_args)."""
+    p = argparse.ArgumentParser(
+        description="크리마 리뷰 CSV → JSON 파이프라인",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument(
-        "-i", "--input",
-        required=True,
-        help="크리마 리뷰 CSV 파일 경로",
-    )
-    parser.add_argument(
+    p.add_argument("--brand",   required=True, help="브랜드명 (예: 슬룸)")
+    p.add_argument("--month",   required=True, help="처리 월 (YYYY-MM)")
+    p.add_argument("--input",   required=True, help="원본 CSV 경로")
+    p.add_argument(
         "--prev-input",
         default=None,
-        help="전월 CSV 파일 경로 (MoM 비교용, 선택)",
+        help="전월 CSV 경로 (MoM 비교용, 선택)",
     )
-    parser.add_argument(
-        "-b", "--brand",
-        required=True,
-        help="브랜드 슬러그 (예: sloom)",
-    )
-    parser.add_argument(
-        "-m", "--month",
-        required=True,
-        help="처리 대상 월 (YYYY-MM 형식)",
-    )
-    parser.add_argument(
+    p.add_argument(
         "--skip-ai",
         action="store_true",
         default=False,
-        help="Ollama AI 분석 건너뜀 (별점 기반 추정 사용)",
+        help="Ollama AI 분석 건너뜀",
     )
-    parser.add_argument(
+    p.add_argument(
         "--ollama-model",
         default="exaone3.5:7.8b",
-        help="사용할 Ollama 모델명",
+        help="Ollama 모델명 (기본: exaone3.5:7.8b)",
     )
-    parser.add_argument(
+    p.add_argument(
         "--ollama-url",
         default="http://localhost:11434",
-        help="Ollama API 베이스 URL",
+        help="Ollama 엔드포인트 URL (기본: http://localhost:11434)",
     )
-    parser.add_argument(
+    p.add_argument(
         "--top-n-keywords",
         type=int,
         default=30,
-        help="추출할 키워드 상위 N개",
+        dest="top_n_keywords",
+        help="키워드 추출 상위 N개 (기본: 30)",
     )
-    return parser.parse_args()
+    return p.parse_args()
 
 
 if __name__ == "__main__":
-    run_pipeline(parse_args())
+    args = parse_args()
+    run_pipeline(args)

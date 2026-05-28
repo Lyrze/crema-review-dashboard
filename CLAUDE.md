@@ -24,7 +24,7 @@ crema-review-dashboard/
 │   └── anonymized/{브랜드}/{YYYY-MM}/       # 익명화 CSV (GitHub 업로드 O)
 │       └── reviews_anon.csv                # 주문번호·회원명 제거, 회원ID→해시
 ├── docs/                                    # GitHub Pages 서빙 루트
-│   ├── index.html                           # 대시보드 (단일 HTML 파일, ~816줄)
+│   ├── index.html                           # 대시보드 (단일 HTML 파일, ~1240줄)
 │   └── data/
 │       ├── index.json                       # 브랜드·월 목록 (딕셔너리 형태 필수)
 │       └── {브랜드}/{YYYY-MM}/
@@ -318,7 +318,48 @@ python scripts/anonymize_csv.py \
 | SKU 변화 테이블 | ✅ | 섹션 ⑤ (prev null이면 "전월 없음" 표시) |
 | 상품 VOC | ✅ | 섹션 ⑥ |
 | 구매경험 VOC | ✅ | 섹션 ⑦ |
+| **상품 포커스 필터** | ✅ | 헤더 바 (특정 상품만 필터링) |
+| **AI 커스텀 질문** | ✅ | 섹션 ⑧ (KPI·SKU·VOC 컨텍스트 선택 후 자유 질문) |
+| **커스텀 차트 빌더** | ✅ | 섹션 ⑨ (메트릭·범위·차트타입 선택 후 추가) |
+| 데이터 로드 실패 배너 | ✅ | 상단 (JSON 로드 실패 시 경고 표시) |
 | 다크 테마 | ✅ | 사이드바 하단 🌙 버튼 |
+
+---
+
+### 🔴 CRITICAL: index.html — 파일 잘림 방지
+
+**발생**: Linux 샌드박스에서 index.html 편집 후 renderTimeline 함수 내부에서 파일이 잘렸음. process_data.py 에서도 동일하게 발생 (2회).
+
+**규칙**: 300줄 이상 HTML/Python 파일 수정 후 반드시 검증한다.
+
+```bash
+# HTML 잘림 검증
+python3 -c "
+html = open('docs/index.html', encoding='utf-8').read()
+assert '</html>' in html, 'HTML 닫힘 태그 없음 — 파일 잘림!'
+assert 'DOMContentLoaded' in html, '초기화 핸들러 없음!'
+print('OK:', len(html.splitlines()), '줄')
+"
+
+# Python 잘림 검증
+python3 -m py_compile scripts/process_data.py && echo "OK"
+tail -20 scripts/process_data.py  # if __name__ == '__main__' 블록 확인
+```
+
+---
+
+### 🟠 HIGH: loadData — 로드 실패 시 사용자에게 반드시 알릴 것
+
+**발생**: `Promise.allSettled` 사용 시 JSON 로드 실패가 조용히 REAL_DATA 폴백으로 처리됨. 사용자가 잘못된 데이터를 보고 있음을 알 수 없었음.
+
+**규칙**: 로드 실패 시 `data-load-banner` 요소를 `display:block`으로 전환해 경고 표시.
+
+```javascript
+// 올바른 패턴
+var anyFailed = res.some(function(r){ return r.status === 'rejected'; });
+var banner = document.getElementById('data-load-banner');
+if(banner) banner.style.display = anyFailed ? 'block' : 'none';
+```
 
 ---
 
