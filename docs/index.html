@@ -3245,19 +3245,53 @@ function openKeywordReviewsModal(keyword, productFilter, type, searchTerm){
     });
   }
 
-  // 3순위 (최종 폴백): 본문 텍스트 검색 — 키워드/searchTerm으로 모든 저장된 리뷰 본문 검색
+  // 3순위 (최종 폴백): 본문 텍스트 검색 — 다중 토큰 OR 매칭 + 시노님 확장
   if(allReviews.length===0){
     dataSource='text-search';
-    var q=(searchTerm||keyword).toLowerCase().trim();
-    // 검색어가 너무 길거나 짧으면 첫 토큰 사용
-    var qTokens=q.split(/[\s,·—.\(\)→\/]+/).filter(function(t){return t.length>=2;});
-    var primaryQ=qTokens[0]||q;
+    var q=(searchTerm||keyword).trim();
+    // searchTerm이 '|' 포함 시 OR 토큰으로 처리, 아니면 자체 분리
+    var qTokens=[];
+    if(q.indexOf('|')>=0){
+      qTokens=q.split('|').map(function(t){return t.trim();}).filter(function(t){return t.length>=2;});
+    } else {
+      qTokens=q.split(/[\s,·—.\(\)→\/]+/).filter(function(t){return t.length>=2;});
+    }
+    // 시노님 매핑 — 약어/영문 → 한국어 본문 토큰 확장
+    var SYNONYMS={
+      'cs':['cs','상담','연결','문의','고객서비스','고객 센터','상담사'],
+      'as':['as','수리','교환','환불','보증'],
+      'ems':['ems','전기자극'],
+      '광고':['광고','영상','유튜브','유튜버','협찬'],
+      '협찬':['협찬','광고','영상','유튜버'],
+      '구독자':['구독자','구독','채널'],
+      '효도':['효도','부모님','어머니','아버지'],
+      '선물':['선물','선물용','효도'],
+      '배송':['배송','당일','출고','택배'],
+      '반품':['반품','환불','교환'],
+      '환불':['환불','반품','교환'],
+      '디자인':['디자인','외관','색상','컬러','네이비'],
+      '구조':['구조','형태','모양'],
+      '재구매':['재구매','두번째','또샀','다시'],
+      '온열':['온열','따뜻','발열','히터'],
+      '진동':['진동','떨림','진동음'],
+      '소음':['소음','소리','시끄','웅','우웅']
+    };
+    var expandedTokens=[];
+    qTokens.forEach(function(t){
+      var lower=t.toLowerCase();
+      expandedTokens.push(lower);
+      if(SYNONYMS[lower]) SYNONYMS[lower].forEach(function(s){if(expandedTokens.indexOf(s)<0) expandedTokens.push(s);});
+    });
+    // 검색 — 본문에 임의의 토큰이 포함되면 매칭
     allProds.forEach(function(p){
       if(productFilter && p.name!==productFilter) return;
       (p.top_reviews||[]).concat(p.bottom_reviews||[]).forEach(function(r){
         var text=(r.text||'').toLowerCase();
-        if(text.indexOf(primaryQ)>=0){
-          allReviews.push({name:p.name, r:r});
+        for(var i=0;i<expandedTokens.length;i++){
+          if(text.indexOf(expandedTokens[i])>=0){
+            allReviews.push({name:p.name, r:r, matchedToken:expandedTokens[i]});
+            return;
+          }
         }
       });
     });
@@ -3266,8 +3300,10 @@ function openKeywordReviewsModal(keyword, productFilter, type, searchTerm){
       var k=item.r.review_id;
       if(seen2[k]) return false; seen2[k]=true; return true;
     });
-    // 검색 결과 카운트
     totalCount=allReviews.length;
+    // 검색 토큰 정보 컨텍스트에 저장 (헤더에 표시용)
+    keyword=keyword; // 원본 키워드 유지
+    searchTerm=expandedTokens.join(' | '); // 사용된 모든 토큰 표시
   }
 
   // 헤더
@@ -3276,7 +3312,9 @@ function openKeywordReviewsModal(keyword, productFilter, type, searchTerm){
   var subtitleParts=[];
   if(dataSource==='text-search'){
     subtitleParts.push('🔍 본문 검색 모드');
-    subtitleParts.push('"'+(searchTerm||keyword)+'" 텍스트 매칭');
+    var st=searchTerm||keyword;
+    if(st.length>40) st=st.slice(0,38)+'…';
+    subtitleParts.push('확장 검색: '+st);
   } else {
     subtitleParts.push(type+' 키워드');
     subtitleParts.push('매칭 '+fmt(totalCount)+'건');
@@ -3352,9 +3390,20 @@ function krmRenderList(){
     var stars=''; for(var i=1;i<=5;i++) stars+=i<=r.rating?'★':'☆';
     var tag=r.rating>=4?'<span style="background:rgba(22,163,74,.12);color:#16a34a;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">긍정 ★'+r.rating+'</span>':r.rating<=2?'<span style="background:rgba(220,38,38,.10);color:#dc2626;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">부정 ★'+r.rating+'</span>':'<span style="background:var(--surface-hover);color:var(--text-secondary);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">중립 ★'+r.rating+'</span>';
     var text=r.text||'';
-    var firstWord=keyword.split(/[\s\/]+/)[0];
-    var re=new RegExp('('+firstWord.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'[^\\s,.!?]*)','gi');
-    var highlighted=escapeHtml(text).replace(re,'<mark style="background:#fef08a;padding:0 2px;">$1</mark>');
+    // 다중 토큰 하이라이트 — 검색에 사용된 모든 토큰 처리
+    var highlightTokens=[];
+    if(ctx.dataSource==='text-search' && ctx.searchTerm){
+      var raw=ctx.searchTerm.indexOf('|')>=0?ctx.searchTerm.split('|'):[ctx.searchTerm];
+      highlightTokens=raw.map(function(t){return t.trim();}).filter(function(t){return t.length>=2;});
+    } else {
+      highlightTokens=[keyword.split(/[\s\/]+/)[0]];
+    }
+    var highlighted=escapeHtml(text);
+    highlightTokens.forEach(function(tk){
+      var safe=tk.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      var re=new RegExp('('+safe+'[^\\s,.!?]*)','gi');
+      highlighted=highlighted.replace(re,'<mark style="background:#fef08a;padding:0 2px;">$1</mark>');
+    });
     return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;">'+
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">'+
         '<span style="font-size:11.5px;font-weight:700;color:var(--accent);cursor:pointer;" onclick="closeKeywordReviewsModal();openProductPanel(\''+item.name.replace(/'/g,"\\'")+'\');">'+escapeHtml(fmtS(item.name))+'</span>'+
@@ -4221,6 +4270,84 @@ function aicClearHistory(){
 }
 
 // ── 구매경험 VOC 카반 동적 렌더 ──
+// PVOC 카반 카드 데이터 (액션 버튼에서 참조)
+var PVOC_CARDS=[];
+
+// ✦ 버튼 — Hey Sloom 패널에 카드 컨텍스트 전달
+function pvocAskAI(idx){
+  var card=PVOC_CARDS[idx];
+  if(!card) return;
+  openAIChatPanel();
+  setTimeout(function(){
+    var ctxText='['+card.catLbl+' / '+card.title+']\n'+
+      card.items.map(function(it,i){
+        var w=it.word||it; var cnt=it.count!=null?' ('+it.count+'건)':'';
+        return (i+1)+'. '+w+cnt;
+      }).join('\n');
+    var inp=$('aic-input');
+    inp.value='아래 "'+card.title+'" 카드의 키워드들이 의미하는 핵심 인사이트를 분석하고, '+
+      '실행 가능한 액션 아이템을 한국어로 정리해줘.\n\n'+ctxText;
+    aicInputResize(inp);
+    inp.focus();
+  },200);
+}
+
+// ⋯ 버튼 — 카드 메뉴 (Hey Sloom / CSV / 닫기)
+function pvocCardMenu(btn, idx){
+  var card=PVOC_CARDS[idx];
+  if(!card) return;
+  // 기존 메뉴 모두 닫기
+  document.querySelectorAll('.pvoc-card-menu').forEach(function(m){m.remove();});
+  // 토글: 이미 열려있던 경우 닫기만 하고 종료
+  if(btn._menuOpen){ btn._menuOpen=false; return; }
+  btn._menuOpen=true;
+
+  var menu=document.createElement('div');
+  menu.className='pvoc-card-menu';
+  menu.style.cssText='position:absolute;right:0;top:30px;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:4px;z-index:50;min-width:180px;';
+  menu.innerHTML=
+    '<button class="card-menu-item" onclick="pvocAskAI('+idx+');this.closest(\'.pvoc-card-menu\').remove();"><span class="ic">✦</span>Hey Sloom 분석</button>'+
+    '<button class="card-menu-item" onclick="pvocExportCSV('+idx+');this.closest(\'.pvoc-card-menu\').remove();"><span class="ic">📊</span>CSV 다운로드</button>'+
+    '<button class="card-menu-item" onclick="pvocShowAllReviews('+idx+');this.closest(\'.pvoc-card-menu\').remove();"><span class="ic">📝</span>이 카테고리 전체 리뷰</button>'+
+    '<button class="card-menu-item" onclick="this.closest(\'.pvoc-card-menu\').remove();"><span class="ic">✕</span>닫기</button>';
+  btn.parentElement.appendChild(menu);
+
+  setTimeout(function(){
+    function outside(e){
+      if(!e.target.closest('.pvoc-card-menu')&&e.target!==btn){
+        menu.remove(); btn._menuOpen=false; document.removeEventListener('click',outside);
+      }
+    }
+    document.addEventListener('click',outside);
+  },10);
+}
+
+function pvocExportCSV(idx){
+  var card=PVOC_CARDS[idx];
+  if(!card) return;
+  var rows=[['#','키워드','카운트','카테고리']];
+  card.items.forEach(function(it,i){
+    rows.push([i+1, it.word||it, it.count||'', card.catLbl]);
+  });
+  var csv=rows.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a'); a.href=url; a.download='pvoc_'+card.title.replace(/[^\w가-힣]/g,'_')+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('✓ CSV 다운로드 완료');
+}
+
+function pvocShowAllReviews(idx){
+  var card=PVOC_CARDS[idx];
+  if(!card) return;
+  // 카드의 모든 키워드 word를 합쳐서 검색
+  var searchTerms=card.items.map(function(it){return it.word||it;});
+  // 카드 자체의 첫 키워드를 대표로 사용 + searchTerm은 여러 토큰 합쳐서 OR 검색
+  var combined=searchTerms.join(' / ');
+  openKeywordReviewsModal(combined, null, card.type, searchTerms.join('|'));
+}
+
 function renderPVOCKanban(){
   var container=$('pvoc-kanban');
   if(!container) return;
@@ -4266,6 +4393,7 @@ function renderPVOCKanban(){
     }
   ];
 
+  PVOC_CARDS=[];
   container.innerHTML=cards.map(function(c, idx){
     // 데이터가 4개 미만이면 fallback으로 보충
     var items=(c.data||[]).slice();
@@ -4275,6 +4403,10 @@ function renderPVOCKanban(){
     }
     if(items.length===0) items=c.fallback||[];
     items=items.slice(0,7);
+    // 카드 정보 저장 (액션에서 참조)
+    PVOC_CARDS[idx]={
+      cat:c.cat, catLbl:c.catLbl, type:c.type, title:c.title, items:items
+    };
     var bulletsHtml=items.map(function(it, i){
       var w=it.word||it; var cnt=it.count!=null?it.count:'';
       // 모든 항목 클릭 가능 — 실제 키워드는 review_samples 사용, fallback은 본문 검색
@@ -4292,12 +4424,12 @@ function renderPVOCKanban(){
         '<div class="pvoc-k-text">'+w+(cnt!==''?'<span class="pvoc-k-cnt">'+cnt+'</span>':'')+'</div>'+
         '</div>';
     }).join('');
-    return '<div class="pvoc-k-card">'+
+    return '<div class="pvoc-k-card" data-pvoc-idx="'+idx+'">'+
       '<div class="pvoc-k-head">'+
         '<div class="pvoc-k-cat '+c.cat+'">'+c.catLbl+'</div>'+
-        '<div class="pvoc-k-actions">'+
-          '<button class="card-icon-btn ai" title="AI 분석" onclick="aiAnalyzeSection(\'pvoc-card-'+idx+'\')">✦</button>'+
-          '<button class="card-icon-btn" title="더 보기">⋯</button>'+
+        '<div class="pvoc-k-actions" style="position:relative;">'+
+          '<button class="card-icon-btn ai" title="Hey Sloom에서 이 카드 분석" onclick="pvocAskAI('+idx+')">✦</button>'+
+          '<button class="card-icon-btn" title="더 보기" onclick="pvocCardMenu(this, '+idx+')">⋯</button>'+
         '</div>'+
       '</div>'+
       '<div class="pvoc-k-title">'+c.title+'</div>'+
