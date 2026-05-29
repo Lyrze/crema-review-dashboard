@@ -598,6 +598,105 @@
       .card, .chart-card { break-inside:avoid; box-shadow:none !important; border:1px solid #f0f0f0; }
       .kpi-grid { grid-template-columns:repeat(2,1fr) !important; }
     }
+    /* ───────────────── Taxonomy ───────────────── */
+    #taxonomy-page { display:none; padding:0; }
+    #taxonomy-page.active { display:block; }
+    body.taxonomy-mode .section { display:none; }
+    body.taxonomy-mode .sync-filter-bar { display:none; }
+    body.taxonomy-mode .product-focus-bar { display:none; }
+    body.taxonomy-mode #compare-banner { display:none; }
+    .tx-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px; gap:16px; flex-wrap:wrap; }
+    .tx-title { font-size:22px; font-weight:800; color:var(--text); letter-spacing:-.4px; display:flex; align-items:center; gap:10px; }
+    .tx-subtitle { font-size:12.5px; color:var(--text-secondary); margin-top:5px; }
+    .tx-add-btn { padding:9px 16px; background:var(--text); color:var(--bg); border:none; border-radius:9px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; display:inline-flex; align-items:center; gap:6px; transition:opacity .12s; }
+    .tx-add-btn:hover { opacity:.88; }
+    .tx-counter { font-size:12.5px; color:var(--text-secondary); margin-right:10px; }
+    /* Taxonomy 카드 그리드 */
+    .tx-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:16px; }
+    .tx-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:22px 20px 18px; cursor:pointer; transition:all .15s; position:relative; display:flex; flex-direction:column; min-height:180px; }
+    .tx-card:hover { border-color:var(--text-secondary); box-shadow:0 4px 16px rgba(0,0,0,.08); }
+    .tx-card-title { font-size:15px; font-weight:800; color:var(--text); display:flex; align-items:center; gap:6px; margin-bottom:auto; padding-right:36px; }
+    .tx-card-saved { font-size:13px; color:var(--accent); }
+    .tx-card-fav { position:absolute; top:14px; right:14px; width:28px; height:28px; border:none; background:var(--surface); border-radius:6px; cursor:pointer; font-size:14px; color:var(--text-secondary); transition:all .12s; padding:0; display:inline-flex; align-items:center; justify-content:center; }
+    .tx-card-fav.active { background:#fef9c3; color:#ca8a04; }
+    .tx-card-fav:hover { background:var(--surface-hover); }
+    .tx-card-menu { position:absolute; top:14px; right:48px; width:28px; height:28px; border:none; background:transparent; border-radius:6px; cursor:pointer; font-size:14px; color:var(--text-secondary); display:none; }
+    .tx-card:hover .tx-card-menu { display:inline-flex; align-items:center; justify-content:center; }
+    .tx-card-menu:hover { background:var(--surface-hover); }
+    .tx-card-footer { display:flex; align-items:center; gap:6px; margin-top:18px; }
+    .tx-card-topiccount { background:var(--surface); padding:5px 14px; border-radius:18px; font-size:12px; font-weight:700; color:var(--text); }
+    /* Taxonomy 상세 페이지 */
+    #taxonomy-detail { display:none; }
+    #taxonomy-detail.active { display:flex; gap:0; height:calc(100vh - 130px); min-height:600px; }
+    .txd-sidebar { width:320px; flex-shrink:0; background:var(--card); border:1px solid var(--border); border-radius:14px 0 0 14px; padding:18px; overflow-y:auto; }
+    .txd-sidebar-head { display:flex; align-items:center; gap:8px; padding-bottom:14px; border-bottom:1px solid var(--border); margin-bottom:12px; }
+    .txd-back-btn { width:28px; height:28px; border:none; background:transparent; border-radius:6px; cursor:pointer; color:var(--text-secondary); font-size:16px; padding:0; display:inline-flex; align-items:center; justify-content:center; }
+    .txd-back-btn:hover { background:var(--surface-hover); color:var(--text); }
+    .txd-sidebar-title { font-size:14px; font-weight:800; color:var(--text); }
+    .txd-topics-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .txd-topics-label { font-size:11.5px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.5px; }
+    .txd-topic-search { width:100%; padding:7px 10px; border:1px solid var(--border); border-radius:7px; font-size:12px; font-family:inherit; background:var(--bg); color:var(--text); outline:none; margin-bottom:10px; }
+    .txd-topic-search:focus { border-color:var(--accent); }
+    .txd-topic-tree { display:flex; flex-direction:column; gap:2px; }
+    .txd-topic-item { display:flex; align-items:center; gap:6px; padding:8px 10px; border-radius:7px; cursor:pointer; font-size:12.5px; color:var(--text); transition:background .12s; }
+    .txd-topic-item:hover { background:var(--surface); }
+    .txd-topic-item.active { background:var(--accent-bg); color:var(--accent); font-weight:700; }
+    .txd-topic-item .ic-expand { width:14px; flex-shrink:0; font-size:9px; color:var(--text-secondary); }
+    .txd-topic-item .ic-tag { font-size:11px; }
+    .txd-topic-item .topic-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .txd-topic-item .topic-add { display:none; width:18px; height:18px; align-items:center; justify-content:center; border-radius:4px; font-size:11px; color:var(--text-secondary); }
+    .txd-topic-item:hover .topic-add { display:inline-flex; }
+    .txd-topic-item .topic-add:hover { background:var(--surface-hover); color:var(--accent); }
+    .txd-topic-item.child { padding-left:30px; }
+    .txd-main { flex:1; background:var(--card); border:1px solid var(--border); border-left:none; border-radius:0 14px 14px 0; padding:24px 28px; overflow-y:auto; }
+    .txd-main-head { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:18px; gap:12px; }
+    .txd-main-title { font-size:18px; font-weight:800; color:var(--text); display:flex; align-items:center; gap:8px; }
+    .txd-main-tag { font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; }
+    .txd-main-tag.taxonomy { background:var(--surface); color:var(--text-secondary); }
+    .txd-main-tag.rule { background:rgba(91,94,244,.08); color:var(--accent); }
+    .txd-main-tag.ai { background:rgba(22,163,74,.1); color:#16a34a; }
+    .txd-main-actions { display:flex; gap:6px; align-items:center; }
+    .txd-main-actions button { padding:7px 14px; border:1px solid var(--border); background:var(--bg); border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; color:var(--text); transition:all .12s; }
+    .txd-main-actions button:hover { background:var(--surface-hover); }
+    .txd-main-actions button.primary { background:var(--text); color:var(--bg); border-color:var(--text); }
+    .txd-main-actions button.primary:hover { opacity:.88; }
+    .txd-stats { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:18px; }
+    .txd-stat-card { background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:14px 18px; }
+    .txd-stat-val { font-size:24px; font-weight:800; color:var(--text); }
+    .txd-stat-lbl { font-size:11px; color:var(--text-secondary); margin-top:2px; }
+    .txd-stat-card .pct { color:var(--accent); }
+    .txd-toolbar { display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+    .txd-toolbar select, .txd-toolbar input { padding:7px 12px; border:1px solid var(--border); border-radius:7px; background:var(--bg); color:var(--text); font-size:12px; font-family:inherit; outline:none; }
+    .txd-toolbar input { min-width:200px; flex:1; max-width:340px; }
+    .txd-fb-list { display:flex; flex-direction:column; gap:10px; }
+    .txd-fb-item { background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
+    .txd-fb-meta { display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap; }
+    .txd-fb-id { font-size:10.5px; font-weight:700; color:#d97706; background:rgba(245,158,11,.1); padding:2px 8px; border-radius:10px; }
+    .txd-fb-author { font-size:11.5px; font-weight:600; color:var(--accent); cursor:pointer; }
+    .txd-fb-date { font-size:10.5px; color:var(--text-secondary); margin-left:auto; }
+    .txd-fb-stars { font-size:12px; color:#f59e0b; letter-spacing:-1px; }
+    .txd-fb-text { font-size:12.5px; color:var(--text); line-height:1.65; }
+    .txd-empty { text-align:center; padding:60px 20px; color:var(--text-secondary); }
+    .txd-empty .ic-big { font-size:42px; opacity:.3; margin-bottom:14px; }
+    .txd-empty h4 { font-size:14px; font-weight:700; color:var(--text); margin-bottom:6px; }
+    .txd-empty p { font-size:12px; line-height:1.6; margin-bottom:14px; max-width:380px; margin-left:auto; margin-right:auto; }
+    .txd-empty button { padding:8px 18px; background:var(--accent); color:#fff; border:none; border-radius:8px; font-size:12.5px; font-weight:700; cursor:pointer; font-family:inherit; margin:0 4px; }
+    .txd-empty button.secondary { background:var(--bg); color:var(--text); border:1px solid var(--border); }
+    /* Rule 편집 모달 */
+    .tx-rule-modal { display:none; position:fixed; inset:0; z-index:800; background:rgba(0,0,0,.5); align-items:center; justify-content:center; }
+    .tx-rule-modal.open { display:flex; }
+    .tx-rule-box { background:var(--card); border-radius:14px; width:100%; max-width:520px; padding:24px; box-shadow:0 12px 40px rgba(0,0,0,.22); }
+    .tx-rule-box h3 { font-size:16px; font-weight:800; color:var(--text); margin-bottom:6px; }
+    .tx-rule-box p { font-size:12px; color:var(--text-secondary); margin-bottom:14px; }
+    .tx-rule-box label { display:block; font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px; margin-top:12px; }
+    .tx-rule-box input[type=text], .tx-rule-box textarea, .tx-rule-box select { width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:7px; background:var(--bg); color:var(--text); font-size:12.5px; font-family:inherit; outline:none; box-sizing:border-box; }
+    .tx-rule-box textarea { resize:vertical; min-height:64px; }
+    .tx-rule-box input:focus, .tx-rule-box textarea:focus { border-color:var(--accent); }
+    .tx-rule-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:18px; }
+    .tx-rule-actions button { padding:8px 16px; border-radius:7px; font-size:12.5px; font-weight:700; cursor:pointer; font-family:inherit; }
+    .tx-rule-actions .cancel { background:var(--bg); border:1px solid var(--border); color:var(--text); }
+    .tx-rule-actions .apply { background:var(--accent); color:#fff; border:none; }
+    .tx-rule-actions .delete { background:transparent; color:var(--negative); border:1px solid var(--negative); margin-right:auto; }
   </style>
 </head>
 <body>
@@ -627,8 +726,9 @@
     <a href="#sec-voc"><span class="icon">💬</span> 상품 VOC</a>
     <a href="#sec-pvoc"><span class="icon">🛒</span> 구매경험 VOC</a>
     <div class="nav-divider"></div>
-    <div class="nav-group">커스텀 분석</div>
-    <a href="#sec-custom-chart"><span class="icon">🛠</span> 커스텀 차트</a>
+    <div class="nav-group">분류 / 분석</div>
+    <a href="#" onclick="event.preventDefault();showTaxonomyPage();" id="nav-taxonomy"><span class="icon">📂</span> Taxonomy</a>
+    <a href="#sec-custom-chart" onclick="hideTaxonomyPage();"><span class="icon">🛠</span> 커스텀 차트</a>
     <a href="#" onclick="event.preventDefault();openAIChatPanel();"><span class="icon">✦</span> Hey Sloom 챗</a>
   </nav>
   <div class="sb-footer">
@@ -663,6 +763,45 @@
 <main id="main-content">
 
   <!-- ── Syncly 스타일 상단 필터 칩 바 ── -->
+  <!-- ───────── Taxonomy 페이지 (분류 관리) ───────── -->
+  <div id="taxonomy-page">
+    <div class="tx-header">
+      <div>
+        <div class="tx-title">📂 Taxonomy</div>
+        <div class="tx-subtitle">키워드 분류가 부정확한 리뷰를 직접 카테고리로 정리합니다.</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="tx-counter" id="tx-counter">0 Taxonomies</span>
+        <button class="tx-add-btn" onclick="txCreateNew()">+ Taxonomy</button>
+      </div>
+    </div>
+    <div class="tx-grid" id="tx-grid"></div>
+  </div>
+  <div id="taxonomy-detail"></div>
+
+  <!-- Rule 편집 모달 -->
+  <div class="tx-rule-modal" id="tx-rule-modal" onclick="if(event.target===this)txCloseRule();">
+    <div class="tx-rule-box" id="tx-rule-box">
+      <h3 id="tx-rule-title">Topic 편집</h3>
+      <p id="tx-rule-desc">매칭 규칙을 정의하면 키워드가 포함된 리뷰가 이 Topic에 자동 분류됩니다.</p>
+      <label>Topic 이름</label>
+      <input type="text" id="tx-rule-name" placeholder="예: EMS 강도 불량" />
+      <label>매칭 키워드 (콤마로 구분, OR 조건)</label>
+      <textarea id="tx-rule-keywords" placeholder="ems, 강도, 약해, 약함, 미흡"></textarea>
+      <label>매칭 모드</label>
+      <select id="tx-rule-mode">
+        <option value="any">아무 키워드라도 포함 (OR)</option>
+        <option value="all">모든 키워드 포함 (AND)</option>
+        <option value="regex">정규식 (고급)</option>
+      </select>
+      <div class="tx-rule-actions">
+        <button class="delete" id="tx-rule-delete" onclick="txDeleteTopic()" style="display:none;">🗑 삭제</button>
+        <button class="cancel" onclick="txCloseRule()">취소</button>
+        <button class="apply" onclick="txSaveRule()">저장 & 매칭</button>
+      </div>
+    </div>
+  </div>
+
   <div class="sync-filter-bar" id="sync-filter-bar">
     <div class="sync-filter-left">
       <button class="filter-chip add" id="chip-add-btn" onclick="toggleAddFilterPop(event)">+ Filter</button>
@@ -4500,6 +4639,535 @@ function toggleCardMenu(btn){
 }
 
 // ── 초기화 ──
+// ───────────────────────────────────────────────
+//  Taxonomy 기능 (Syncly 벤치마크)
+// ───────────────────────────────────────────────
+var TAXONOMIES = []; // [{id, name, favorite, description, topics:[{id, name, parentId, keywords:[], mode:'any'|'all'|'regex', count}]}]
+var TX_STATE = { activeTaxonomyId:null, activeTopicId:null, editingTopicId:null, sortBy:'date' };
+
+function txLoad(){
+  try{
+    var raw=localStorage.getItem('taxonomies');
+    if(raw){ TAXONOMIES=JSON.parse(raw); return; }
+  }catch(e){}
+  // 첫 사용 시 기본 예시 시드
+  TAXONOMIES=[
+    {id:'tx-saved', name:'Saved topics', favorite:true, system:true, description:'즐겨찾기한 키워드 모음', topics:[]},
+    {id:'tx-defect', name:'불량 라벨', favorite:false, description:'제품 불량 유형별 분류', topics:[
+      {id:'t-ems', name:'EMS 강도 불량', keywords:['ems','강도','약해','약함','미흡'], mode:'any'},
+      {id:'t-noise', name:'소음 불량', keywords:['소음','시끄','웅소리','우웅','떨림'], mode:'any'},
+      {id:'t-airbag', name:'에어백 작동 불량', keywords:['에어백','공기','부풀'], mode:'any'},
+      {id:'t-heat', name:'온열 강도 불량', keywords:['온열','따뜻','발열','히터','미지근'], mode:'any'},
+      {id:'t-vibe', name:'진동 강도 불량', keywords:['진동','떨림','두통','어지러'], mode:'any'},
+      {id:'t-charge', name:'충전/전원 불량', keywords:['충전','배터리','전원','꺼짐','어댑터'], mode:'any'},
+      {id:'t-remote', name:'리모컨 불량', keywords:['리모컨','버튼','조작'], mode:'any'},
+      {id:'t-exterior', name:'외관 불량', keywords:['외관','스크래치','흠집','파손','이물'], mode:'any'},
+      {id:'t-cover', name:'커버 제작 불량', keywords:['커버','지퍼','봉제','마감'], mode:'any'},
+      {id:'t-missing', name:'구성품 누락', keywords:['누락','없음','빠짐','구성품'], mode:'any'}
+    ]},
+    {id:'tx-experience', name:'구매 전 경험', favorite:false, description:'구매 의사결정 단계별 경험', topics:[
+      {id:'t-ad', name:'광고 메시지 기대치', keywords:['광고','영상','유튜브','유튜버','협찬','기대','다르'], mode:'any'},
+      {id:'t-motive', name:'구매 결심에 영향을 준 계기', keywords:['선물','효도','부모님','통증','재구매','추천'], mode:'any'},
+      {id:'t-consult', name:'상담 응대 만족도', keywords:['상담','연결','문의','친절','응대'], mode:'any'},
+      {id:'t-detail', name:'상세페이지 이해도', keywords:['상세','설명','구조','에어백','기능'], mode:'any'}
+    ]}
+  ];
+  txSave();
+}
+
+function txSave(){
+  try{ localStorage.setItem('taxonomies', JSON.stringify(TAXONOMIES)); }catch(e){}
+}
+
+// ── 매칭 엔진 — 키워드 → 리뷰 매칭 ──
+function txGetAllReviews(){
+  // 모든 상품의 top + bottom reviews 통합
+  var reviews=[];
+  var prods=STATE.products||REAL_DATA.products;
+  prods.forEach(function(p){
+    (p.top_reviews||[]).forEach(function(r){
+      reviews.push({review_id:r.review_id, rating:r.rating, date:r.date, text:r.text, product:p.name, sentiment:'pos'});
+    });
+    (p.bottom_reviews||[]).forEach(function(r){
+      reviews.push({review_id:r.review_id, rating:r.rating, date:r.date, text:r.text, product:p.name, sentiment:'neg'});
+    });
+  });
+  // 중복 제거
+  var seen={};
+  return reviews.filter(function(r){ if(seen[r.review_id]) return false; seen[r.review_id]=true; return true; });
+}
+
+function txMatchTopic(topic, reviews){
+  if(!topic.keywords || topic.keywords.length===0) return [];
+  var kws=topic.keywords.map(function(k){return String(k).trim().toLowerCase();}).filter(Boolean);
+  var matched=[];
+  if(topic.mode==='regex'){
+    try{
+      var re=new RegExp(kws.join('|'), 'i');
+      reviews.forEach(function(r){ if(re.test(r.text||'')) matched.push(r); });
+    }catch(e){
+      console.warn('Invalid regex in topic', topic.name, e);
+    }
+  } else if(topic.mode==='all'){
+    reviews.forEach(function(r){
+      var lt=(r.text||'').toLowerCase();
+      if(kws.every(function(k){return lt.indexOf(k)>=0;})) matched.push(r);
+    });
+  } else {
+    // 'any' (default)
+    reviews.forEach(function(r){
+      var lt=(r.text||'').toLowerCase();
+      if(kws.some(function(k){return lt.indexOf(k)>=0;})) matched.push(r);
+    });
+  }
+  return matched;
+}
+
+function txComputeStats(taxonomy){
+  var allReviews=txGetAllReviews();
+  var classified=new Set();
+  taxonomy.topics.forEach(function(t){
+    var matched=txMatchTopic(t, allReviews);
+    t.count=matched.length;
+    matched.forEach(function(r){ classified.add(r.review_id); });
+  });
+  return {
+    total: allReviews.length,
+    classified: classified.size,
+    notClassified: allReviews.length - classified.size,
+    notClassifiedPct: allReviews.length>0 ? Math.round((allReviews.length - classified.size)/allReviews.length*1000)/10 : 0
+  };
+}
+
+// ── 페이지 전환 ──
+function showTaxonomyPage(){
+  document.body.classList.add('taxonomy-mode');
+  $('taxonomy-page').classList.add('active');
+  $('taxonomy-detail').classList.remove('active');
+  TX_STATE.activeTaxonomyId=null;
+  txLoad();
+  txRenderGrid();
+  // sidebar nav active 갱신
+  document.querySelectorAll('aside nav a').forEach(function(a){a.classList.remove('active');});
+  $('nav-taxonomy').classList.add('active');
+}
+
+function hideTaxonomyPage(){
+  document.body.classList.remove('taxonomy-mode');
+  $('taxonomy-page').classList.remove('active');
+  $('taxonomy-detail').classList.remove('active');
+}
+
+// ── 메인 그리드 렌더 ──
+function txRenderGrid(){
+  var grid=$('tx-grid');
+  var nonSystem=TAXONOMIES.filter(function(t){return !t.system;});
+  $('tx-counter').textContent=nonSystem.length+' Taxonomies';
+  grid.innerHTML=TAXONOMIES.map(function(t){
+    var topicCount=(t.topics||[]).length;
+    var favCls=t.favorite?' active':'';
+    var favIcon=t.favorite?'★':'☆';
+    var titlePrefix=t.system?'<span class="tx-card-saved">🔖</span>':'';
+    return '<div class="tx-card" onclick="txOpenTaxonomy(\''+t.id+'\')">'+
+      '<button class="tx-card-fav'+favCls+'" onclick="event.stopPropagation();txToggleFav(\''+t.id+'\');" title="즐겨찾기">'+favIcon+'</button>'+
+      (t.system?'':'<button class="tx-card-menu" onclick="event.stopPropagation();txDeleteTaxonomy(\''+t.id+'\');" title="삭제">🗑</button>')+
+      '<div class="tx-card-title">'+titlePrefix+escapeHtml(t.name)+'</div>'+
+      '<div class="tx-card-footer">'+
+        '<span class="tx-card-topiccount">'+topicCount+' Topics</span>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function txToggleFav(id){
+  var t=TAXONOMIES.find(function(x){return x.id===id;});
+  if(!t) return;
+  t.favorite=!t.favorite;
+  txSave(); txRenderGrid();
+}
+
+function txCreateNew(){
+  var name=prompt('새 Taxonomy 이름을 입력하세요:');
+  if(!name||!name.trim()) return;
+  var newTx={
+    id:'tx-'+Date.now(),
+    name:name.trim(),
+    favorite:false,
+    description:'',
+    topics:[]
+  };
+  TAXONOMIES.push(newTx);
+  txSave(); txRenderGrid();
+  // 자동으로 상세 열기
+  setTimeout(function(){ txOpenTaxonomy(newTx.id); }, 100);
+}
+
+function txDeleteTaxonomy(id){
+  var t=TAXONOMIES.find(function(x){return x.id===id;});
+  if(!t) return;
+  if(!confirm('"'+t.name+'" Taxonomy를 삭제하시겠습니까?')) return;
+  TAXONOMIES=TAXONOMIES.filter(function(x){return x.id!==id;});
+  txSave(); txRenderGrid();
+}
+
+// ── 상세 페이지 ──
+function txOpenTaxonomy(id){
+  var t=TAXONOMIES.find(function(x){return x.id===id;});
+  if(!t) return;
+  TX_STATE.activeTaxonomyId=id;
+  TX_STATE.activeTopicId=null;
+  $('taxonomy-page').classList.remove('active');
+  $('taxonomy-detail').classList.add('active');
+  txRenderDetail();
+}
+
+function txBackToList(){
+  TX_STATE.activeTaxonomyId=null;
+  $('taxonomy-detail').classList.remove('active');
+  $('taxonomy-page').classList.add('active');
+  txRenderGrid();
+}
+
+function txRenderDetail(){
+  var t=TAXONOMIES.find(function(x){return x.id===TX_STATE.activeTaxonomyId;});
+  if(!t) return;
+  var stats=txComputeStats(t);
+  var detail=$('taxonomy-detail');
+
+  // 토픽 트리 (검색 필터)
+  var topicSearch=(TX_STATE.topicSearch||'').toLowerCase();
+  var topicsHtml=(t.topics||[]).filter(function(tp){
+    return !topicSearch || tp.name.toLowerCase().indexOf(topicSearch)>=0;
+  }).map(function(tp){
+    var active=tp.id===TX_STATE.activeTopicId?' active':'';
+    var safeId=tp.id.replace(/'/g,"\\'");
+    return '<div class="txd-topic-item'+active+'" onclick="txSelectTopic(\''+safeId+'\')">'+
+      '<span class="ic-expand"></span>'+
+      '<span class="ic-tag">🏷</span>'+
+      '<span class="topic-name">'+escapeHtml(tp.name)+'</span>'+
+      '<span style="font-size:10px;color:var(--text-secondary);">'+(tp.count||0)+'</span>'+
+      '<span class="topic-add" onclick="event.stopPropagation();txEditTopic(\''+safeId+'\');" title="편집">✎</span>'+
+    '</div>';
+  }).join('');
+
+  // 우측 메인 영역
+  var mainHtml;
+  if(TX_STATE.activeTopicId){
+    mainHtml=txRenderTopicDetail(t);
+  } else {
+    mainHtml=txRenderTaxonomyOverview(t, stats);
+  }
+
+  detail.innerHTML=
+    '<div class="txd-sidebar">'+
+      '<div class="txd-sidebar-head">'+
+        '<button class="txd-back-btn" onclick="txBackToList()" title="목록으로">←</button>'+
+        '<div class="txd-sidebar-title">'+escapeHtml(t.name)+'</div>'+
+      '</div>'+
+      '<div class="txd-topics-head">'+
+        '<span class="txd-topics-label">Topics ('+(t.topics||[]).length+')</span>'+
+        '<button onclick="txAddTopic()" style="border:none;background:transparent;cursor:pointer;font-size:14px;color:var(--text-secondary);padding:2px 6px;border-radius:4px;" title="Topic 추가">+</button>'+
+      '</div>'+
+      '<input type="text" class="txd-topic-search" placeholder="🔍 Topic 검색..." value="'+escapeHtml(TX_STATE.topicSearch||'')+'" oninput="TX_STATE.topicSearch=this.value;txRenderDetail();" />'+
+      '<div class="txd-topic-tree">'+
+        '<div class="txd-topic-item'+(!TX_STATE.activeTopicId?' active':'')+'" onclick="TX_STATE.activeTopicId=null;txRenderDetail();" style="font-weight:700;">'+
+          '<span class="ic-tag">📂</span>'+
+          '<span class="topic-name">'+escapeHtml(t.name)+' (전체)</span>'+
+        '</div>'+
+        topicsHtml+
+      '</div>'+
+    '</div>'+
+    '<div class="txd-main">'+mainHtml+'</div>';
+
+  // search 입력 포커스 복원
+  if(TX_STATE.topicSearch){
+    var srch=detail.querySelector('.txd-topic-search');
+    if(srch){ srch.focus(); srch.setSelectionRange(srch.value.length,srch.value.length); }
+  }
+}
+
+function txRenderTaxonomyOverview(t, stats){
+  var hasTopics=(t.topics||[]).length>0;
+  return '<div class="txd-main-head">'+
+    '<div>'+
+      '<div class="txd-main-title">'+escapeHtml(t.name)+'<span class="txd-main-tag taxonomy">Taxonomy</span></div>'+
+      '<div style="font-size:11.5px;color:var(--text-secondary);margin-top:4px;">'+
+        (t.description||'설명 없음')+
+      '</div>'+
+    '</div>'+
+    '<div class="txd-main-actions">'+
+      '<button onclick="txAddTopic()" class="primary">+ Topic 추가</button>'+
+    '</div>'+
+  '</div>'+
+  '<div class="txd-stats">'+
+    '<div class="txd-stat-card"><div class="txd-stat-val">'+fmt(stats.total)+'</div><div class="txd-stat-lbl">All feedback</div></div>'+
+    '<div class="txd-stat-card"><div class="txd-stat-val"><span class="pct">'+stats.notClassifiedPct+'%</span> <span style="font-size:14px;color:var(--text-secondary);">('+fmt(stats.notClassified)+' / '+fmt(stats.total)+')</span></div><div class="txd-stat-lbl">Not classified</div></div>'+
+  '</div>'+
+  (!hasTopics?
+    '<div class="txd-empty">'+
+      '<div class="ic-big">📂</div>'+
+      '<h4>아직 Topic이 없습니다</h4>'+
+      '<p>Topic을 추가하면 매칭 키워드 규칙에 따라 리뷰가 자동으로 분류됩니다. AI로 자동 그룹화하거나 직접 추가할 수 있습니다.</p>'+
+      '<button onclick="txAutoGroupAI()">✦ AI로 자동 그룹화</button>'+
+      '<button onclick="txAddTopic()" class="secondary">+ Topic 직접 추가</button>'+
+    '</div>':
+    '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">💡 좌측에서 Topic을 선택하면 해당 카테고리에 매칭된 리뷰가 표시됩니다.</div>'+
+    '<div class="txd-fb-list">'+
+      (t.topics||[]).map(function(tp){
+        return '<div class="txd-fb-item" style="cursor:pointer;" onclick="txSelectTopic(\''+tp.id.replace(/\'/g,"\\\'")+'\')">'+
+          '<div class="txd-fb-meta">'+
+            '<span class="ic-tag" style="font-size:14px;">🏷</span>'+
+            '<strong style="font-size:13px;">'+escapeHtml(tp.name)+'</strong>'+
+            '<span class="txd-fb-date">매칭 '+(tp.count||0)+'건</span>'+
+          '</div>'+
+          '<div class="txd-fb-text" style="font-size:11.5px;color:var(--text-secondary);">'+
+            '키워드: '+escapeHtml((tp.keywords||[]).slice(0,5).join(', '))+(tp.keywords&&tp.keywords.length>5?' ...':'')+' · 모드: '+(tp.mode||'any')+
+          '</div>'+
+        '</div>';
+      }).join('')+
+    '</div>'
+  );
+}
+
+function txSelectTopic(topicId){
+  TX_STATE.activeTopicId=topicId;
+  txRenderDetail();
+}
+
+function txRenderTopicDetail(taxonomy){
+  var topic=taxonomy.topics.find(function(x){return x.id===TX_STATE.activeTopicId;});
+  if(!topic) return '<div>Topic을 찾을 수 없습니다.</div>';
+  var allReviews=txGetAllReviews();
+  var matched=txMatchTopic(topic, allReviews);
+  topic.count=matched.length;
+  var hasRule=topic.keywords && topic.keywords.length>0;
+
+  // 정렬
+  var sorted=matched.slice();
+  if(TX_STATE.sortBy==='rating-asc') sorted.sort(function(a,b){return a.rating-b.rating;});
+  else if(TX_STATE.sortBy==='rating-desc') sorted.sort(function(a,b){return b.rating-a.rating;});
+  else sorted.sort(function(a,b){return (b.date||'').localeCompare(a.date||'');});
+
+  // 필터 (검색)
+  var q=(TX_STATE.fbSearch||'').toLowerCase().trim();
+  if(q) sorted=sorted.filter(function(r){return (r.text||'').toLowerCase().indexOf(q)>=0;});
+
+  var listHtml=sorted.slice(0,50).map(function(r){
+    var stars=''; for(var i=1;i<=5;i++) stars+=i<=r.rating?'★':'☆';
+    // 키워드 하이라이트
+    var hl=escapeHtml(r.text||'');
+    if(topic.mode!=='regex'){
+      topic.keywords.forEach(function(k){
+        var safe=String(k).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+        try{
+          var re=new RegExp('('+safe+')','gi');
+          hl=hl.replace(re,'<mark style="background:#fef08a;padding:0 2px;">$1</mark>');
+        }catch(e){}
+      });
+    }
+    return '<div class="txd-fb-item">'+
+      '<div class="txd-fb-meta">'+
+        '<span class="txd-fb-id">FB-'+(r.review_id||'').slice(-6)+'</span>'+
+        '<span class="txd-fb-author" onclick="hideTaxonomyPage();openProductPanel(\''+r.product.replace(/\'/g,"\\\'")+'\');">'+escapeHtml(fmtS(r.product))+'</span>'+
+        '<span class="txd-fb-stars">'+stars+'</span>'+
+        '<span class="txd-fb-date">'+(r.date||'')+'</span>'+
+      '</div>'+
+      '<div class="txd-fb-text">'+hl+'</div>'+
+    '</div>';
+  }).join('');
+
+  return '<div class="txd-main-head">'+
+    '<div>'+
+      '<div class="txd-main-title">'+escapeHtml(topic.name)+
+        (hasRule?'<span class="txd-main-tag rule">🔖 Rule</span>':'<span class="txd-main-tag ai">✦ 미설정</span>')+
+      '</div>'+
+      '<div style="font-size:11.5px;color:var(--text-secondary);margin-top:4px;">'+
+        (hasRule?'키워드: '+escapeHtml(topic.keywords.slice(0,8).join(', ')):'매칭 규칙이 설정되지 않았습니다.')+
+      '</div>'+
+    '</div>'+
+    '<div class="txd-main-actions">'+
+      '<button onclick="txEditTopic(\''+topic.id.replace(/\'/g,"\\\'")+'\')">✎ 규칙 편집</button>'+
+      '<button onclick="txOpenTopicInsights(\''+topic.id.replace(/\'/g,"\\\'")+'\')" class="primary">📊 View insights</button>'+
+    '</div>'+
+  '</div>'+
+  '<div class="txd-stats">'+
+    '<div class="txd-stat-card"><div class="txd-stat-val">'+fmt(matched.length)+'</div><div class="txd-stat-lbl">매칭 리뷰</div></div>'+
+    '<div class="txd-stat-card"><div class="txd-stat-val"><span class="pct">'+(allReviews.length>0?(matched.length/allReviews.length*100).toFixed(1):0)+'%</span></div><div class="txd-stat-lbl">전체 대비 비율 ('+fmt(matched.length)+' / '+fmt(allReviews.length)+')</div></div>'+
+  '</div>'+
+  '<div class="txd-toolbar">'+
+    '<select onchange="TX_STATE.sortBy=this.value;txRenderDetail();">'+
+      '<option value="date"'+(TX_STATE.sortBy==='date'?' selected':'')+'>최신순</option>'+
+      '<option value="rating-asc"'+(TX_STATE.sortBy==='rating-asc'?' selected':'')+'>별점 낮은순</option>'+
+      '<option value="rating-desc"'+(TX_STATE.sortBy==='rating-desc'?' selected':'')+'>별점 높은순</option>'+
+    '</select>'+
+    '<input type="text" placeholder="🔍 본문에서 검색..." value="'+escapeHtml(TX_STATE.fbSearch||'')+'" oninput="TX_STATE.fbSearch=this.value;txRenderDetail();" />'+
+    '<button onclick="txExportTopicCSV(\''+topic.id.replace(/\'/g,"\\\'")+'\')" style="margin-left:auto;padding:7px 12px;border:1px solid var(--border);background:var(--bg);border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit;">↓ CSV</button>'+
+  '</div>'+
+  (matched.length===0?
+    '<div class="txd-empty">'+
+      '<div class="ic-big">🔍</div>'+
+      '<h4>매칭된 리뷰가 없습니다</h4>'+
+      '<p>'+(hasRule?'키워드와 매칭되는 리뷰가 없습니다. 키워드를 추가하거나 매칭 모드를 변경해보세요.':'먼저 매칭 규칙(키워드)을 설정해주세요.')+'</p>'+
+      '<button onclick="txEditTopic(\''+topic.id.replace(/\'/g,"\\\'")+'\')">✎ 규칙 편집</button>'+
+    '</div>':
+    '<div class="txd-fb-list">'+listHtml+(matched.length>50?'<div style="text-align:center;padding:14px;color:var(--text-secondary);font-size:11px;">'+(matched.length-50)+'건 더 있음 — CSV로 내보내기 또는 검색으로 좁히기</div>':'')+'</div>'
+  );
+}
+
+// ── Topic 추가/편집 ──
+function txAddTopic(){
+  TX_STATE.editingTopicId='new';
+  $('tx-rule-title').textContent='새 Topic 추가';
+  $('tx-rule-name').value='';
+  $('tx-rule-keywords').value='';
+  $('tx-rule-mode').value='any';
+  $('tx-rule-delete').style.display='none';
+  $('tx-rule-modal').classList.add('open');
+  setTimeout(function(){$('tx-rule-name').focus();},80);
+}
+
+function txEditTopic(topicId){
+  var t=TAXONOMIES.find(function(x){return x.id===TX_STATE.activeTaxonomyId;});
+  var tp=t.topics.find(function(x){return x.id===topicId;});
+  if(!tp) return;
+  TX_STATE.editingTopicId=topicId;
+  $('tx-rule-title').textContent='Topic 편집';
+  $('tx-rule-name').value=tp.name||'';
+  $('tx-rule-keywords').value=(tp.keywords||[]).join(', ');
+  $('tx-rule-mode').value=tp.mode||'any';
+  $('tx-rule-delete').style.display='inline-block';
+  $('tx-rule-modal').classList.add('open');
+  setTimeout(function(){$('tx-rule-name').focus();},80);
+}
+
+function txCloseRule(){
+  $('tx-rule-modal').classList.remove('open');
+  TX_STATE.editingTopicId=null;
+}
+
+function txSaveRule(){
+  var name=$('tx-rule-name').value.trim();
+  var keywordsRaw=$('tx-rule-keywords').value.trim();
+  var mode=$('tx-rule-mode').value;
+  if(!name){ alert('Topic 이름을 입력하세요.'); return; }
+  var keywords=keywordsRaw?keywordsRaw.split(/[,\n]/).map(function(s){return s.trim();}).filter(Boolean):[];
+  var t=TAXONOMIES.find(function(x){return x.id===TX_STATE.activeTaxonomyId;});
+  if(!t) return;
+  if(TX_STATE.editingTopicId==='new'){
+    var newTp={ id:'t-'+Date.now(), name:name, keywords:keywords, mode:mode };
+    t.topics.push(newTp);
+    TX_STATE.activeTopicId=newTp.id;
+  } else {
+    var tp=t.topics.find(function(x){return x.id===TX_STATE.editingTopicId;});
+    if(tp){ tp.name=name; tp.keywords=keywords; tp.mode=mode; }
+  }
+  txSave();
+  txCloseRule();
+  txRenderDetail();
+  showToast('✓ 매칭 완료 — '+keywords.length+'개 키워드로 분류됨');
+}
+
+function txDeleteTopic(){
+  if(!confirm('이 Topic을 삭제하시겠습니까?')) return;
+  var t=TAXONOMIES.find(function(x){return x.id===TX_STATE.activeTaxonomyId;});
+  t.topics=t.topics.filter(function(x){return x.id!==TX_STATE.editingTopicId;});
+  if(TX_STATE.activeTopicId===TX_STATE.editingTopicId) TX_STATE.activeTopicId=null;
+  txSave();
+  txCloseRule();
+  txRenderDetail();
+}
+
+// ── CSV 내보내기 ──
+function txExportTopicCSV(topicId){
+  var t=TAXONOMIES.find(function(x){return x.id===TX_STATE.activeTaxonomyId;});
+  var tp=t.topics.find(function(x){return x.id===topicId;});
+  if(!tp) return;
+  var matched=txMatchTopic(tp, txGetAllReviews());
+  var rows=[['#','review_id','rating','date','product','text']];
+  matched.forEach(function(r,i){
+    rows.push([i+1, r.review_id, r.rating, r.date, r.product, r.text]);
+  });
+  var csv=rows.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a'); a.href=url; a.download='taxonomy_'+tp.name.replace(/[^\w가-힣]/g,'_')+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('✓ CSV 다운로드 완료 ('+matched.length+'건)');
+}
+
+// ── View insights — Hey Sloom 패널로 전달 ──
+function txOpenTopicInsights(topicId){
+  var t=TAXONOMIES.find(function(x){return x.id===TX_STATE.activeTaxonomyId;});
+  var tp=t.topics.find(function(x){return x.id===topicId;});
+  if(!tp) return;
+  var matched=txMatchTopic(tp, txGetAllReviews());
+  if(matched.length===0){ alert('매칭된 리뷰가 없어 분석할 수 없습니다.'); return; }
+  // Hey Sloom 패널로 열기
+  hideTaxonomyPage();
+  openAIChatPanel();
+  setTimeout(function(){
+    var topReviews=matched.slice(0,15).map(function(r){return '★'+r.rating+' ['+r.product+']: '+r.text;}).join('\n');
+    var inp=$('aic-input');
+    inp.value='Taxonomy [' + t.name + '] / Topic [' + tp.name + ']\n'+
+      '매칭 '+matched.length+'건의 핵심 패턴과 액션 인사이트를 분석해줘.\n\n'+
+      '[키워드] '+(tp.keywords||[]).join(', ')+'\n\n'+
+      '[리뷰 샘플 15건]\n'+topReviews;
+    aicInputResize(inp);
+    inp.focus();
+  },200);
+}
+
+// ── AI 자동 그룹화 (Ollama) ──
+async function txAutoGroupAI(){
+  var t=TAXONOMIES.find(function(x){return x.id===TX_STATE.activeTaxonomyId;});
+  if(!t) return;
+  if(!confirm('AI(Ollama)로 리뷰를 분석하여 Topic을 자동 생성합니다. 시간이 1-2분 걸릴 수 있습니다. 계속하시겠습니까?')) return;
+  if($('ollama-dot').className.indexOf('online')<0){
+    alert('Ollama가 오프라인입니다. AI 서버 URL을 확인해주세요.'); return;
+  }
+  var allReviews=txGetAllReviews().slice(0,80);
+  var sample=allReviews.map(function(r){return '★'+r.rating+': '+(r.text||'').slice(0,140);}).join('\n');
+  var prompt='다음은 리뷰 샘플입니다. 이 리뷰들을 5~10개의 의미 있는 카테고리로 분류해주세요.\n\n'+
+    '[Taxonomy 이름] '+t.name+'\n'+
+    (t.description?'[설명] '+t.description+'\n':'')+
+    '\n[리뷰 샘플]\n'+sample+'\n\n'+
+    '응답은 반드시 다음 JSON 배열 형식만 출력 (다른 텍스트 X):\n'+
+    '[{"name":"카테고리명","keywords":["키워드1","키워드2","키워드3"]}, ...]';
+
+  showToast('🤖 AI가 분석 중... (1-2분 소요)');
+  try{
+    var r=await fetch(getOllamaUrl()+'/api/generate',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:STATE.ollamaModel||'exaone3.5:7.8b', prompt:prompt, stream:false}),
+      signal:AbortSignal.timeout(180000)
+    });
+    var data=await r.json();
+    var resp=(data.response||'').trim();
+    // JSON 추출 (응답에 다른 텍스트 있을 수 있음)
+    var match=resp.match(/\[[\s\S]*\]/);
+    if(!match) throw new Error('JSON 응답을 찾을 수 없습니다');
+    var topics=JSON.parse(match[0]);
+    if(!Array.isArray(topics)) throw new Error('배열이 아닙니다');
+    // 기존 Topic 보존 + 새 Topic 추가
+    topics.forEach(function(tp){
+      if(tp && tp.name && Array.isArray(tp.keywords)){
+        t.topics.push({
+          id:'t-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),
+          name:tp.name,
+          keywords:tp.keywords,
+          mode:'any'
+        });
+      }
+    });
+    txSave();
+    txRenderDetail();
+    showToast('✓ '+topics.length+'개 Topic 자동 생성 완료');
+  }catch(err){
+    alert('AI 자동 분류 실패: '+err.message+'\n\n수동으로 Topic을 추가해주세요.');
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async function(){
   restoreSectionOrder();
   initDragOrder();
@@ -4514,6 +5182,7 @@ document.addEventListener('DOMContentLoaded', async function(){
     });
   }
   pingOllama();
+  txLoad();  // Taxonomy 데이터 로드 (localStorage)
   applyURLParams();  // URL 쿼리에서 상태 복원
   await loadIndex();
   syncChipBarFromState();
@@ -4527,7 +5196,9 @@ document.addEventListener('DOMContentLoaded', async function(){
     if(e.key==='Escape'){
       var krm=$('keyword-reviews-modal');
       var rsm=$('review-search-modal');
-      if(krm && krm.style.display==='flex') closeKeywordReviewsModal();
+      var trm=$('tx-rule-modal');
+      if(trm && trm.classList.contains('open')) txCloseRule();
+      else if(krm && krm.style.display==='flex') closeKeywordReviewsModal();
       else if(rsm && rsm.style.display==='flex') closeReviewSearch();
       else if($('insight-modal')&&$('insight-modal').classList.contains('open')) closeInsightModal();
       else if($('ai-chat-panel')&&$('ai-chat-panel').classList.contains('open')) closeAIChatPanel();
