@@ -430,14 +430,13 @@ def resolve_product_with_option(raw_name: str, option: str) -> str:
         return "(기타 프로모션)"
 
     # 3) 버전 미명시 상품 → 옵션에서 V1/V2 추출
+    #    규칙: V2/프로 명시 시에만 V2, 그 외(V1 명시/명시 없음/옵션 없음) → V1 기본
     for pat, base in _VERSION_AMBIGUOUS_PATTERNS:
         if pat.search(raw_name):
-            if option_str:
-                if re.search(r"V2|프로|Pro", option_str, re.IGNORECASE):
-                    return base + " V2"
-                if re.search(r"V1|데일리|Daily", option_str, re.IGNORECASE):
-                    return base + " V1"
-            # 옵션 없으면 기본 처리
+            if option_str and re.search(r"V2|프로|Pro", option_str, re.IGNORECASE):
+                return base + " V2"
+            # V1 명시 / 명시 없음 / 옵션 없음 → V1 기본값
+            return base + " V1"
 
     # 4) 기본 정규화
     return normalize_product_name(raw_name)

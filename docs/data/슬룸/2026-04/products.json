@@ -1443,25 +1443,25 @@
       "name": "발편한케어 V1",
       "raw_name": "★최대할인 비밀링크★ 발편한케어 V1 프리미엄 발 마사지기",
       "price": 89000,
-      "review_count": 23,
-      "avg_rating": 4.61,
+      "review_count": 24,
+      "avg_rating": 4.58,
       "rating_distribution": {
         "1": 1,
         "2": 0,
         "3": 1,
-        "4": 3,
+        "4": 4,
         "5": 18
       },
       "photo_count": 8,
       "sentiment": {
-        "positive": 21,
+        "positive": 22,
         "neutral": 1,
         "negative": 1
       },
-      "positive_rate": 91.3,
-      "negative_rate": 4.35,
-      "prev_review_count": 37,
-      "prev_avg_rating": 4.84,
+      "positive_rate": 91.67,
+      "negative_rate": 4.17,
+      "prev_review_count": 72,
+      "prev_avg_rating": 4.67,
       "top_reviews": [
         {
           "review_id": "111940",
@@ -1576,6 +1576,12 @@
           "text": "족저근막염 있는 발에 잘 쓰고 있어요, 그런데 슬리퍼에 부착하는 작은 스위치가 하나만 있어서 조금 불편해요. 따로 구매해야 양쪽 동시에 쓸 수 있는건가요? 어디에서 구매하는지 궁금합니다.",
           "rating": 4,
           "date": "2026-04-24"
+        },
+        {
+          "review_id": "110446",
+          "text": "뭉쳤던 다리근육이 풀리는것같네요",
+          "rating": 4,
+          "date": "2026-04-16"
         },
         {
           "review_id": "96980",
@@ -2862,40 +2868,6 @@
           "date": "2026-04-13"
         }
       ]
-    },
-    {
-      "id": "645",
-      "name": "발편한케어 프리미엄 발 마사지기 (데일리, 프로)",
-      "raw_name": "발편한케어 프리미엄 발 마사지기 (데일리, 프로)",
-      "price": 89000,
-      "review_count": 1,
-      "avg_rating": 4.0,
-      "rating_distribution": {
-        "1": 0,
-        "2": 0,
-        "3": 0,
-        "4": 1,
-        "5": 0
-      },
-      "photo_count": 0,
-      "sentiment": {
-        "positive": 1,
-        "neutral": 0,
-        "negative": 0
-      },
-      "positive_rate": 100.0,
-      "negative_rate": 0.0,
-      "prev_review_count": 35,
-      "prev_avg_rating": 4.49,
-      "top_reviews": [
-        {
-          "review_id": "110446",
-          "text": "뭉쳤던 다리근육이 풀리는것같네요",
-          "rating": 4,
-          "date": "2026-04-16"
-        }
-      ],
-      "bottom_reviews": []
     },
     {
       "id": "756",
