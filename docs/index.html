@@ -133,11 +133,11 @@
     .sku-table tbody td.r { text-align:right; }
     .rank-badge { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:6px; font-size:11px; font-weight:700; background:var(--surface-hover); color:var(--text-secondary); }
     .rank-badge.gold{background:#fef9c3;color:#854d0e} .rank-badge.silver{background:#f1f5f9;color:#475569} .rank-badge.bronze{background:#fef3c7;color:#92400e}
-    .prod-name { font-weight:600; color:var(--text); max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; }
+    .prod-name { font-weight:600; color:var(--text); max-width:320px; white-space:normal; overflow:hidden; text-overflow:ellipsis; display:block; line-height:1.35; word-break:keep-all; }
     .rate-badge { display:inline-block; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:700; }
     .rate-badge.pos{background:var(--positive-bg);color:var(--positive)} .rate-badge.neg{background:var(--negative-bg);color:var(--negative)} .rate-badge.neu{background:var(--surface-hover);color:var(--text-secondary)}
     .combo-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px; box-shadow:var(--card-shadow); }
-    .combo-card-title { font-size:11.5px; font-weight:700; margin-bottom:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .combo-card-title { font-size:11.5px; font-weight:700; margin-bottom:10px; white-space:normal; word-break:keep-all; line-height:1.35; min-height:32px; }
     .combo-wrap { height:120px; position:relative; }
     .change-table { width:100%; border-collapse:collapse; font-size:12px; }
     .change-table thead th { padding:8px 10px; text-align:left; font-size:11px; font-weight:700; color:var(--text-secondary); border-bottom:1px solid var(--border); }
@@ -452,7 +452,7 @@
       .im-container { max-height:96vh; }
     }
     /* SKU 테이블 상품명 클릭 커서 */
-    .prod-name-link { cursor:pointer; color:var(--text); font-weight:600; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; transition:color .12s; }
+    .prod-name-link { cursor:pointer; color:var(--text); font-weight:600; max-width:320px; white-space:normal; word-break:keep-all; line-height:1.35; display:block; transition:color .12s; }
     .prod-name-link:hover { color:var(--accent); text-decoration:underline; }
     /* CIP View Insight 버튼 */
     .cip-insight-btn { width:100%; margin-top:10px; padding:7px; background:var(--accent); color:#fff; border:none; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; font-family:inherit; transition:opacity .15s; }
@@ -1319,7 +1319,29 @@ var customChartIdx = 0;
 var CHARTS = {};
 var $ = function(id){ return document.getElementById(id); };
 function fmt(n){ return n!=null ? Number(n).toLocaleString('ko-KR') : '-'; }
-function fmtS(s){ return s&&s.length>14 ? s.slice(0,13)+'…' : (s||''); }
+// 상품명 단축 표시 — 세트(🎁) / 길이별 처리 (테이블·카드용, 충분한 폭)
+function fmtS(s){
+  if(!s) return '';
+  // [세트] 상품은 더 관대하게 (최대 30자) — 세트 구성을 보존
+  if(s.indexOf('[세트]')===0){
+    if(s.length<=30) return s;
+    return s.slice(0,29)+'…';
+  }
+  // 일반 상품 — 최대 22자
+  if(s.length<=22) return s;
+  return s.slice(0,21)+'…';
+}
+
+// 차트 Y축 라벨용 — 한정된 공간에 맞춰 더 압축
+function fmtSChart(s){
+  if(!s) return '';
+  if(s.indexOf('[세트]')===0){
+    var inner=s.slice(4).trim().replace(/\s*\+\s*/g,'+');  // "[세트] " 제거, 공백+공백 압축
+    return '🎁 '+(inner.length>16 ? inner.slice(0,15)+'…' : inner);
+  }
+  if(s.length<=16) return s;
+  return s.slice(0,15)+'…';
+}
 function stars(r){ var s='',full=Math.round(r); for(var i=1;i<=5;i++) s+=i<=full?'★':'☆'; return '<span style="color:#f59e0b">'+s+'</span>'; }
 
 var ChartManager = {
@@ -1797,7 +1819,7 @@ function renderSKUTable(){
   var negTop5=base.slice().sort(function(a,b){return b.negative_rate-a.negative_rate;}).slice(0,5);
   if($('sku-neg-top5')){
     ChartManager.safeInit('sku-neg-top5',{type:'bar',
-      data:{labels:negTop5.map(function(p){return fmtS(p.name);}),
+      data:{labels:negTop5.map(function(p){return fmtSChart(p.name);}),
             datasets:[{data:negTop5.map(function(p){return p.negative_rate;}),
               backgroundColor:'rgba(220,38,38,0.7)',borderRadius:4,maxBarThickness:20}]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
@@ -1809,7 +1831,7 @@ function renderSKUTable(){
   var posTop5=base.slice().sort(function(a,b){return b.positive_rate-a.positive_rate;}).slice(0,5);
   if($('sku-pos-top5')){
     ChartManager.safeInit('sku-pos-top5',{type:'bar',
-      data:{labels:posTop5.map(function(p){return fmtS(p.name);}),
+      data:{labels:posTop5.map(function(p){return fmtSChart(p.name);}),
             datasets:[{data:posTop5.map(function(p){return p.positive_rate;}),
               backgroundColor:'rgba(22,163,74,0.7)',borderRadius:4,maxBarThickness:20}]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
@@ -1824,7 +1846,7 @@ function renderSKUCombo(){
   var allProds=(STATE.products||REAL_DATA.products);
   if(STATE.productFocus) allProds=allProds.filter(function(p){return p.name===STATE.productFocus;});
   var prods=allProds.filter(function(p){return p.review_count>=10;}).sort(function(a,b){return b.review_count-a.review_count;}).slice(0,20);
-  var labels=prods.map(function(p){return fmtS(p.name);});
+  var labels=prods.map(function(p){return fmtSChart(p.name);});
   var counts=prods.map(function(p){return p.review_count;});
   var ratings=prods.map(function(p){return p.avg_rating;});
   ChartManager.safeInit('sku-combo-single',{type:'bar',data:{labels:labels,datasets:[
@@ -1913,7 +1935,7 @@ function renderKwBar(cid,kws,color,onClickCb){
 function renderSkuBar(cid,prods,valueField,color,onClickCb){
   var items=prods.slice(0,10);
   if(!items.length) return;
-  var labels=items.map(function(p){return fmtS(p.name);});
+  var labels=items.map(function(p){return fmtSChart(p.name);});
   var values=items.map(function(p){return p[valueField]||0;});
   var cfg={type:'bar',
     data:{labels:labels,datasets:[{data:values,backgroundColor:color,borderRadius:4,maxBarThickness:20}]},
@@ -1938,7 +1960,7 @@ function renderVOC(){
   });
   (function(){
     var items=praiseSkuProds.slice(0,10);
-    var labels=items.map(function(p){return fmtS(p.name);});
+    var labels=items.map(function(p){return fmtSChart(p.name);});
     var values=items.map(function(p){return (p.sentiment&&p.sentiment.positive)||Math.round(p.review_count*(p.positive_rate||0)/100);});
     var cfg={type:'bar',data:{labels:labels,datasets:[{data:values,backgroundColor:'rgba(22,163,74,0.65)',borderRadius:4,maxBarThickness:20}]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
@@ -1956,7 +1978,7 @@ function renderVOC(){
   });
   (function(){
     var items=complaintSkuProds.slice(0,10);
-    var labels=items.map(function(p){return fmtS(p.name);});
+    var labels=items.map(function(p){return fmtSChart(p.name);});
     var values=items.map(function(p){return (p.sentiment&&p.sentiment.negative)||Math.round(p.review_count*(p.negative_rate||0)/100);});
     var cfg={type:'bar',data:{labels:labels,datasets:[{data:values,backgroundColor:'rgba(220,38,38,0.65)',borderRadius:4,maxBarThickness:20}]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
@@ -1974,7 +1996,7 @@ function renderVOC(){
   });
   (function(){
     var items=improveSkuProds.slice(0,10);
-    var labels=items.map(function(p){return fmtS(p.name);});
+    var labels=items.map(function(p){return fmtSChart(p.name);});
     var values=items.map(function(p){return Math.round(p.review_count*(p.negative_rate||0)/100);});
     var cfg={type:'bar',data:{labels:labels,datasets:[{data:values,backgroundColor:'rgba(245,158,11,0.65)',borderRadius:4,maxBarThickness:20}]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
