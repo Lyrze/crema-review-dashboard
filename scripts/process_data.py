@@ -155,7 +155,9 @@ SYNONYM_ENTRIES: List[Tuple[re.Pattern, str]] = []
 _RAW_SYNONYMS: List[Tuple[List[str], str]] = [
     # ── 목 마사지 베개 플러스 (V1) ──
     (["목베게플러스", "목베게+", "경추 목 마사지기 베개", "경추목베개", "목베개",
-      "고밀도 프리미엄 경추 마사지 베개", "목베개 플러스 프리미엄", "목마사지베개",
+      "고밀도 프리미엄 경추 마사지 베개", "고밀도 프리미엄 경추 마사지 계절베개",
+      "고밀도 프리미엄 경추 마사지 계절베개 목베개 플러스",
+      "목베개 플러스 프리미엄", "목마사지베개",
       "경추 마사지기 베개", "목베개 플러스", "목베개플러스"], "목베개플러스"),
     # ── 목 마사지 베개 V2 ──
     (["목베개2", "목베개 V2", "목마사지V2", "목마사지베개 브이투",
@@ -182,6 +184,12 @@ _RAW_SYNONYMS: List[Tuple[List[str], str]] = [
     # ── 넥숄더 힐링케어 V2 ──
     (["넥숄더V2", "목 어깨 마사지기 V2", "넥숄더 힐링케어 V2",
       "넥숄더 힐링케어 V2 목"], "넥숄더 힐링케어 V2"),
+    # ── 넥숄더 프로 (구 모델, V2 이전) ──
+    (["넥숄더 프로", "넥숄더 프로 목 어깨 마사지기",
+      "넥숄더프로", "넥숄더 프로 목"], "넥숄더 프로"),
+    # ── 넥숄더 힐링케어 (V2 이전 일반 모델) ──
+    (["넥숄더 힐링케어 목 어깨 마사지기",
+      "넥숄더 힐링케어 목"], "넥숄더 힐링케어"),
     # ── 하루수면 ──
     (["하루수면+", "하루수면"], "하루수면"),
     # ── 에어리프팅 ──
@@ -291,6 +299,148 @@ def normalize_product_name(raw_name: str) -> str:
     return mapped
 
 
+# ────────────────────────────────────────────
+# 옵션 기반 정규화 (인플루언서 광고 + 세트 + 버전 분리)
+# ────────────────────────────────────────────
+
+# 옵션에서 추출할 알려진 상품 키워드 (긴 패턴 먼저)
+_OPTION_PRODUCT_PATTERNS: List[tuple] = [
+    (re.compile(r"목\s*마사지\s*베개\s*V2|목마사지베개\s*V2"), "목마사지베개 V2"),
+    (re.compile(r"넥숄더\s*힐링케어\s*V2|넥숄더힐링케어\s*V2|넥숄더\s*V2"), "넥숄더 힐링케어 V2"),
+    (re.compile(r"넥숄더\s*힐링케어(?!\s*V)"), "넥숄더 힐링케어"),
+    (re.compile(r"넥숄더\s*프로"), "넥숄더 프로"),
+    (re.compile(r"허리편한케어\s*V2|허리편한케어V2"), "허리편한케어 V2"),
+    (re.compile(r"허리편한케어\s*V1|허리편한케어V1"), "허리편한케어 V1"),
+    (re.compile(r"발편한케어\s*V2|발편한케어V2|발편한케어\s*프로"), "발편한케어 V2"),
+    (re.compile(r"발편한케어\s*V1|발편한케어V1|발편한케어\s*데일리"), "발편한케어 V1"),
+    (re.compile(r"발편한케어(?!\s*[VvDd데프])"), "발편한케어"),
+    (re.compile(r"목편한케어\s*플라잉"), "목편한케어 플라잉"),
+    (re.compile(r"목편한케어(?!\s*플)"), "목편한케어"),
+    (re.compile(r"목베개\s*플러스|목베개플러스"), "목베개플러스"),
+    (re.compile(r"종아리편한케어"), "종아리편한케어"),
+    (re.compile(r"눈편한케어"), "눈편한케어"),
+    (re.compile(r"손편한케어"), "손편한케어"),
+    (re.compile(r"엘보케어|팔꿈치"), "엘보케어"),
+    (re.compile(r"골반\s*케어|골반편한케어"), "골반케어"),
+    (re.compile(r"코어\s*요추\s*벨트|코어요추벨트|요추\s*벨트"), "코어 요추벨트"),
+    (re.compile(r"마그네슘\s*시너지\s*크림|마그네슘\s*크림"), "마그네슘 시너지 크림"),
+    (re.compile(r"EMS\s*발\s*마사지기"), "EMS 발 마사지기"),
+    (re.compile(r"USB\s*충전|어댑터|충전기"), "USB 충전 어댑터"),
+    (re.compile(r"하루끝차|티백차"), "하루끝차"),
+]
+
+# 증정 표기 패턴 (해당 부분 제거)
+_GIFT_PATTERN: re.Pattern = re.compile(
+    r"\(증정\)[^+]*?(?=\+|$)|\+\s*\(증정\)[^+]*?(?=\+|$)|증정\)[^+]*?(?=\+|$)",
+    re.IGNORECASE,
+)
+
+# 세트 표기 (★...SET★, [...세트])
+_SET_NAME_PATTERN: re.Pattern = re.compile(
+    r"★\s*[^★]*?SET\s*★|\[[^\]]*?세트\]",
+    re.IGNORECASE,
+)
+
+
+def _extract_products_from_option(option: str) -> List[str]:
+    """옵션 문자열에서 실제 상품들을 추출 (증정 제외, 중복 제거, 순서 유지)."""
+    if not option or not isinstance(option, str):
+        return []
+    # 증정 제거
+    cleaned = _GIFT_PATTERN.sub("", option)
+    # 패턴 매칭으로 상품 추출
+    found = []
+    seen = set()
+    for pattern, canonical in _OPTION_PRODUCT_PATTERNS:
+        if pattern.search(cleaned):
+            if canonical not in seen:
+                # 추출 위치를 보존하기 위해 search().start()로 인덱스 확보
+                m = pattern.search(cleaned)
+                found.append((m.start(), canonical))
+                seen.add(canonical)
+    # 위치 순으로 정렬 (옵션에 먼저 등장하는 상품이 메인)
+    found.sort(key=lambda x: x[0])
+    return [name for _, name in found]
+
+
+def _is_set_option(option: str) -> bool:
+    """옵션에 세트 표기(★SET★, [세트])가 있는지."""
+    if not option or not isinstance(option, str):
+        return False
+    return bool(_SET_NAME_PATTERN.search(option))
+
+
+# 인플루언서/프로모션 raw_name이면서 옵션 기반 분해가 필요한 패턴
+_PROMO_RAW_PATTERNS: List[re.Pattern] = [
+    re.compile(r"덤순이|예나러브|사라패밀리|배말랭|코메리칸|까밀라댁|밍슐랭|꿀민|"
+               r"강주은|44언니|구독자.*?할인|구독자.*?특가|역대급.*?할인|"
+               r"초특가.*?할인|선물\s*찬스|특별\s*연장", re.IGNORECASE),
+]
+
+# "발편한케어 프리미엄 발 마사지기 (데일리, 프로)" 같은 버전 미분리 raw_name
+_VERSION_AMBIGUOUS_PATTERNS: List[tuple] = [
+    (re.compile(r"발편한케어\s*프리미엄.*?\(\s*데일리\s*,\s*프로\s*\)"),
+     "발편한케어"),  # 옵션에서 V1/V2 결정
+]
+
+
+def resolve_product_with_option(raw_name: str, option: str) -> str:
+    """
+    상품명 + 옵션을 함께 보고 최종 정규화 상품명을 결정.
+
+    규칙:
+      1. 옵션에 ★SET★/[세트] 표기 → "[세트] 상품A + 상품B" 카테고리
+      2. raw_name이 "[코어 밸런스 세트] A + B" 형태 → "[세트] A + B"
+      3. raw_name이 프로모션 광고 + 옵션에 상품 2개 이상(증정 제외) → 세트
+      4. raw_name이 프로모션 광고 + 옵션에 상품 1개 → 그 상품으로 매핑
+      5. raw_name이 버전 미명시(데일리/프로) + 옵션에 V1/V2 → 해당 버전
+      6. 그 외 → 기존 normalize_product_name 동작
+    """
+    if not isinstance(raw_name, str):
+        raw_name = str(raw_name)
+    option_str = option if isinstance(option, str) else ""
+
+    # 1) raw_name 자체에 [세트] / SET 표기 있으면 세트 카테고리로
+    if _SET_NAME_PATTERN.search(raw_name):
+        prods = _extract_products_from_option(raw_name) or _extract_products_from_option(option_str)
+        # 메인 상품 2개만 추출 (증정 제외)
+        prods = [p for p in prods if "마그네슘" not in p and "코어 요추벨트" not in p][:2]
+        if len(prods) >= 2:
+            return "[세트] " + " + ".join(prods)
+        # raw_name이 세트인데 옵션 분해 실패 시 fallback
+        if prods:
+            return prods[0]
+
+    # 2) raw_name이 인플루언서 광고 → 옵션 기반 분해
+    is_promo = any(p.search(raw_name) for p in _PROMO_RAW_PATTERNS)
+    if is_promo and option_str:
+        is_set = _is_set_option(option_str)
+        prods = _extract_products_from_option(option_str)
+        # 증정 상품(마그네슘, 코어 요추벨트)은 메인 카운트에서 제외
+        main_prods = [p for p in prods if "마그네슘" not in p and "코어 요추벨트" not in p]
+        if is_set and len(main_prods) >= 2:
+            return "[세트] " + " + ".join(main_prods[:2])
+        if main_prods:
+            return main_prods[0]
+        if prods:
+            return prods[0]
+        # 옵션도 텅 비어있으면 (기타 프로모션)
+        return "(기타 프로모션)"
+
+    # 3) 버전 미명시 상품 → 옵션에서 V1/V2 추출
+    for pat, base in _VERSION_AMBIGUOUS_PATTERNS:
+        if pat.search(raw_name):
+            if option_str:
+                if re.search(r"V2|프로|Pro", option_str, re.IGNORECASE):
+                    return base + " V2"
+                if re.search(r"V1|데일리|Daily", option_str, re.IGNORECASE):
+                    return base + " V1"
+            # 옵션 없으면 기본 처리
+
+    # 4) 기본 정규화
+    return normalize_product_name(raw_name)
+
+
 def get_product_group_key(normalized_name: str) -> str:
     """
     정규화된 상품명을 동일 상품 그룹 키로 변환.
@@ -393,9 +543,17 @@ def load_csv(csv_path: Path) -> pd.DataFrame:
     if "body" in df.columns:
         df["body"] = df["body"].fillna("").astype(str)
 
-    # 상품명 정규화 (벡터화 — Series.map 사용)
+    # 상품명 정규화 — 옵션 컬럼이 있으면 옵션 기반 분해도 적용
     if "product_name_raw" in df.columns:
-        df["product_name"] = df["product_name_raw"].map(normalize_product_name)
+        if "product_option" in df.columns:
+            df["product_name"] = df.apply(
+                lambda r: resolve_product_with_option(
+                    r["product_name_raw"], r.get("product_option", "") or ""
+                ),
+                axis=1,
+            )
+        else:
+            df["product_name"] = df["product_name_raw"].map(normalize_product_name)
 
     # 별점 유효값만 유지 (1~5)
     if "rating" in df.columns:
