@@ -241,7 +241,7 @@
     },
     {
       "id": "966",
-      "name": "골반 케어 프리미엄 골반 마사지기",
+      "name": "골반 마사지기",
       "raw_name": "골반 케어 프리미엄 골반 마사지기",
       "price": 189000,
       "review_count": 219,
@@ -2318,28 +2318,28 @@
     },
     {
       "id": "898",
-      "name": "(기타 프로모션)",
+      "name": "종아리편한케어",
       "raw_name": "[44언니X슬룸] 2차! EMS 발 마사지기 최저가 OPEN★",
       "price": 79900,
-      "review_count": 3,
+      "review_count": 4,
       "avg_rating": 5.0,
       "rating_distribution": {
         "1": 0,
         "2": 0,
         "3": 0,
         "4": 0,
-        "5": 3
+        "5": 4
       },
-      "photo_count": 3,
+      "photo_count": 4,
       "sentiment": {
-        "positive": 3,
+        "positive": 4,
         "neutral": 0,
         "negative": 0
       },
       "positive_rate": 100.0,
       "negative_rate": 0.0,
-      "prev_review_count": 8,
-      "prev_avg_rating": 4.62,
+      "prev_review_count": 5,
+      "prev_avg_rating": 5.0,
       "top_reviews": [
         {
           "review_id": "111073",
@@ -2352,6 +2352,12 @@
           "text": "완전만족 여태까지 다리마사지기 안써번게없는데 최고에여",
           "rating": 5,
           "date": "2026-04-08"
+        },
+        {
+          "review_id": "96972",
+          "text": "선물하려고 하나더 구매했어요",
+          "rating": 5,
+          "date": "2026-04-04"
         },
         {
           "review_id": "96970",
@@ -2921,40 +2927,6 @@
           "text": "디자인 굿 . 슬룸꺼라 믿고 써요",
           "rating": 5,
           "date": "2026-04-22"
-        }
-      ],
-      "bottom_reviews": []
-    },
-    {
-      "id": "872",
-      "name": "종아리편한케어",
-      "raw_name": "종아리편한케어 프리미엄 종아리 마사지기",
-      "price": 149000,
-      "review_count": 1,
-      "avg_rating": 5.0,
-      "rating_distribution": {
-        "1": 0,
-        "2": 0,
-        "3": 0,
-        "4": 0,
-        "5": 1
-      },
-      "photo_count": 1,
-      "sentiment": {
-        "positive": 1,
-        "neutral": 0,
-        "negative": 0
-      },
-      "positive_rate": 100.0,
-      "negative_rate": 0.0,
-      "prev_review_count": 2,
-      "prev_avg_rating": 5.0,
-      "top_reviews": [
-        {
-          "review_id": "96972",
-          "text": "선물하려고 하나더 구매했어요",
-          "rating": 5,
-          "date": "2026-04-04"
         }
       ],
       "bottom_reviews": []
