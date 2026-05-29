@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- 캐시 우회: 항상 최신 버전 로드 -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>크리마 리뷰 대시보드 — 슬룸</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1710,7 +1714,14 @@ async function aiAnalyzeSection(key){
   );
 }
 
-async function fetchJSON(url){ var r=await fetch(url); if(!r.ok) throw new Error(r.status); return r.json(); }
+async function fetchJSON(url){
+  // 캐시 우회: URL에 cache-busting 쿼리 + cache:'no-cache' 옵션
+  var sep = url.indexOf('?')>=0 ? '&' : '?';
+  var bustUrl = url + sep + '_=' + Date.now();
+  var r = await fetch(bustUrl, { cache: 'no-cache' });
+  if(!r.ok) throw new Error(r.status);
+  return r.json();
+}
 
 async function loadIndex(){
   try{
