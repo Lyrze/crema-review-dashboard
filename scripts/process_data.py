@@ -1059,9 +1059,9 @@ def extract_keywords_basic(df: pd.DataFrame, top_n: int = 30) -> dict:
                     # 패턴 재검증 — 본문에 실제 포함되는지
                     if not verify_re.search(text):
                         continue
-                    # 상품별 분포 균등화 (한 상품 최대 4건)
+                    # 상품별 분포 균등화 (한 상품 최대 8건 — 다양성과 전체 보기 균형)
                     prod_name = str(row["product_name"]) if "product_name" in source_df.columns else ""
-                    if seen_products.get(prod_name, 0) >= 4:
+                    if seen_products.get(prod_name, 0) >= 8:
                         continue
                     seen_products[prod_name] = seen_products.get(prod_name, 0) + 1
                     # 날짜 포맷
@@ -1091,9 +1091,9 @@ def extract_keywords_basic(df: pd.DataFrame, top_n: int = 30) -> dict:
     _attach_by_product(praise_top)
     _attach_by_product(complaint_top)
     _attach_by_product(improvement_top)
-    _attach_review_samples(praise_top, df, max_samples=15)
-    _attach_review_samples(complaint_top, low_df, max_samples=15)
-    _attach_review_samples(improvement_top, df, max_samples=15)
+    _attach_review_samples(praise_top, df, max_samples=50)
+    _attach_review_samples(complaint_top, low_df, max_samples=50)
+    _attach_review_samples(improvement_top, df, max_samples=50)
 
     return {
         "negative_keywords": _count_keywords(neg_df, top_n),

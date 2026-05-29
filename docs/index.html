@@ -3140,6 +3140,21 @@ function showCIPKeyword(word, cnt, type, anchorEl, evt){
 }
 
 // ── 키워드별 관련 리뷰 모달 ──
+var KRM_MODE='15'; // '5' | '15' | 'all'
+
+function krmSetMode(mode){
+  KRM_MODE=mode;
+  document.querySelectorAll('.krm-mode-btn').forEach(function(b){
+    var isActive=b.getAttribute('data-mode')===mode;
+    b.classList.toggle('active', isActive);
+    b.style.background=isActive?'var(--accent)':'transparent';
+    b.style.color=isActive?'#fff':'var(--text-secondary)';
+  });
+  // 재렌더
+  var modal=$('keyword-reviews-modal');
+  if(modal && modal._ctx) krmRenderList();
+}
+
 function openKeywordReviewsModal(keyword, productFilter, type){
   var modal=$('keyword-reviews-modal');
   if(!modal){
@@ -3158,6 +3173,16 @@ function openKeywordReviewsModal(keyword, productFilter, type){
           '<button onclick="krmAskAI()" id="krm-ai-btn" style="padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;">✦ AI 요약</button>'+
           '<button onclick="closeKeywordReviewsModal()" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--text-secondary);padding:0;line-height:1;">×</button>'+
         '</div>'+
+      '</div>'+
+      // 요약/전체 토글 컨트롤
+      '<div style="padding:10px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--bg);">'+
+        '<span style="font-size:11px;color:var(--text-secondary);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">표시 모드</span>'+
+        '<div style="display:inline-flex;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:3px;">'+
+          '<button class="krm-mode-btn" data-mode="5" onclick="krmSetMode(\'5\')" style="padding:4px 12px;background:transparent;border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:600;color:var(--text-secondary);font-family:inherit;">📌 대표 5건</button>'+
+          '<button class="krm-mode-btn active" data-mode="15" onclick="krmSetMode(\'15\')" style="padding:4px 12px;background:var(--accent);border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:600;color:#fff;font-family:inherit;">📝 요약 15건</button>'+
+          '<button class="krm-mode-btn" data-mode="all" onclick="krmSetMode(\'all\')" style="padding:4px 12px;background:transparent;border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:600;color:var(--text-secondary);font-family:inherit;">📚 전체 보기</button>'+
+        '</div>'+
+        '<span id="krm-mode-info" style="font-size:11px;color:var(--text-secondary);margin-left:auto;"></span>'+
       '</div>'+
       '<div id="krm-ai-result" style="display:none;padding:14px 22px;border-bottom:1px solid var(--border);background:rgba(91,94,244,.04);font-size:12.5px;line-height:1.7;color:var(--text);"></div>'+
       '<div id="krm-list" style="flex:1;overflow-y:auto;padding:14px 22px;"></div>'+
@@ -3221,42 +3246,81 @@ function openKeywordReviewsModal(keyword, productFilter, type){
   if(reviewIds.length<totalCount) subtitleParts.push('샘플 '+reviewIds.length+'건 표시');
   $('krm-subtitle').textContent=subtitleParts.join(' · ');
 
-  // 리뷰 목록
-  var listEl=$('krm-list');
-  if(allReviews.length===0){
-    var emptyMsg=productFilter
-      ? '"'+escapeHtml(fmtS(productFilter)||productFilter)+'" 상품에 해당 키워드 매칭 리뷰가 저장되어 있지 않습니다.<br><br><span style="font-size:11px;color:var(--text-secondary);">전체 보기로 다시 시도해보세요.</span>'
-      : '본문이 저장된 리뷰가 없습니다.<br><br><span style="font-size:11px;color:var(--text-secondary);">파이프라인을 재실행하여 review_samples를 생성하세요.</span>';
-    listEl.innerHTML='<div style="text-align:center;padding:30px;color:var(--text-secondary);font-size:12.5px;">'+emptyMsg+'</div>';
-  } else {
-    listEl.innerHTML=allReviews.map(function(item){
-      var r=item.r;
-      var stars=''; for(var i=1;i<=5;i++) stars+=i<=r.rating?'★':'☆';
-      var tag=r.rating>=4?'<span style="background:rgba(22,163,74,.12);color:#16a34a;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">긍정 ★'+r.rating+'</span>':r.rating<=2?'<span style="background:rgba(220,38,38,.10);color:#dc2626;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">부정 ★'+r.rating+'</span>':'<span style="background:var(--surface-hover);color:var(--text-secondary);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">중립 ★'+r.rating+'</span>';
-      // 키워드 하이라이트
-      var text=r.text||'';
-      var firstWord=keyword.split(/[\s\/]+/)[0];
-      var re=new RegExp('('+firstWord.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'[^\\s,.!?]*)','gi');
-      var highlighted=escapeHtml(text).replace(re,'<mark style="background:#fef08a;padding:0 2px;">$1</mark>');
-      return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;">'+
-        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">'+
-          '<span style="font-size:11.5px;font-weight:700;color:var(--accent);cursor:pointer;" onclick="closeKeywordReviewsModal();openProductPanel(\''+item.name.replace(/'/g,"\\'")+'\');">'+escapeHtml(fmtS(item.name))+'</span>'+
-          '<span style="font-size:12px;color:#f59e0b;letter-spacing:-1px;">'+stars+'</span>'+
-          '<span style="font-size:10.5px;color:var(--text-secondary);">'+(r.date||'')+'</span>'+
-          tag+
-        '</div>'+
-        '<div style="font-size:12.5px;color:var(--text);line-height:1.65;">'+highlighted+'</div>'+
-      '</div>';
-    }).join('');
-  }
-
-  // 푸터
-  $('krm-footer').innerHTML='<span>표시 '+allReviews.length+'건 / 매칭 총 '+fmt(totalCount)+'건</span>'+
-    '<span style="font-size:10.5px;">⌨ ESC: 닫기 · 키워드는 노란 형광펜으로 표시</span>';
-
-  // AI 요약용 컨텍스트 저장
+  // AI 요약용 컨텍스트 저장 (krmRenderList에서 mode에 따라 슬라이스)
   modal._ctx={keyword:keyword, productFilter:productFilter, type:type, reviews:allReviews, totalCount:totalCount};
   $('krm-ai-result').style.display='none';
+  // 모드 기본값으로 리셋 (15건)
+  KRM_MODE='15';
+  document.querySelectorAll('.krm-mode-btn').forEach(function(b){
+    var isActive=b.getAttribute('data-mode')==='15';
+    b.classList.toggle('active', isActive);
+    b.style.background=isActive?'var(--accent)':'transparent';
+    b.style.color=isActive?'#fff':'var(--text-secondary)';
+  });
+  krmRenderList();
+}
+
+// 모드에 따라 리뷰 목록 렌더링 (요약 5건 / 요약 15건 / 전체)
+function krmRenderList(){
+  var modal=$('keyword-reviews-modal');
+  if(!modal||!modal._ctx) return;
+  var ctx=modal._ctx;
+  var allReviews=ctx.reviews||[];
+  var totalCount=ctx.totalCount;
+  var keyword=ctx.keyword;
+
+  var listEl=$('krm-list');
+  if(allReviews.length===0){
+    var emptyMsg=ctx.productFilter
+      ? '"'+escapeHtml(fmtS(ctx.productFilter)||ctx.productFilter)+'" 상품에 해당 키워드 매칭 리뷰가 저장되어 있지 않습니다.<br><br><span style="font-size:11px;color:var(--text-secondary);">전체 보기로 다시 시도해보세요.</span>'
+      : '본문이 저장된 리뷰가 없습니다.';
+    listEl.innerHTML='<div style="text-align:center;padding:30px;color:var(--text-secondary);font-size:12.5px;">'+emptyMsg+'</div>';
+    $('krm-mode-info').textContent='';
+    $('krm-footer').innerHTML='<span>0건</span><span style="font-size:10.5px;">⌨ ESC: 닫기</span>';
+    return;
+  }
+
+  // 모드별 슬라이스
+  var limit;
+  if(KRM_MODE==='5') limit=5;
+  else if(KRM_MODE==='15') limit=15;
+  else limit=allReviews.length; // 'all'
+  var shown=allReviews.slice(0, limit);
+
+  // 모드 안내 + 푸터
+  var modeLabel=KRM_MODE==='5'?'대표 5건':KRM_MODE==='15'?'요약 15건':'전체 보기';
+  var totalSaved=allReviews.length;
+  $('krm-mode-info').textContent='저장 '+totalSaved+'건 / 매칭 '+totalCount+'건';
+
+  if(totalSaved<totalCount){
+    $('krm-footer').innerHTML='<span><strong>'+modeLabel+'</strong>: '+shown.length+'건 표시 / 저장 '+totalSaved+'건 / 매칭 총 '+fmt(totalCount)+'건</span>'+
+      '<span style="font-size:10.5px;color:var(--text-secondary);">💡 저장 한도(50건/키워드) 초과는 process_data.py 조정 필요</span>';
+  } else {
+    $('krm-footer').innerHTML='<span><strong>'+modeLabel+'</strong>: '+shown.length+'건 표시 / 매칭 '+fmt(totalCount)+'건 전체 저장됨</span>'+
+      '<span style="font-size:10.5px;">⌨ ESC: 닫기 · 키워드는 노란 형광펜으로 표시</span>';
+  }
+
+  listEl.innerHTML=shown.map(function(item){
+    var r=item.r;
+    var stars=''; for(var i=1;i<=5;i++) stars+=i<=r.rating?'★':'☆';
+    var tag=r.rating>=4?'<span style="background:rgba(22,163,74,.12);color:#16a34a;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">긍정 ★'+r.rating+'</span>':r.rating<=2?'<span style="background:rgba(220,38,38,.10);color:#dc2626;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">부정 ★'+r.rating+'</span>':'<span style="background:var(--surface-hover);color:var(--text-secondary);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">중립 ★'+r.rating+'</span>';
+    var text=r.text||'';
+    var firstWord=keyword.split(/[\s\/]+/)[0];
+    var re=new RegExp('('+firstWord.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'[^\\s,.!?]*)','gi');
+    var highlighted=escapeHtml(text).replace(re,'<mark style="background:#fef08a;padding:0 2px;">$1</mark>');
+    return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;">'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">'+
+        '<span style="font-size:11.5px;font-weight:700;color:var(--accent);cursor:pointer;" onclick="closeKeywordReviewsModal();openProductPanel(\''+item.name.replace(/'/g,"\\'")+'\');">'+escapeHtml(fmtS(item.name))+'</span>'+
+        '<span style="font-size:12px;color:#f59e0b;letter-spacing:-1px;">'+stars+'</span>'+
+        '<span style="font-size:10.5px;color:var(--text-secondary);">'+(r.date||'')+'</span>'+
+        tag+
+      '</div>'+
+      '<div style="font-size:12.5px;color:var(--text);line-height:1.65;">'+highlighted+'</div>'+
+    '</div>';
+  }).join('');
+
+  // 컨텍스트에 현재 표시된 리뷰 저장 (AI 요약용)
+  ctx.shownReviews=shown;
 }
 
 function closeKeywordReviewsModal(){
@@ -3280,12 +3344,15 @@ async function krmAskAI(){
   resultEl.style.display='block';
   resultEl.innerHTML='리뷰 분석 중... <span class="aic-cursor">▍</span>';
 
-  var reviewTexts=ctx.reviews.slice(0,15).map(function(item){
+  // 현재 화면에 표시된 리뷰들 (krmRenderList에서 shownReviews 저장)
+  var sourceReviews=ctx.shownReviews||ctx.reviews.slice(0,15);
+  var modeLabel=KRM_MODE==='5'?'대표 5건':KRM_MODE==='15'?'요약 15건':'전체 보기 ('+sourceReviews.length+'건)';
+  var reviewTexts=sourceReviews.map(function(item){
     return '★'+item.r.rating+' ['+fmtS(item.name)+']: '+item.r.text;
   }).join('\n');
-  var prompt='[키워드: "'+ctx.keyword+'" / '+ctx.type+' 키워드 / 총 '+ctx.totalCount+'건]\n'+
+  var prompt='[키워드: "'+ctx.keyword+'" / '+ctx.type+' 키워드 / 매칭 총 '+ctx.totalCount+'건 / 분석 대상: '+modeLabel+']\n'+
     (ctx.productFilter?'[상품 필터: '+ctx.productFilter+']\n':'')+
-    '\n[리뷰 샘플]\n'+reviewTexts+'\n\n'+
+    '\n[리뷰 본문]\n'+reviewTexts+'\n\n'+
     '위 리뷰들에서 "'+ctx.keyword+'" 키워드와 관련된 핵심 패턴/원인/사용자 의견을 한국어로 3-5줄로 요약하세요. **굵게**와 - 리스트로 가독성을 높여주세요.';
 
   await ollamaStream(prompt,
