@@ -197,11 +197,6 @@
     .ai-analyze-btn:disabled { opacity:.5; cursor:wait; }
     /* no-prev 표시 */
     .no-prev { color:var(--text-secondary); font-size:11px; }
-    /* 상품 포커스 필터 */
-    .product-focus-bar { display:flex; align-items:center; gap:10px; margin-bottom:20px; padding:10px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; flex-wrap:wrap; }
-    .product-focus-label { font-size:11px; font-weight:700; color:var(--text-secondary); white-space:nowrap; }
-    .product-focus-select { padding:5px 28px 5px 10px; border:1px solid var(--border); border-radius:7px; font-size:12px; color:var(--text); background:var(--bg); cursor:pointer; font-family:inherit; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 8px center; min-width:180px; }
-    .product-focus-tag { display:inline-block; background:var(--accent-bg); color:var(--accent); font-size:11px; font-weight:600; padding:2px 8px; border-radius:12px; }
     /* AI 커스텀 질문 */
     .custom-ai-textarea { width:100%; min-height:80px; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:inherit; color:var(--text); background:var(--bg); resize:vertical; line-height:1.5; }
     .custom-ai-textarea:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-bg); }
@@ -446,10 +441,33 @@
     .im-ai-trigger { font-size:10.5px; padding:4px 10px; border:1px dashed rgba(91,94,244,.4); background:transparent; color:var(--accent); border-radius:6px; cursor:pointer; margin-top:8px; font-family:inherit; transition:all .12s; }
     .im-ai-trigger:hover { background:rgba(91,94,244,.06); border-style:solid; }
     .im-ai-trigger:disabled { opacity:.5; cursor:not-allowed; }
-    /* 모바일 대응 */
+    /* 모바일 대응 — 인사이트 모달 */
     @media (max-width: 768px){
       .im-charts { grid-template-columns:1fr; }
       .im-container { max-height:96vh; }
+      .im-header { padding:16px 18px 12px; flex-wrap:wrap; }
+      .im-title { font-size:16px; }
+      .im-body { padding:16px 18px 18px; }
+      .im-cards { grid-template-columns:1fr; }
+      .im-card { min-width:0; }
+      .im-review-controls { flex-direction:column; align-items:stretch; }
+      .im-rev-filter-group, .im-rev-count-group { width:100%; justify-content:space-around; }
+      .im-action-btn { padding:6px 10px; font-size:11px; }
+    }
+    /* 모바일 — AI 챗 패널 */
+    @media (max-width: 600px){
+      #ai-chat-panel { width:100vw; }
+      .aic-bubble { max-width:78vw; }
+      #product-detail-panel { width:100vw; }
+      .sync-filter-bar { gap:6px; }
+      .filter-chip { padding:6px 11px; font-size:11px; }
+      .filter-chip .chip-label { font-size:9px; }
+    }
+    /* 모바일 — 칩 바 좁은 화면 */
+    @media (max-width: 480px){
+      .sync-filter-right .filter-chip { padding:6px 8px; font-size:10.5px; }
+      #chip-aichat { font-size:11px; }
+      .sync-filter-bar { padding-bottom:4px; }
     }
     /* SKU 테이블 상품명 클릭 커서 */
     .prod-name-link { cursor:pointer; color:var(--text); font-weight:600; max-width:320px; white-space:normal; word-break:keep-all; line-height:1.35; display:block; transition:color .12s; }
@@ -554,6 +572,9 @@
     .date-range-clear:hover { background:var(--surface-hover); color:var(--text); }
     /* Override 적용 시 chip 강조 */
     .filter-chip.override-active { background:var(--accent-bg); border-color:var(--accent); color:var(--accent); }
+    /* AI 응답 스트리밍 커서 */
+    .aic-cursor { display:inline-block; width:6px; height:14px; background:var(--accent); margin-left:2px; vertical-align:middle; animation:cursor-blink 0.85s steps(1) infinite; border-radius:1px; }
+    @keyframes cursor-blink { 50% { opacity:0; } }
     /* ── 인쇄(PDF) 스타일 ── */
     @media print {
       aside, .menu-btn, .product-focus-bar, .fab-btn, .fab-menu,
@@ -575,15 +596,13 @@
 <aside id="sidebar" role="navigation" aria-label="대시보드 메뉴">
   <div class="sb-header">
     <div class="sb-logo"><div class="logo-dot"></div>크리마 리뷰 <span>대시보드</span></div>
-    <div class="sb-selects">
-      <div><label for="brand-select">브랜드</label><select id="brand-select" onchange="onBrandChange(this.value)"><option value="슬룸">슬룸</option></select></div>
-      <div><label for="month-select">기간</label><select id="month-select" onchange="onMonthChange(this.value)"><option value="2026-04">2026-04</option></select></div>
-      <div style="margin-top:4px;"><button class="compare-toggle" id="compare-toggle" onclick="toggleCompareMode()">비교 모드</button></div>
-      <div class="compare-month-row" id="compare-month-row" style="display:none;margin-top:4px;">
-        <label for="compare-month-select">비교 기간</label>
-        <select id="compare-month-select" onchange="onCompareMonthChange(this.value)"></select>
-      </div>
-    </div>
+    <div style="font-size:11px;color:var(--text-secondary);margin-top:6px;line-height:1.4;">상단 필터 칩으로<br>브랜드·기간·상품을 변경하세요</div>
+    <!-- 호환성 유지용 hidden 요소들 (다른 코드에서 참조) -->
+    <select id="brand-select" style="display:none;" onchange="onBrandChange(this.value)"><option value="슬룸">슬룸</option></select>
+    <select id="month-select" style="display:none;" onchange="onMonthChange(this.value)"><option value="2026-04">2026-04</option></select>
+    <select id="compare-month-select" style="display:none;" onchange="onCompareMonthChange(this.value)"></select>
+    <button id="compare-toggle" style="display:none;" onclick="toggleCompareMode()">비교 모드</button>
+    <div id="compare-month-row" style="display:none;"></div>
   </div>
   <nav>
     <div class="nav-group">분석 섹션</div>
@@ -598,8 +617,8 @@
     <a href="#sec-pvoc"><span class="icon">🛒</span> 구매경험 VOC</a>
     <div class="nav-divider"></div>
     <div class="nav-group">커스텀 분석</div>
-    <a href="#sec-ai-custom"><span class="icon">🤖</span> AI 질문</a>
     <a href="#sec-custom-chart"><span class="icon">🛠</span> 커스텀 차트</a>
+    <a href="#" onclick="event.preventDefault();openAIChatPanel();"><span class="icon">✦</span> Hey Sloom 챗</a>
   </nav>
   <div class="sb-footer">
     <div class="sb-footer-row">
@@ -640,6 +659,9 @@
       </div>
     </div>
     <div class="sync-filter-right">
+      <button class="filter-chip" id="chip-search" onclick="openReviewSearch()" title="리뷰 본문 검색">🔍 리뷰 검색</button>
+      <button class="filter-chip" id="chip-refresh" onclick="manualReload()" title="데이터 새로고침">🔄</button>
+      <button class="filter-chip" id="chip-share" onclick="shareCurrentURL()" title="현재 상태 URL 복사">🔗 공유</button>
       <button class="filter-chip" id="chip-aichat" onclick="toggleAIChatPanel()" title="AI 채팅 패널 열기" style="background:rgba(91,94,244,.08);border-color:var(--accent);color:var(--accent);">✦ Hey Sloom</button>
       <button class="filter-chip" id="chip-compare" onclick="toggleCompareMode()" title="두 달 비교 모드">📊 비교 모드</button>
       <button class="filter-chip" id="chip-override" onclick="toggleDateOverridePop(event)" title="기간 재정의">📅 <span id="chip-override-val">Override date filter</span></button>
@@ -647,12 +669,6 @@
   </div>
   <!-- 칩 드롭다운 (재사용) -->
   <div class="chip-pop" id="chip-pop" style="position:absolute;"></div>
-
-  <!-- 기존 상품 포커스 바 (하위 호환용, 숨김) -->
-  <div class="product-focus-bar" id="product-focus-bar" style="display:none;">
-    <span class="product-focus-label">상품 포커스</span>
-    <select id="product-focus-select" class="product-focus-select" onchange="onProductFocusChange(this.value)"></select>
-  </div>
 
   <!-- 비교 모드 배너 -->
   <div id="compare-banner" style="display:none;margin-bottom:20px;">
@@ -962,42 +978,11 @@
     <div class="section-desc">* 구매경험 VOC는 리뷰 텍스트에서 구매 전/후 경험 관련 언급을 분류한 결과입니다. 가로로 스크롤하여 모든 카드를 확인하세요.</div>
   </section>
 
-  <!-- ⑧ AI 커스텀 질문 -->
-  <section class="section animate delay-5" id="sec-ai-custom" aria-label="AI 커스텀 질문">
-    <div class="section-header">
-      <div>
-        <div class="section-title"><span class="drag-handle" title="드래그해서 이동">⠿</span><span class="sec-num">8</span>AI 커스텀 질문</div>
-        <div class="section-subtitle">데이터를 기반으로 자유롭게 질문하세요</div>
-      </div>
-    </div>
-    <div class="card">
-      <textarea class="custom-ai-textarea" id="custom-ai-input"
-        placeholder="예: 가장 부정 리뷰가 많은 상품은? / 이번 달 긍정률이 낮은 상품과 이유는? / 특정 상품의 주요 불만 사항을 요약해줘"></textarea>
-      <div class="custom-ai-toolbar">
-        <select class="custom-ai-ctx" id="custom-ai-ctx" title="분석 컨텍스트 선택">
-          <option value="all">전체 데이터 포함</option>
-          <option value="kpi">KPI 요약만</option>
-          <option value="sku">SKU 데이터만</option>
-          <option value="voc">VOC 키워드만</option>
-        </select>
-        <button class="ai-analyze-btn" id="btn-ai-custom" onclick="aiCustomQuestion()">✦ AI에게 질문하기</button>
-        <span style="font-size:11px;color:var(--text-secondary);">모델: <span id="custom-ai-model-label">—</span></span>
-      </div>
-    </div>
-    <div class="ai-panel" id="ai-panel-custom" style="display:none; margin-top:12px;">
-      <div class="ai-panel-head" onclick="toggleAIPanel('custom')">
-        <div class="ai-panel-title"><span class="ai-tag">✦ AI</span> 답변</div>
-        <span id="ai-panel-custom-toggle">▲ 접기</span>
-      </div>
-      <div class="ai-panel-body open" id="ai-panel-custom-body">분석 중...</div>
-    </div>
-  </section>
-
-  <!-- ⑨ 커스텀 차트 -->
+  <!-- ⑧ 커스텀 차트 (구 ⑨, AI 커스텀 질문은 Hey Sloom 패널로 통합됨) -->
   <section class="section animate delay-5" id="sec-custom-chart" aria-label="커스텀 차트">
     <div class="section-header">
       <div>
-        <div class="section-title"><span class="drag-handle" title="드래그해서 이동">⠿</span><span class="sec-num">9</span>커스텀 차트</div>
+        <div class="section-title"><span class="drag-handle" title="드래그해서 이동">⠿</span><span class="sec-num">8</span>커스텀 차트</div>
         <div class="section-subtitle">우하단 <strong>+</strong> 버튼으로 차트를 추가하세요</div>
       </div>
     </div>
@@ -1161,6 +1146,32 @@
   </div>
 </div>
 
+<!-- ── 리뷰 본문 검색 모달 ── -->
+<div id="review-search-modal" onclick="if(event.target===this)closeReviewSearch();" style="display:none;position:fixed;inset:0;z-index:780;background:rgba(0,0,0,.55);align-items:flex-start;justify-content:center;padding-top:80px;">
+  <div style="background:var(--card);border-radius:14px;width:100%;max-width:720px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.22);">
+    <div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div style="flex:1;">
+        <div style="font-size:15px;font-weight:800;color:var(--text);">🔍 리뷰 본문 검색</div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;">키워드로 저장된 리뷰 샘플(top + bottom) 검색</div>
+      </div>
+      <button onclick="closeReviewSearch()" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--text-secondary);padding:0;line-height:1;">×</button>
+    </div>
+    <div style="padding:14px 22px;border-bottom:1px solid var(--border);display:flex;gap:8px;">
+      <input type="text" id="rev-search-input" placeholder="검색어 입력 (예: 소음, 효과, 반품, 빠른배송...)" style="flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--text);outline:none;" oninput="runReviewSearch()" autofocus>
+      <select id="rev-search-rating" onchange="runReviewSearch()" style="padding:9px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--bg);color:var(--text);font-family:inherit;outline:none;">
+        <option value="">전체 별점</option>
+        <option value="5">★★★★★</option>
+        <option value="4">★★★★☆</option>
+        <option value="3">★★★☆☆</option>
+        <option value="2">★★☆☆☆</option>
+        <option value="1">★☆☆☆☆</option>
+      </select>
+    </div>
+    <div id="rev-search-results" style="flex:1;overflow-y:auto;padding:14px 22px;"></div>
+    <div id="rev-search-count" style="padding:8px 22px 14px;font-size:11px;color:var(--text-secondary);border-top:1px solid var(--border);"></div>
+  </div>
+</div>
+
 <!-- ── 날짜 범위 선택 팝업 ── -->
 <div class="date-range-pop" id="date-range-pop">
   <h4>📅 기간 재정의 (Override date filter)</h4>
@@ -1195,7 +1206,6 @@
         <div class="im-subtitle" id="im-subtitle"></div>
       </div>
       <div class="im-header-actions">
-        <button class="im-action-btn" onclick="imExportPDF()" title="PDF 저장">🖨 PDF</button>
         <button class="im-action-btn accent" onclick="imAskHeySloom()" title="Hey Sloom 챗에서 분석">✦ Hey Sloom</button>
         <button class="im-close" onclick="closeInsightModal()">×</button>
       </div>
@@ -1319,6 +1329,36 @@ var customChartIdx = 0;
 var CHARTS = {};
 var $ = function(id){ return document.getElementById(id); };
 function fmt(n){ return n!=null ? Number(n).toLocaleString('ko-KR') : '-'; }
+
+// ── 간단한 마크다운 → HTML 변환 (AI 응답 가독성용) ──
+function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function mdToHtml(text){
+  if(!text) return '';
+  var s=escapeHtml(text);
+  // 코드 블록 ```
+  s=s.replace(/```([\s\S]*?)```/g,function(_,c){return '<pre style="background:var(--surface);padding:8px 10px;border-radius:6px;font-size:11.5px;overflow-x:auto;margin:6px 0;font-family:Consolas,Monaco,monospace;">'+c+'</pre>';});
+  // 인라인 코드 `code`
+  s=s.replace(/`([^`\n]+)`/g,'<code style="background:var(--surface);padding:1px 5px;border-radius:4px;font-size:.9em;font-family:Consolas,Monaco,monospace;">$1</code>');
+  // 굵게 **text** + __text__
+  s=s.replace(/\*\*([^*\n]+)\*\*/g,'<strong>$1</strong>');
+  s=s.replace(/__([^_\n]+)__/g,'<strong>$1</strong>');
+  // 기울임 *text* + _text_
+  s=s.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g,'<em>$1</em>');
+  s=s.replace(/(?<!_)_([^_\n]+)_(?!_)/g,'<em>$1</em>');
+  // 헤딩 # / ## / ###
+  s=s.replace(/^###\s+(.+)$/gm,'<div style="font-size:13px;font-weight:700;margin:8px 0 4px;color:var(--text);">$1</div>');
+  s=s.replace(/^##\s+(.+)$/gm,'<div style="font-size:14px;font-weight:800;margin:10px 0 5px;color:var(--text);">$1</div>');
+  s=s.replace(/^#\s+(.+)$/gm,'<div style="font-size:15px;font-weight:800;margin:12px 0 6px;color:var(--text);">$1</div>');
+  // 리스트 - / * / 숫자.
+  s=s.replace(/^\s*[-*]\s+(.+)$/gm,'<div style="padding-left:14px;position:relative;margin:3px 0;"><span style="position:absolute;left:2px;color:var(--accent);">·</span>$1</div>');
+  s=s.replace(/^\s*(\d+)\.\s+(.+)$/gm,'<div style="padding-left:18px;position:relative;margin:3px 0;"><span style="position:absolute;left:0;color:var(--accent);font-weight:700;">$1.</span>$2</div>');
+  // 인용 >
+  s=s.replace(/^>\s+(.+)$/gm,'<div style="border-left:3px solid var(--accent);padding:4px 10px;background:var(--surface);margin:6px 0;color:var(--text-secondary);">$1</div>');
+  // 단락 줄바꿈 (이미 div 처리된 라인 제외)
+  s=s.replace(/(\n){2,}/g,'<br><br>');
+  s=s.replace(/(?<!>)\n(?!<)/g,'<br>');
+  return s;
+}
 // 상품명 단축 표시 — 세트(🎁) / 길이별 처리 (테이블·카드용, 충분한 폭)
 function fmtS(s){
   if(!s) return '';
@@ -1604,17 +1644,19 @@ async function aiAnalyzeSection(key){
   }
 
   if(!prompt){ btn.disabled=false; btn.textContent=origText; return; }
-  try{
-    var r=await fetch('http://localhost:11434/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:STATE.ollamaModel,prompt:prompt,stream:false}),signal:AbortSignal.timeout(60000)});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    var d=await r.json();
-    if(popBody) popBody.textContent=d.response||'응답 없음';
-    if(popAsk) popAsk.style.display='block';
-  }catch(e){
-    if(popBody) popBody.textContent='[오류] '+e.message+'\n\nOllama가 실행 중인지 확인하세요.';
-  }
-  btn.disabled=false; btn.textContent=origText;
+  if(popBody) popBody.innerHTML='데이터 분석 중... <span class="aic-cursor">▍</span>';
+  await ollamaStream(prompt,
+    function(_t, full){ if(popBody) popBody.innerHTML=mdToHtml(full)+'<span class="aic-cursor">▍</span>'; },
+    function(full){
+      if(popBody) popBody.innerHTML=mdToHtml(full);
+      if(popAsk) popAsk.style.display='block';
+      btn.disabled=false; btn.textContent=origText;
+    },
+    function(err){
+      if(popBody) popBody.innerHTML='[오류] '+escapeHtml(err.message)+'<br>Ollama가 실행 중인지 확인하세요.';
+      btn.disabled=false; btn.textContent=origText;
+    }
+  );
 }
 
 async function fetchJSON(url){ var r=await fetch(url); if(!r.ok) throw new Error(r.status); return r.json(); }
@@ -2071,91 +2113,22 @@ function updateActiveNav(){
 }
 window.addEventListener('scroll',updateActiveNav,{passive:true});
 
-// ── 상품 포커스 드롭다운 ──
-function updateProductFocusBar(){
-  var bar=$('product-focus-bar');
-  var sel=$('product-focus-select');
-  if(!bar||!sel) return;
-  var prods=STATE.products||REAL_DATA.products;
-  if(!prods||!prods.length){bar.style.display='none';return;}
-  bar.style.display='flex';
-  var cur=STATE.productFocus||'';
-  sel.innerHTML='<option value="">전체 상품</option>';
-  prods.slice().sort(function(a,b){return b.review_count-a.review_count;}).forEach(function(p){
-    var opt=document.createElement('option');
-    opt.value=p.name;
-    opt.textContent=p.name+' ('+p.review_count+'건)';
-    if(cur===p.name) opt.selected=true;
-    sel.appendChild(opt);
-  });
-}
-
+// 상품 포커스는 상단 칩 (chip-product)으로 일원화 — 호환성용 stub
+function updateProductFocusBar(){ /* no-op (상단 칩으로 일원화) */ }
 function onProductFocusChange(val){
   STATE.productFocus=val||null;
-  updateProductFocusBar();
-  renderExec(); renderKPI(); renderTimeline();
-  renderSKUTable(); renderSKUCombo(); renderChangeTables();
+  syncChipBarFromState();
+  render();
 }
 
-// ── AI 커스텀 모델 표시 ──
+// ── AI 모델 라벨 (Hey Sloom 패널의 aic-model-label로 일원화) ──
 function updateCustomAIModelLabel(){
-  var el=$('custom-ai-model-label');
+  var el=$('aic-model-label');
   if(el) el.textContent=STATE.ollamaModel||'—';
 }
 
-// ── AI 커스텀 질문 ──
-async function aiCustomQuestion(){
-  var inputEl=$('custom-ai-input');
-  var question=inputEl?inputEl.value.trim():'';
-  if(!question){alert('질문을 입력해주세요.');return;}
-  var btn=$('btn-ai-custom'),panel=$('ai-panel-custom'),body=$('ai-panel-custom-body');
-  if(!btn||!panel||!body) return;
-  var dot=$('ollama-dot');
-  if(dot&&dot.className.indexOf('online')<0){
-    alert('Ollama가 오프라인입니다. ollama serve 실행 후 재시도하세요.');return;
-  }
-  btn.disabled=true; btn.textContent='분석 중...';
-  panel.style.display='block';
-  body.classList.add('open'); body.textContent='분석 중입니다...';
-  var tog=$('ai-panel-custom-toggle'); if(tog) tog.textContent='▲ 접기';
-
-  var ctx=$('custom-ai-ctx')?$('custom-ai-ctx').value:'all';
-  var k=(STATE.summary||REAL_DATA.summary).kpis;
-  var prods=STATE.products||REAL_DATA.products;
-  var kws=STATE.keywords||REAL_DATA.keywords;
-  var ctxStr='[분석 대상: '+STATE.brand+' '+STATE.month+']\n\n';
-  if(ctx==='all'||ctx==='kpi'){
-    ctxStr+='[KPI] 총리뷰: '+k.total_reviews+'건, 평균별점: '+k.avg_rating+', 긍정률: '+k.positive_rate.toFixed(1)+'%, 부정률: '+k.negative_rate.toFixed(2)+'%\n\n';
-  }
-  if(ctx==='all'||ctx==='sku'){
-    ctxStr+='[SKU 상위 10개]\n';
-    prods.slice().sort(function(a,b){return b.review_count-a.review_count;}).slice(0,10).forEach(function(p,i){
-      ctxStr+=(i+1)+'. '+p.name+': '+p.review_count+'건, ★'+p.avg_rating+', 긍정 '+(p.positive_rate||0).toFixed(1)+'%, 부정 '+(p.negative_rate||0).toFixed(1)+'%\n';
-    });
-    ctxStr+='\n';
-  }
-  if(ctx==='all'||ctx==='voc'){
-    var bi=(kws&&kws.by_intent)||{};
-    if(bi.praise&&bi.praise.length) ctxStr+='[칭찬 키워드]: '+bi.praise.slice(0,8).map(function(w){return w.word+'('+w.count+')';}).join(', ')+'\n';
-    if(bi.complaint&&bi.complaint.length) ctxStr+='[불만 키워드]: '+bi.complaint.slice(0,8).map(function(w){return w.word+'('+w.count+')';}).join(', ')+'\n';
-    if(bi.improvement&&bi.improvement.length) ctxStr+='[개선 키워드]: '+bi.improvement.slice(0,6).map(function(w){return w.word+'('+w.count+')';}).join(', ')+'\n';
-  }
-  var fullPrompt=ctxStr+'\n[질문]\n'+question+'\n\n한국어로 간결하게 답변해주세요.';
-  try{
-    var r=await fetch('http://localhost:11434/api/generate',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:STATE.ollamaModel,prompt:fullPrompt,stream:false}),
-      signal:AbortSignal.timeout(90000)
-    });
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    var d=await r.json();
-    body.textContent=d.response||'응답 없음';
-    injectAIInlineAsk('ai-panel-custom-body', 'custom');
-  }catch(e){
-    body.textContent='[오류] '+e.message+'\n\nOllama가 실행 중인지 확인하세요.';
-  }
-  btn.disabled=false; btn.textContent='✦ AI에게 질문하기';
-}
+// AI 커스텀 질문 → Hey Sloom 패널로 일원화 (legacy stub for backward compat)
+async function aiCustomQuestion(){ openAIChatPanel(); }
 
 // ── 커스텀 차트 빌더 ──
 var CHART_TYPE_LABELS = {bar:'막대',hbar:'가로막대',line:'라인',area:'영역',dotted:'점선',doughnut:'도넛',radar:'레이더'};
@@ -2713,6 +2686,22 @@ function imBuildCard(opts){
       '</div>'+
     '</div>';
   }).join('');
+  // 캐시된 AI 결과 확인 (개선8)
+  var cacheKey='imAI:'+(IM_CURRENT_PRODUCT?IM_CURRENT_PRODUCT.name:'')+':'+opts.cls;
+  var cached='', cachedTs=0;
+  try{
+    cached=localStorage.getItem(cacheKey)||'';
+    cachedTs=parseInt(localStorage.getItem(cacheKey+':ts')||'0');
+  }catch(_){}
+  var cachedHtml='';
+  if(cached){
+    var ageMin=Math.round((Date.now()-cachedTs)/60000);
+    cachedHtml='<div class="im-ai-result show" data-cached="1">'+mdToHtml(cached)+
+      '<div style="font-size:10px;color:var(--text-secondary);margin-top:6px;display:flex;justify-content:space-between;align-items:center;">'+
+        '<span>💾 캐시 ('+ageMin+'분 전)</span>'+
+        '<button onclick="imClearCardCache(this,\''+cacheKey.replace(/'/g,"\\'")+'\',\''+opts.cls+'\')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:10.5px;font-family:inherit;">🔄 다시 분석</button>'+
+      '</div></div>';
+  }
   card.innerHTML=
     '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">'+
       '<span class="im-card-brand-tag">'+opts.tag+'</span>'+
@@ -2721,13 +2710,28 @@ function imBuildCard(opts){
     '<div class="im-card-question">'+opts.question+'</div>'+
     '<div class="im-card-summary">'+opts.summary+'</div>'+
     blocksHtml+
-    '<button class="im-ai-trigger" onclick="imAskAIForCard(this,\''+opts.cls+'\')">✦ AI 심층 분석 (Ollama)</button>'+
-    '<div class="im-ai-result"></div>'+
+    (cached?'':'<button class="im-ai-trigger" onclick="imAskAIForCard(this,\''+opts.cls+'\')">✦ AI 심층 분석 (Ollama)</button>')+
+    (cached?cachedHtml:'<div class="im-ai-result"></div>')+
     '<div class="im-card-footer">'+
       '<span class="im-card-ts">Updated on '+ts+'</span>'+
       '<div class="im-card-vote"><button title="유용함" onclick="this.classList.toggle(\'active\')">👍</button><button title="아쉬움" onclick="this.classList.toggle(\'active\')">👎</button></div>'+
     '</div>';
   return card;
+}
+
+function imClearCardCache(btn, cacheKey, category){
+  try{ localStorage.removeItem(cacheKey); localStorage.removeItem(cacheKey+':ts'); }catch(_){}
+  var card=btn.closest('.im-card');
+  var resultEl=card.querySelector('.im-ai-result');
+  resultEl.innerHTML=''; resultEl.classList.remove('show');
+  // AI 분석 버튼 복원
+  var trigger=document.createElement('button');
+  trigger.className='im-ai-trigger';
+  trigger.textContent='✦ AI 심층 분석 (Ollama)';
+  trigger.onclick=function(){ imAskAIForCard(this, category); };
+  resultEl.parentNode.insertBefore(trigger, resultEl);
+  // 자동 재분석 시작
+  setTimeout(function(){ imAskAIForCard(trigger, category); }, 100);
 }
 
 function imBuildSummaryCard(p){
@@ -2925,24 +2929,24 @@ async function imAskAIForCard(btn, category){
   var prompt='[상품: '+p.name+']\n리뷰 '+p.review_count+'건, ★'+p.avg_rating+', 긍'+p.positive_rate.toFixed(1)+'%/부'+p.negative_rate.toFixed(2)+'%\n\n'+
     '['+label+' 키워드] '+kwList+'\n\n'+
     '[대표 '+label+' 리뷰]\n'+reviews+'\n\n'+
-    '위 데이터로 '+label+' 측면 심층 분석을 한국어로 3-5줄로 요약하세요. 핵심 원인과 패턴을 분석하고 액션 인사이트를 제시하세요.';
+    '위 데이터로 '+label+' 측면 심층 분석을 한국어로 3-5줄로 요약하세요. **핵심 원인**과 패턴을 분석하고, 액션 인사이트를 - 리스트로 제시하세요.';
 
-  try{
-    var r=await fetch('http://localhost:11434/api/generate',{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:STATE.ollamaModel||'exaone3.5:7.8b', prompt:prompt, stream:false}),
-      signal:AbortSignal.timeout(60000)
-    });
-    var data=await r.json();
-    resultEl.textContent=data.response||'(응답 없음)';
-  }catch(err){
-    resultEl.textContent='❌ 오류: '+err.message;
-  }
-  btn.disabled=false; btn.textContent='✦ AI 심층 분석 (Ollama)';
+  resultEl.innerHTML='Ollama로 심층 분석 중... <span class="aic-cursor">▍</span>';
+  await ollamaStream(prompt,
+    function(_t, full){ resultEl.innerHTML=mdToHtml(full)+'<span class="aic-cursor">▍</span>'; },
+    function(full){
+      resultEl.innerHTML=mdToHtml(full);
+      // 카드별 AI 결과 캐시 (개선8)
+      var cacheKey='imAI:'+p.name+':'+category;
+      try{ localStorage.setItem(cacheKey, full); localStorage.setItem(cacheKey+':ts', String(Date.now())); }catch(_){}
+      btn.disabled=false; btn.textContent='✦ AI 심층 분석 (Ollama)';
+    },
+    function(err){
+      resultEl.textContent='❌ 오류: '+err.message;
+      btn.disabled=false; btn.textContent='✦ AI 심층 분석 (Ollama)';
+    }
+  );
 }
-
-// 모달 PDF 저장
-function imExportPDF(){ window.print(); }
 
 // 모달 → Hey Sloom 챗 패널로 분석 요청
 function imAskHeySloom(){
@@ -3062,12 +3066,38 @@ function updateCompareBanner(){
 
 function toggleCompareMode(){
   COMPARE_STATE.active=!COMPARE_STATE.active;
-  var btn=$('compare-toggle');
-  var row=$('compare-month-row');
-  if(btn){btn.classList.toggle('active',COMPARE_STATE.active);btn.textContent=COMPARE_STATE.active?'비교 모드 ON':'비교 모드';}
-  if(row) row.style.display=COMPARE_STATE.active?'block':'none';
+  var chip=$('chip-compare');
+  if(chip){
+    chip.classList.toggle('active',COMPARE_STATE.active);
+    chip.innerHTML=COMPARE_STATE.active?'📊 비교 ON':'📊 비교 모드';
+  }
+  // 활성화 시 비교 월 선택 팝업 자동 띄움
+  if(COMPARE_STATE.active && !COMPARE_STATE.month){
+    setTimeout(function(){
+      var cmpChip=$('chip-compare');
+      if(cmpChip) showCompareMonthPop(cmpChip);
+    },100);
+  }
   if(COMPARE_STATE.active&&COMPARE_STATE.month) loadCompareData(COMPARE_STATE.month);
   updateCompareBanner(); renderKPI(); renderSKUTable();
+}
+
+function showCompareMonthPop(anchorEl){
+  var months=[];
+  if(STATE.index){
+    var b=Object.values(STATE.index.brands||{}).find(function(x){return x.display_name===STATE.brand;});
+    if(b&&b.months) months=[].concat(b.months).filter(function(m){return m!==STATE.month;}).reverse();
+  }
+  if(months.length===0){
+    alert('비교 가능한 다른 기간 데이터가 없습니다.');
+    return;
+  }
+  var html='<div style="font-size:10.5px;font-weight:700;color:var(--text-secondary);padding:6px 10px 4px;text-transform:uppercase;letter-spacing:.5px;">비교할 기간 선택</div>';
+  html+=months.map(function(m){
+    var sel=m===COMPARE_STATE.month?' selected':'';
+    return '<button class="chip-pop-item'+sel+'" onclick="onCompareMonthChange(\''+m+'\');closeChipPop();">'+m+'</button>';
+  }).join('');
+  showChipPop(anchorEl, html);
 }
 
 function onCompareMonthChange(val){
@@ -3148,23 +3178,181 @@ function renderProductComparePanel(){
   panel.classList.add('open');
   document.body.classList.add('compare-panel-open');
   var allProds=STATE.products||REAL_DATA.products;
+  var selected=PROD_COMPARE.map(function(name){return allProds.find(function(x){return x.name===name;});}).filter(Boolean);
   grid.innerHTML='';
-  PROD_COMPARE.forEach(function(name){
-    var p=allProds.find(function(x){return x.name===name;}); if(!p) return;
+
+  // 1) 상품별 카드 (지표 + sentiment 도넛)
+  selected.forEach(function(p, idx){
     var col=document.createElement('div'); col.className='pc-col';
-    var inner='<div class="pc-col-name">'+p.name+'</div>'+
+    var canvasId='pc-donut-'+idx;
+    var inner='<div class="pc-col-name" title="'+p.name+'">'+escapeHtml(fmtS(p.name))+'</div>'+
+      '<div style="position:relative;height:100px;margin:8px 0;"><canvas id="'+canvasId+'"></canvas></div>'+
       '<div class="pc-row"><span class="pc-label">리뷰 수</span><span class="pc-val">'+fmt(p.review_count)+'건</span></div>'+
-      '<div class="pc-row"><span class="pc-label">평균 별점</span><span class="pc-val">'+p.avg_rating.toFixed(2)+'★</span></div>'+
+      '<div class="pc-row"><span class="pc-label">평균 별점</span><span class="pc-val" style="color:#f59e0b">'+p.avg_rating.toFixed(2)+'★</span></div>'+
       '<div class="pc-row"><span class="pc-label">긍정률</span><span class="pc-val" style="color:var(--positive)">'+p.positive_rate.toFixed(1)+'%</span></div>'+
-      '<div class="pc-row"><span class="pc-label">부정률</span><span class="pc-val" style="color:var(--negative)">'+p.negative_rate.toFixed(1)+'%</span></div>'+
+      '<div class="pc-row"><span class="pc-label">부정률</span><span class="pc-val" style="color:var(--negative)">'+p.negative_rate.toFixed(2)+'%</span></div>'+
       '<div class="pc-row"><span class="pc-label">포토리뷰</span><span class="pc-val">'+(p.photo_count||0)+'건</span></div>';
     if(p.prev_review_count!=null){
       var d=p.review_count-p.prev_review_count;
-      inner+='<div class="pc-row"><span class="pc-label">리뷰 변화</span><span class="pc-val" style="color:'+(d>=0?'var(--positive)':'var(--negative)')+'">'+(d>=0?'+':'')+d+'건</span></div>';
+      var pct=p.prev_review_count>0?((d/p.prev_review_count)*100).toFixed(1):'-';
+      inner+='<div class="pc-row"><span class="pc-label">리뷰 변화</span><span class="pc-val" style="color:'+(d>=0?'var(--positive)':'var(--negative)')+'">'+(d>=0?'+':'')+d+'건 ('+pct+'%)</span></div>';
     }
     col.innerHTML=inner;
     grid.appendChild(col);
+    // 도넛 차트 렌더
+    setTimeout(function(){
+      var c=document.getElementById(canvasId);
+      if(!c||!p.sentiment) return;
+      var s=p.sentiment;
+      if(c.chart) c.chart.destroy();
+      c.chart=new Chart(c.getContext('2d'),{
+        type:'doughnut',
+        data:{labels:['긍정','중립','부정'],datasets:[{data:[s.positive||0,s.neutral||0,s.negative||0],backgroundColor:['#16a34a','#9ca3af','#dc2626'],borderWidth:1,borderColor:'#fff'}]},
+        options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{enabled:true,callbacks:{label:function(c){var tot=(s.positive||0)+(s.neutral||0)+(s.negative||0)||1;return c.label+': '+fmt(c.parsed)+'건 ('+Math.round(c.parsed/tot*100)+'%)';}}}}}
+      });
+    },20);
   });
+
+  // 2) 가로 막대 비교 차트 (리뷰수 / 긍정률 / 부정률)
+  if(selected.length>=2){
+    var compareBar=document.createElement('div');
+    compareBar.style.cssText='grid-column:1/-1;margin-top:14px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;';
+    compareBar.innerHTML='<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px;">📊 핵심 지표 비교</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;">'+
+      '<div><div style="font-size:10px;color:var(--text-secondary);font-weight:700;text-transform:uppercase;margin-bottom:6px;">리뷰 수</div><div style="position:relative;height:140px;"><canvas id="pc-bar-reviews"></canvas></div></div>'+
+      '<div><div style="font-size:10px;color:var(--text-secondary);font-weight:700;text-transform:uppercase;margin-bottom:6px;">긍정률 (%)</div><div style="position:relative;height:140px;"><canvas id="pc-bar-pos"></canvas></div></div>'+
+      '<div><div style="font-size:10px;color:var(--text-secondary);font-weight:700;text-transform:uppercase;margin-bottom:6px;">부정률 (%)</div><div style="position:relative;height:140px;"><canvas id="pc-bar-neg"></canvas></div></div>'+
+      '</div>';
+    grid.appendChild(compareBar);
+    setTimeout(function(){
+      var labels=selected.map(function(p){return fmtSChart(p.name);});
+      var mkBar=function(id, data, color){
+        var c=document.getElementById(id); if(!c) return;
+        if(c.chart) c.chart.destroy();
+        c.chart=new Chart(c.getContext('2d'),{
+          type:'bar', data:{labels:labels,datasets:[{data:data,backgroundColor:color,borderRadius:4,maxBarThickness:30}]},
+          options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:true}},
+            scales:{x:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:9}},grid:{display:false}}}}
+        });
+      };
+      mkBar('pc-bar-reviews', selected.map(function(p){return p.review_count;}), 'rgba(91,94,244,.65)');
+      mkBar('pc-bar-pos', selected.map(function(p){return p.positive_rate;}), 'rgba(22,163,74,.65)');
+      mkBar('pc-bar-neg', selected.map(function(p){return p.negative_rate;}), 'rgba(220,38,38,.65)');
+    },50);
+  }
+}
+
+// ── 데이터 새로고침 ──
+async function manualReload(){
+  var btn=$('chip-refresh'); if(btn){btn.disabled=true;btn.textContent='⏳';}
+  try{ await reload(); }catch(e){ console.warn(e); }
+  if(btn){btn.disabled=false;btn.textContent='🔄';}
+  // 토스트 알림
+  showToast('✓ 데이터를 새로고침했습니다');
+}
+
+function showToast(msg){
+  var t=document.createElement('div');
+  t.textContent=msg;
+  t.style.cssText='position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 20px;border-radius:24px;font-size:13px;font-weight:600;z-index:900;box-shadow:0 4px 16px rgba(0,0,0,.18);';
+  document.body.appendChild(t);
+  setTimeout(function(){t.style.opacity='0';t.style.transition='opacity .3s';},1800);
+  setTimeout(function(){t.remove();},2200);
+}
+
+// ── URL 공유 (현재 상태 query string으로 인코딩) ──
+function shareCurrentURL(){
+  var p=new URLSearchParams();
+  if(STATE.brand!=='슬룸') p.set('brand', STATE.brand);
+  if(STATE.month!=='2026-04') p.set('month', STATE.month);
+  if(STATE.productFocus) p.set('product', STATE.productFocus);
+  if(STATE.dateOverride){
+    p.set('from', STATE.dateOverride.from);
+    p.set('to', STATE.dateOverride.to);
+  }
+  var qs=p.toString();
+  var url=location.origin+location.pathname+(qs?'?'+qs:'');
+  // 클립보드 복사 시도
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(function(){
+      showToast('🔗 링크 복사 완료');
+    }, function(){
+      prompt('아래 링크를 복사하세요:', url);
+    });
+  }else{
+    prompt('아래 링크를 복사하세요:', url);
+  }
+}
+
+function applyURLParams(){
+  var p=new URLSearchParams(location.search);
+  if(p.get('brand')) STATE.brand=p.get('brand');
+  if(p.get('month')) STATE.month=p.get('month');
+  if(p.get('product')) STATE.productFocus=p.get('product');
+  if(p.get('from')&&p.get('to')) STATE.dateOverride={from:p.get('from'),to:p.get('to')};
+}
+
+// ── 리뷰 본문 검색 ──
+function openReviewSearch(){
+  $('review-search-modal').style.display='flex';
+  setTimeout(function(){$('rev-search-input').focus();},80);
+  runReviewSearch();
+}
+
+function closeReviewSearch(){
+  $('review-search-modal').style.display='none';
+}
+
+function runReviewSearch(){
+  var q=($('rev-search-input').value||'').trim().toLowerCase();
+  var rating=$('rev-search-rating').value;
+  var prods=STATE.products||REAL_DATA.products;
+  var allReviews=[];
+  prods.forEach(function(p){
+    (p.top_reviews||[]).forEach(function(r){
+      allReviews.push({name:p.name, type:'pos', r:r});
+    });
+    (p.bottom_reviews||[]).forEach(function(r){
+      allReviews.push({name:p.name, type:'neg', r:r});
+    });
+  });
+  var matched=allReviews.filter(function(item){
+    if(rating && item.r.rating!==parseInt(rating)) return false;
+    if(!q) return true;
+    var text=(item.r.text||'').toLowerCase();
+    var name=(item.name||'').toLowerCase();
+    return text.indexOf(q)>=0 || name.indexOf(q)>=0;
+  });
+  var resultsEl=$('rev-search-results');
+  var countEl=$('rev-search-count');
+  if(matched.length===0){
+    resultsEl.innerHTML='<div style="text-align:center;padding:40px 0;color:var(--text-secondary);font-size:13px;">'+(q?'검색 결과 없음':'검색어를 입력하세요')+'</div>';
+    countEl.textContent='';
+    return;
+  }
+  countEl.textContent='총 '+matched.length+'건';
+  resultsEl.innerHTML=matched.slice(0,100).map(function(item){
+    var r=item.r;
+    var stars=''; for(var i=1;i<=5;i++) stars+=i<=r.rating?'★':'☆';
+    var text=r.text||'';
+    var highlighted=text;
+    if(q){
+      var re=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');
+      highlighted=escapeHtml(text).replace(re,'<mark style="background:#fef08a;padding:0 2px;">$1</mark>');
+    }else{
+      highlighted=escapeHtml(text);
+    }
+    var tag=item.type==='pos'?'<span style="background:rgba(22,163,74,.12);color:#16a34a;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">긍정</span>':'<span style="background:rgba(220,38,38,.10);color:#dc2626;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">부정</span>';
+    return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;">'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'+
+        '<span style="font-size:11.5px;font-weight:700;color:var(--accent);cursor:pointer;" onclick="closeReviewSearch();openProductPanel(\''+item.name.replace(/'/g,"\\'")+'\');">'+escapeHtml(fmtS(item.name))+'</span>'+
+        '<span style="font-size:12px;color:#f59e0b;letter-spacing:-1px;">'+stars+'</span>'+
+        '<span style="font-size:10.5px;color:var(--text-secondary);">'+(r.date||'')+'</span>'+
+        tag+
+      '</div>'+
+      '<div style="font-size:12.5px;color:var(--text);line-height:1.6;">'+highlighted+'</div>'+
+      '</div>';
+  }).join('')+(matched.length>100?'<div style="text-align:center;padding:10px;color:var(--text-secondary);font-size:11px;">'+(matched.length-100)+'건 더 있음 — 검색어를 좁혀주세요</div>':'');
 }
 
 // ── Syncly 스타일 상단 필터 칩 ──
@@ -3546,6 +3734,40 @@ function aicBuildContext(){
   return ctx.join('\n');
 }
 
+// ── Ollama 스트리밍 호출 헬퍼 ──
+// onToken(text): 토큰 단위 콜백
+// onDone(fullText): 완료 콜백
+// onError(err): 에러 콜백
+async function ollamaStream(prompt, onToken, onDone, onError){
+  try{
+    var r=await fetch('http://localhost:11434/api/generate',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:STATE.ollamaModel||'exaone3.5:7.8b', prompt:prompt, stream:true})
+    });
+    if(!r.ok){ onError(new Error('HTTP '+r.status)); return; }
+    var reader=r.body.getReader();
+    var decoder=new TextDecoder('utf-8');
+    var buf='', full='';
+    while(true){
+      var chunk=await reader.read();
+      if(chunk.done) break;
+      buf+=decoder.decode(chunk.value, {stream:true});
+      var lines=buf.split('\n');
+      buf=lines.pop();
+      for(var i=0;i<lines.length;i++){
+        var line=lines[i].trim();
+        if(!line) continue;
+        try{
+          var obj=JSON.parse(line);
+          if(obj.response){ full+=obj.response; onToken(obj.response, full); }
+          if(obj.done){ onDone(full); return; }
+        }catch(_){}
+      }
+    }
+    onDone(full);
+  }catch(err){ onError(err); }
+}
+
 async function aicSend(){
   var inputEl=$('aic-input');
   var q=(inputEl.value||'').trim();
@@ -3565,27 +3787,29 @@ async function aicSend(){
   }
 
   var ctx=aicBuildContext();
-  // 대화 히스토리 (최근 6턴)
   var historyText=AIC_HISTORY.slice(-7,-1).filter(function(m){return m.text!=='...';})
     .map(function(m){return (m.role==='user'?'사용자: ':'AI: ')+m.text;}).join('\n');
-  var prompt=ctx+'\n\n'+(historyText?'[이전 대화]\n'+historyText+'\n\n':'')+'[질문] '+q+'\n\n위 데이터를 바탕으로 한국어로 친절하게 답변하세요. 핵심만 3-6줄로.';
+  var prompt=ctx+'\n\n'+(historyText?'[이전 대화]\n'+historyText+'\n\n':'')+'[질문] '+q+'\n\n위 데이터를 바탕으로 한국어로 친절하게 답변하세요. 핵심을 3-6줄로 정리하고, 가능하면 **굵게**·- 리스트로 가독성을 높여 주세요.';
 
-  try{
-    var r=await fetch('http://localhost:11434/api/generate',{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:STATE.ollamaModel||'exaone3.5:7.8b', prompt:prompt, stream:false}),
-      signal:AbortSignal.timeout(60000)
-    });
-    var data=await r.json();
-    bubble.textContent=data.response||'(응답 없음)';
-    botMsg.classList.remove('thinking');
-    // AIC_HISTORY 마지막 항목 업데이트
-    if(AIC_HISTORY.length>0) AIC_HISTORY[AIC_HISTORY.length-1].text=data.response||'';
-  }catch(err){
-    bubble.textContent='❌ 오류: '+err.message;
-    botMsg.classList.remove('thinking');
-  }
-  $('aic-send-btn').disabled=false;
+  bubble.innerHTML=''; // 비우고 스트리밍 시작
+  var msgsEl=$('aic-messages');
+  await ollamaStream(prompt,
+    function(_token, full){
+      bubble.innerHTML=mdToHtml(full)+'<span class="aic-cursor">▍</span>';
+      msgsEl.scrollTop=msgsEl.scrollHeight;
+    },
+    function(full){
+      bubble.innerHTML=mdToHtml(full);
+      botMsg.classList.remove('thinking');
+      if(AIC_HISTORY.length>0) AIC_HISTORY[AIC_HISTORY.length-1].text=full;
+      $('aic-send-btn').disabled=false;
+    },
+    function(err){
+      bubble.textContent='❌ 오류: '+err.message;
+      botMsg.classList.remove('thinking');
+      $('aic-send-btn').disabled=false;
+    }
+  );
 }
 
 function aicClearHistory(){
@@ -3672,7 +3896,7 @@ function enhanceCardActions(){
   document.querySelectorAll('.card .card-header, .chart-card .card-header').forEach(function(hdr){
     if(hdr.querySelector('.card-actions')) return; // 이미 처리
     if(hdr.closest('.pvoc-k-card')) return;        // 카반 카드 제외
-    if(hdr.closest('#sec-ai-custom')) return;      // AI 질문 카드 제외
+    // (구 AI 질문 섹션 제거됨 — Hey Sloom 패널로 일원화)
     var existingBtn=hdr.querySelector('.ai-card-btn'); // 이미 ✦ 버튼이 있으면 그대로
     var actions=document.createElement('div'); actions.className='card-actions';
     if(existingBtn){
@@ -3708,8 +3932,7 @@ function toggleCardMenu(btn){
   pop.innerHTML='<button class="card-menu-item" onclick="cardMenuAskAI(this)"><span class="ic">✦</span>AI에게 분석 요청</button>'+
     '<button class="card-menu-item" onclick="cardMenuExportPNG(this)"><span class="ic">🖼</span>PNG로 저장</button>'+
     '<button class="card-menu-item" onclick="cardMenuDownloadCSV(this)"><span class="ic">📊</span>CSV 다운로드</button>'+
-    '<button class="card-menu-item" onclick="cardMenuOpenNewWindow(this)"><span class="ic">🪟</span>새 창으로 보기</button>'+
-    '<button class="card-menu-item" onclick="window.print();this.closest(\'.card-menu-pop\').classList.remove(\'open\');"><span class="ic">🖨</span>인쇄 / PDF</button>';
+    '<button class="card-menu-item" onclick="cardMenuOpenNewWindow(this)"><span class="ic">🪟</span>새 창으로 보기</button>';
   card.style.position='relative';
   btn.parentElement.appendChild(pop);
   setTimeout(function(){
@@ -3729,6 +3952,7 @@ document.addEventListener('DOMContentLoaded', async function(){
   initDragOrder();
   initCardDragOrder();
   pingOllama();
+  applyURLParams();  // URL 쿼리에서 상태 복원
   await loadIndex();
   syncChipBarFromState();
   renderPVOCKanban();
@@ -3739,11 +3963,18 @@ document.addEventListener('DOMContentLoaded', async function(){
   // ESC 키로 패널/모달 닫기
   document.addEventListener('keydown', function(e){
     if(e.key==='Escape'){
-      if($('insight-modal')&&$('insight-modal').classList.contains('open')) closeInsightModal();
+      var rsm=$('review-search-modal');
+      if(rsm && rsm.style.display==='flex') closeReviewSearch();
+      else if($('insight-modal')&&$('insight-modal').classList.contains('open')) closeInsightModal();
       else if($('ai-chat-panel')&&$('ai-chat-panel').classList.contains('open')) closeAIChatPanel();
       else if($('product-detail-panel')&&$('product-detail-panel').classList.contains('open')) closeProductPanel();
       else if($('chip-pop')&&$('chip-pop').classList.contains('open')) closeChipPop();
       else if($('date-range-pop')&&$('date-range-pop').classList.contains('open')) $('date-range-pop').classList.remove('open');
+    }
+    // Ctrl/Cmd + K → 리뷰 검색
+    if((e.ctrlKey||e.metaKey) && e.key==='k'){
+      e.preventDefault();
+      openReviewSearch();
     }
   });
 });
