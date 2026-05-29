@@ -51,6 +51,11 @@
     .ollama-model-row { display:none; }
     .ollama-model-row.visible { display:block; }
     .ollama-model-row label { font-size:10px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.6px; display:block; margin-bottom:3px; }
+    .ollama-url-row { padding:8px 0 0; }
+    .ollama-url-row label { font-size:10px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.6px; margin-bottom:3px; }
+    .ollama-url-row input { width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:6px; font-size:10.5px; color:var(--text); background:var(--bg); font-family:inherit; outline:none; box-sizing:border-box; }
+    .ollama-url-row input:focus { border-color:var(--accent); }
+    .ollama-url-row input.error { border-color:var(--negative); }
     .ollama-model-row select { width:100%; padding:5px 24px 5px 8px; border:1px solid var(--border); border-radius:6px; font-size:11px; color:var(--text); background:var(--bg); cursor:pointer; font-family:inherit; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 8px center; }
     .ollama-badge { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-secondary); }
     .ollama-dot { width:7px; height:7px; border-radius:50%; background:var(--border); flex-shrink:0; }
@@ -637,6 +642,14 @@
     <div class="ollama-model-row" id="ollama-model-row">
       <label>AI 모델</label>
       <select id="ollama-model-select" onchange="onModelChange(this.value)" title="Ollama 모델 선택"></select>
+    </div>
+    <div class="ollama-url-row" id="ollama-url-row">
+      <label style="display:flex;justify-content:space-between;align-items:center;">
+        <span>AI 서버 URL</span>
+        <button onclick="resetOllamaUrl()" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:10px;padding:0;font-family:inherit;" title="localhost로 초기화">↺ 로컬</button>
+      </label>
+      <input type="text" id="ollama-url-input" placeholder="https://tunnel.example.com 또는 http://localhost:11434" title="Ollama 엔드포인트 URL" />
+      <div style="font-size:9.5px;color:var(--text-secondary);margin-top:4px;line-height:1.4;">💡 Cloudflare Tunnel URL 입력 시 외부 PC에서도 AI 사용 가능</div>
     </div>
   </div>
 </aside>
@@ -1323,7 +1336,14 @@ var REAL_DATA = {
   ]
 };
 
-var STATE = { brand:'슬룸', month:'2026-04', index:null, summary:null, products:null, keywords:null, ollamaModel: localStorage.getItem('ollamaModel') || 'exaone3.5:7.8b', skuSort:'review_count', skuMin:10, productFocus:null, dateOverride:null /* {from:'YYYY-MM-DD',to:'YYYY-MM-DD'} */ };
+var STATE = { brand:'슬룸', month:'2026-04', index:null, summary:null, products:null, keywords:null, ollamaModel: localStorage.getItem('ollamaModel') || 'exaone3.5:7.8b', ollamaUrl: localStorage.getItem('ollamaUrl') || 'http://localhost:11434', skuSort:'review_count', skuMin:10, productFocus:null, dateOverride:null /* {from:'YYYY-MM-DD',to:'YYYY-MM-DD'} */ };
+
+// Ollama URL 정규화 (끝의 / 제거)
+function getOllamaUrl(){
+  var u=(STATE.ollamaUrl||'http://localhost:11434').trim();
+  if(u.endsWith('/')) u=u.slice(0,-1);
+  return u;
+}
 var CUSTOM_CHARTS = {};
 var customChartIdx = 0;
 var CHARTS = {};
@@ -1447,7 +1467,7 @@ async function aiPopupSend(){
   ansEl.textContent='답변 생성 중...'; ansEl.style.display='block';
   var prompt='[기존 분석]\n'+prev.slice(0,600)+'\n\n[추가 질문]\n'+q+'\n\n한국어로 간결하게 답변하세요.';
   try{
-    var r=await fetch('http://localhost:11434/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:STATE.ollamaModel,prompt:prompt,stream:false}),signal:AbortSignal.timeout(60000)});
+    var r=await fetch(getOllamaUrl()+'/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:STATE.ollamaModel,prompt:prompt,stream:false}),signal:AbortSignal.timeout(60000)});
     if(!r.ok) throw new Error('HTTP '+r.status);
     var d=await r.json(); ansEl.textContent=d.response||'응답 없음';
   }catch(e){ ansEl.textContent='[오류] '+e.message; }
@@ -1509,7 +1529,7 @@ function toggleMenu(){ $('sidebar').classList.toggle('open'); }
 
 async function pingOllama(){
   try{
-    var r=await fetch('http://localhost:11434/',{signal:AbortSignal.timeout(3000)});
+    var r=await fetch(getOllamaUrl()+'/',{signal:AbortSignal.timeout(3000)});
     if(r.ok){
       $('ollama-dot').className='ollama-dot online';
       $('ollama-status').textContent='Ollama 연결됨';
@@ -1524,7 +1544,7 @@ async function pingOllama(){
 
 async function fetchOllamaModels(){
   try{
-    var r=await fetch('http://localhost:11434/api/tags',{signal:AbortSignal.timeout(2000)});
+    var r=await fetch(getOllamaUrl()+'/api/tags',{signal:AbortSignal.timeout(2000)});
     if(!r.ok) return;
     var data=await r.json();
     var models=(data.models||[]).map(function(m){return m.name;});
@@ -1548,6 +1568,35 @@ async function fetchOllamaModels(){
 function onModelChange(model){
   STATE.ollamaModel=model;
   localStorage.setItem('ollamaModel',model);
+}
+
+// AI 서버 URL 변경 (Cloudflare Tunnel 등 외부 엔드포인트 지원)
+function onOllamaUrlChange(){
+  var inputEl=$('ollama-url-input');
+  if(!inputEl) return;
+  var url=(inputEl.value||'').trim();
+  if(!url){ resetOllamaUrl(); return; }
+  // 간단 검증: http(s):// 로 시작
+  if(!/^https?:\/\//i.test(url)){
+    inputEl.classList.add('error');
+    showToast('⚠️ URL은 http:// 또는 https:// 로 시작해야 합니다');
+    return;
+  }
+  inputEl.classList.remove('error');
+  STATE.ollamaUrl=url;
+  localStorage.setItem('ollamaUrl', url);
+  showToast('✓ AI 서버 URL 변경: '+url);
+  // 즉시 연결 상태 재확인
+  pingOllama();
+}
+
+function resetOllamaUrl(){
+  STATE.ollamaUrl='http://localhost:11434';
+  localStorage.removeItem('ollamaUrl');
+  var inputEl=$('ollama-url-input');
+  if(inputEl){ inputEl.value=STATE.ollamaUrl; inputEl.classList.remove('error'); }
+  showToast('↺ 로컬 Ollama로 초기화');
+  pingOllama();
 }
 
 function setSKUSort(field){
@@ -2268,7 +2317,7 @@ async function aiInlineQuestion(panelBodyId, sectionType) {
 
   var prompt='[기존 분석 내용]\n'+prevAnalysis+'\n\n[추가 질문]\n'+question+'\n\n한국어로 간결하게 답변해주세요.';
   try{
-    var r=await fetch('http://localhost:11434/api/generate',{
+    var r=await fetch(getOllamaUrl()+'/api/generate',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:STATE.ollamaModel,prompt:prompt,stream:false}),
       signal:AbortSignal.timeout(60000)
@@ -3740,7 +3789,7 @@ function aicBuildContext(){
 // onError(err): 에러 콜백
 async function ollamaStream(prompt, onToken, onDone, onError){
   try{
-    var r=await fetch('http://localhost:11434/api/generate',{
+    var r=await fetch(getOllamaUrl()+'/api/generate',{
       method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:STATE.ollamaModel||'exaone3.5:7.8b', prompt:prompt, stream:true})
     });
@@ -3951,6 +4000,15 @@ document.addEventListener('DOMContentLoaded', async function(){
   restoreSectionOrder();
   initDragOrder();
   initCardDragOrder();
+  // AI 서버 URL 입력란 초기화
+  var ollamaUrlInput=$('ollama-url-input');
+  if(ollamaUrlInput){
+    ollamaUrlInput.value=STATE.ollamaUrl;
+    ollamaUrlInput.addEventListener('blur', onOllamaUrlChange);
+    ollamaUrlInput.addEventListener('keydown', function(e){
+      if(e.key==='Enter'){ e.preventDefault(); onOllamaUrlChange(); ollamaUrlInput.blur(); }
+    });
+  }
   pingOllama();
   applyURLParams();  // URL 쿼리에서 상태 복원
   await loadIndex();
