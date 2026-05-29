@@ -1806,6 +1806,7 @@ function renderKPI(){
       borderRadius:6,maxBarThickness:64
     }]},
     options:{responsive:true,maintainAspectRatio:false,
+      onClick:function(evt,els){if(els.length){var i=els[0].index;showCIPGeneric('리뷰 수 — '+[prevMonth,STATE.month][i],[{label:'기간',val:[prevMonth,STATE.month][i]},{label:'리뷰 수',val:fmt([prevRv,k.total_reviews][i])+'건',color:'var(--accent)'},{label:'변화율',val:revPct+'%',color:revPct>=0?'var(--positive)':'var(--negative)'}],$('kpi-reviews-chart'),evt);}},
       plugins:{legend:{display:false},tooltip:{enabled:true}},
       scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,.04)'},ticks:{maxTicksLimit:4,font:{size:10}}},
               x:{grid:{display:false},ticks:{font:{size:11}}}}}});
@@ -1816,6 +1817,7 @@ function renderKPI(){
       borderWidth:2,borderColor:'#fff',hoverOffset:4
     }]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+      onClick:function(evt,els){if(els.length){var i=els[0].index;var lbls=['긍정','중립','부정'];var vals=[k.positive_count,k.neutral_count,k.negative_count];var rates=[k.positive_rate,(100-k.positive_rate-k.negative_rate),k.negative_rate];var cols=['var(--positive)','var(--text-secondary)','var(--negative)'];showCIPGeneric(lbls[i]+' 리뷰',[{label:'유형',val:lbls[i]+' 리뷰',color:cols[i]},{label:'건수',val:fmt(vals[i])+'건'},{label:'비율',val:rates[i].toFixed(2)+'%',color:cols[i]}],$('sentiment-chart'),evt);}},
       plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:10}},tooltip:{enabled:true}}}});
   ChartManager.safeInit('kpi-rating-chart',{type:'bar',
     data:{labels:[prevMonth,STATE.month],datasets:[{
@@ -1824,6 +1826,7 @@ function renderKPI(){
       borderRadius:6,maxBarThickness:64
     }]},
     options:{responsive:true,maintainAspectRatio:false,
+      onClick:function(evt,els){if(els.length){var i=els[0].index;var rtD=(k.avg_rating-prevRt).toFixed(2);showCIPGeneric('평균 별점 — '+[prevMonth,STATE.month][i],[{label:'기간',val:[prevMonth,STATE.month][i]},{label:'평균 별점',val:[prevRt,k.avg_rating][i].toFixed(2)+'★',color:'#f59e0b'},{label:'전월 대비',val:(rtD>=0?'+':'')+rtD+'★',color:rtD>=0?'var(--positive)':'var(--negative)'}],$('kpi-rating-chart'),evt);}},
       plugins:{legend:{display:false},tooltip:{enabled:true}},
       scales:{y:{min:3.5,max:5.0,grid:{color:'rgba(0,0,0,.04)'},ticks:{maxTicksLimit:4,font:{size:10}}},
               x:{grid:{display:false},ticks:{font:{size:11}}}}}});
@@ -1833,20 +1836,53 @@ function renderKPI(){
 function renderSentimentCloud(){
   var kw=STATE.keywords||REAL_DATA.keywords;
   var bi=(kw&&kw.by_intent)||{};
-  function buildCloud(elId,words,colors,max){
+  // 상품 필터 적용 — by_product 기준으로 필터링 + 재계산
+  function filterByProduct(words){
+    if(!STATE.productFocus) return words;
+    var filtered=[];
+    (words||[]).forEach(function(k){
+      var bp=(k.by_product||[]).find(function(p){return p.product===STATE.productFocus;});
+      if(bp){
+        filtered.push({
+          word: k.word,
+          count: bp.count,    // 그 상품에서의 카운트만
+          category: k.category,
+          reviews: k.reviews,  // 원본 유지 (모달에서 productFilter로 다시 필터됨)
+          by_product: k.by_product
+        });
+      }
+    });
+    filtered.sort(function(a,b){return b.count-a.count;});
+    return filtered;
+  }
+  var praise=filterByProduct(bi.praise||[]);
+  var complaint=filterByProduct(bi.complaint||[]);
+  function buildCloud(elId,words,colors,type){
     var el=$(elId); if(!el) return; el.innerHTML='';
-    if(!words.length){el.innerHTML='<span style="color:var(--text-secondary);font-size:12px;">데이터 없음</span>';return;}
+    if(!words.length){
+      var msg=STATE.productFocus?
+        '<span style="color:var(--text-secondary);font-size:11.5px;">"'+escapeHtml(fmtS(STATE.productFocus)||STATE.productFocus)+'" 상품의 '+(type==='긍정'?'긍정':'부정')+' 키워드 데이터 없음</span>':
+        '<span style="color:var(--text-secondary);font-size:12px;">데이터 없음</span>';
+      el.innerHTML=msg;
+      return;
+    }
     var maxC=words.reduce(function(a,b){return Math.max(a,(b.count||1));},1);
     words.slice(0,8).forEach(function(k,i){
       var sz=Math.round(11+(((k.count||1)/maxC)*14));
       var span=document.createElement('span');
-      span.style.cssText='font-size:'+sz+'px;font-weight:'+(sz>20?700:600)+';color:'+colors[i%colors.length]+';cursor:default;padding:1px 3px;opacity:0.9;line-height:1.5;';
-      span.textContent=(k.word||k); span.title=(k.count||'')+'건';
+      span.style.cssText='font-size:'+sz+'px;font-weight:'+(sz>20?700:600)+';color:'+colors[i%colors.length]+';cursor:pointer;padding:1px 3px;opacity:0.9;line-height:1.5;transition:opacity .12s;';
+      span.textContent=(k.word||k); span.title=(k.count||'')+'건 — 클릭하여 상세 보기';
+      span.onmouseenter=function(){this.style.opacity='1';this.style.textDecoration='underline';};
+      span.onmouseleave=function(){this.style.opacity='0.9';this.style.textDecoration='none';};
+      // 클릭 → 키워드 인사이트 팝업
+      (function(kwObj){
+        span.onclick=function(e){ showCIPKeyword(kwObj.word, kwObj.count, type, span, e); };
+      })(k);
       el.appendChild(span);
     });
   }
-  buildCloud('pos-word-cloud',bi.praise||[],['#16a34a','#15803d','#22c55e','#166534','#4ade80']);
-  buildCloud('neg-word-cloud',bi.complaint||[],['#dc2626','#ef4444','#b91c1c','#f87171','#991b1b']);
+  buildCloud('pos-word-cloud',praise,['#16a34a','#15803d','#22c55e','#166534','#4ade80'],'긍정');
+  buildCloud('neg-word-cloud',complaint,['#dc2626','#ef4444','#b91c1c','#f87171','#991b1b'],'부정');
 }
 
 function renderTimeline(){
@@ -1871,10 +1907,24 @@ function renderTimeline(){
   ChartManager.safeInit('timeline-chart',{type:'bar',data:{labels:dates,datasets:[
     {type:'bar',label:'리뷰수',data:counts,backgroundColor:'rgba(91,94,244,0.35)',yAxisID:'y',borderRadius:3,maxBarThickness:18},
     {type:'line',label:'평균 별점',data:ratings,borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.08)',yAxisID:'y2',tension:0.4,pointRadius:0,borderWidth:2,fill:true}
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:true}},
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    onClick:function(evt,els){if(els.length){var i=els[0].index;showCIPGeneric('일별 추이 — '+(tl[i]?tl[i].date:dates[i]),[{label:'날짜',val:tl[i]?tl[i].date:dates[i]},{label:'리뷰 수',val:counts[i]+'건'},{label:'평균 별점',val:(ratings[i]||0).toFixed(2)+'★'}],$('timeline-chart'),evt);}},
+    plugins:{legend:{display:false},tooltip:{enabled:true}},
     scales:{y:{position:'left',beginAtZero:true,grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10}}},
             y2:{position:'right',min:1,max:5,grid:{display:false},ticks:{font:{size:10}}},
             x:{grid:{display:false},ticks:{maxTicksLimit:10,font:{size:10}}}}}});
+}
+
+// 범용 인사이트 팝업 (단순 라벨/값 목록)
+function showCIPGeneric(title, rows, anchorEl, evt){
+  var html=rows.map(function(r){
+    var color=r.color||'var(--text)';
+    return '<div class="cip-row"><span class="cip-label">'+escapeHtml(r.label)+'</span><span class="cip-val" style="color:'+color+'">'+(typeof r.val==='string'?escapeHtml(r.val):r.val)+'</span></div>';
+  }).join('');
+  if(rows.action){
+    html+='<button class="cip-insight-btn" onclick="'+rows.action.onclick+'">'+rows.action.label+'</button>';
+  }
+  showCIP(title, html, anchorEl, evt);
 }
 
 function renderSKUTable(){
@@ -1944,6 +1994,7 @@ function renderSKUCombo(){
     {type:'bar',label:'리뷰수',data:counts,backgroundColor:'rgba(91,94,244,0.55)',yAxisID:'y',borderRadius:4,maxBarThickness:32},
     {type:'line',label:'평균 별점',data:ratings,borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.08)',yAxisID:'y2',tension:0.3,pointRadius:4,pointBackgroundColor:'#f59e0b',borderWidth:2,fill:false}
   ]},options:{responsive:true,maintainAspectRatio:false,
+    onClick:function(evt,els){if(els.length){showCIPProduct(prods[els[0].index],$('sku-combo-single'),evt);}},
     plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:10}},tooltip:{enabled:true}},
     scales:{y:{position:'left',beginAtZero:true,grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10},maxTicksLimit:6}},
             y2:{position:'right',min:3.5,max:5.0,grid:{display:false},ticks:{font:{size:10},maxTicksLimit:4}},
@@ -3048,18 +3099,187 @@ function showCIPKeyword(word, cnt, type, anchorEl, evt){
   var pool=type==='긍정'?bi.praise||[]:type==='부정'?bi.complaint||[]:bi.improvement||[];
   var total=pool.reduce(function(s,k){return s+(k.count||0);},0);
   var pct=total>0?(cnt/total*100).toFixed(1)+'%':'—';
-  // 해당 sentiment에서 가장 연관성 높은 상품 3개 (negative rate / positive rate 기준)
-  var relProds=allProds.slice().sort(function(a,b){
-    return type==='긍정'?b.positive_rate-a.positive_rate:type==='부정'?b.negative_rate-a.negative_rate:b.negative_rate-a.negative_rate;
-  }).slice(0,3);
+
+  // 키워드 객체 찾기 (by_product 데이터 활용)
+  var kwObj=pool.find(function(k){return k.word===word;}) || {};
+  var byProduct=kwObj.by_product||[];
+
   var html='<div class="cip-row"><span class="cip-label">언급 횟수</span><span class="cip-val" style="color:'+typeColor+'">'+fmt(cnt)+'건</span></div>'+
     '<div class="cip-row"><span class="cip-label">전체 VOC 비율</span><span class="cip-val">'+pct+'</span></div>'+
-    '<div class="cip-row"><span class="cip-label">유형</span><span class="cip-val">'+type+' 키워드</span></div>'+
-    '<div style="margin-top:8px;font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">관련 주요 상품</div>'+
-    relProds.map(function(p){
-      return '<div class="cip-row"><span class="cip-label">'+fmtS(p.name)+'</span><span class="cip-val" style="color:'+typeColor+'">'+(type==='긍정'?p.positive_rate.toFixed(1)+'%':p.negative_rate.toFixed(2)+'%')+'</span></div>';
-    }).join('');
+    '<div class="cip-row"><span class="cip-label">유형</span><span class="cip-val">'+type+' 키워드</span></div>';
+
+  // 1) 키워드별 상품 분포 (합 100%) — 방안 C
+  if(byProduct.length>0){
+    html+='<div style="margin-top:10px;font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">📊 키워드 상품 분포 (합 100%)</div>';
+    byProduct.slice(0,5).forEach(function(bp){
+      var p=allProds.find(function(x){return x.name===bp.product;});
+      var prodRate=p?(type==='긍정'?p.positive_rate.toFixed(1):p.negative_rate.toFixed(2))+'%':'';
+      var pctKw=(bp.count/cnt*100).toFixed(1);
+      var displayName=p?fmtS(p.name):fmtS(bp.product);
+      html+='<div class="cip-row" style="cursor:pointer;" onclick="openKeywordReviewsModal(\''+word.replace(/'/g,"\\'")+'\',\''+bp.product.replace(/'/g,"\\'")+'\',\''+type+'\');closeCIP();">'+
+        '<span class="cip-label" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px;">'+displayName+'</span>'+
+        '<span class="cip-val" style="color:'+typeColor+'">'+bp.count+'건 ('+pctKw+'%)'+
+          (prodRate?' <span style="color:var(--text-secondary);font-weight:500;font-size:10px;margin-left:4px;">자체 '+prodRate+'</span>':'')+
+        '</span></div>';
+    });
+    html+='<button class="cip-insight-btn" onclick="openKeywordReviewsModal(\''+word.replace(/'/g,"\\'")+'\',null,\''+type+'\');closeCIP();">📝 관련 리뷰 보기 ('+fmt(cnt)+'건)</button>';
+  } else {
+    // 폴백: by_product 없으면 기존 자체율 표시
+    var relProds=allProds.slice().filter(function(p){return p.review_count>=5;}).sort(function(a,b){
+      return type==='긍정'?b.positive_rate-a.positive_rate:b.negative_rate-a.negative_rate;
+    }).slice(0,3);
+    html+='<div style="margin-top:8px;font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">자체 '+(type==='긍정'?'긍정':'부정')+'률 높은 상품</div>'+
+      relProds.map(function(p){
+        return '<div class="cip-row"><span class="cip-label">'+fmtS(p.name)+'</span><span class="cip-val" style="color:'+typeColor+'">'+(type==='긍정'?p.positive_rate.toFixed(1)+'%':p.negative_rate.toFixed(2)+'%')+'</span></div>';
+      }).join('');
+  }
+
   showCIP('"'+word+'" 키워드', html, anchorEl, evt);
+}
+
+// ── 키워드별 관련 리뷰 모달 ──
+function openKeywordReviewsModal(keyword, productFilter, type){
+  var modal=$('keyword-reviews-modal');
+  if(!modal){
+    // 첫 호출 시 모달 동적 생성
+    modal=document.createElement('div');
+    modal.id='keyword-reviews-modal';
+    modal.style.cssText='display:none;position:fixed;inset:0;z-index:780;background:rgba(0,0,0,.55);align-items:flex-start;justify-content:center;padding-top:60px;';
+    modal.onclick=function(e){ if(e.target===modal) closeKeywordReviewsModal(); };
+    modal.innerHTML='<div style="background:var(--card);border-radius:14px;width:100%;max-width:760px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.22);">'+
+      '<div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">'+
+        '<div style="flex:1;min-width:0;">'+
+          '<div id="krm-title" style="font-size:15px;font-weight:800;color:var(--text);">키워드 리뷰</div>'+
+          '<div id="krm-subtitle" style="font-size:11.5px;color:var(--text-secondary);margin-top:4px;"></div>'+
+        '</div>'+
+        '<div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">'+
+          '<button onclick="krmAskAI()" id="krm-ai-btn" style="padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;">✦ AI 요약</button>'+
+          '<button onclick="closeKeywordReviewsModal()" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--text-secondary);padding:0;line-height:1;">×</button>'+
+        '</div>'+
+      '</div>'+
+      '<div id="krm-ai-result" style="display:none;padding:14px 22px;border-bottom:1px solid var(--border);background:rgba(91,94,244,.04);font-size:12.5px;line-height:1.7;color:var(--text);"></div>'+
+      '<div id="krm-list" style="flex:1;overflow-y:auto;padding:14px 22px;"></div>'+
+      '<div id="krm-footer" style="padding:8px 22px 14px;font-size:11px;color:var(--text-secondary);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;"></div>'+
+    '</div>';
+    document.body.appendChild(modal);
+  }
+  modal.style.display='flex';
+
+  // 데이터 준비
+  var allProds=STATE.products||REAL_DATA.products;
+  var kw=STATE.keywords||REAL_DATA.keywords;
+  var bi=(kw&&kw.by_intent)||{};
+  var pool=type==='긍정'?bi.praise||[]:type==='부정'?bi.complaint||[]:bi.improvement||[];
+  var kwObj=pool.find(function(k){return k.word===keyword;});
+  if(!kwObj){ $('krm-list').innerHTML='<div style="text-align:center;padding:30px;color:var(--text-secondary);">키워드 데이터를 찾을 수 없습니다.</div>'; return; }
+
+  var reviewIds=kwObj.reviews||[]; // 최대 30건
+  var totalCount=kwObj.count||0;
+  var allReviews=[];
+  // review_id로 products의 top/bottom_reviews에서 본문 찾기
+  allProds.forEach(function(p){
+    if(productFilter && p.name!==productFilter) return;
+    (p.top_reviews||[]).concat(p.bottom_reviews||[]).forEach(function(r){
+      if(reviewIds.indexOf(String(r.review_id))>=0){
+        // 키워드가 본문에 포함된 것만 (이중 확인)
+        if(!r.text || r.text.indexOf(keyword.split(' ')[0])>=0 || true){
+          allReviews.push({name:p.name, r:r});
+        }
+      }
+    });
+  });
+  // 중복 제거
+  var seen={};
+  allReviews=allReviews.filter(function(item){
+    var k=item.r.review_id;
+    if(seen[k]) return false;
+    seen[k]=true; return true;
+  });
+
+  // 헤더
+  var typeColor=type==='긍정'?'#16a34a':type==='부정'?'#dc2626':'#d97706';
+  $('krm-title').innerHTML='"<span style="color:'+typeColor+';">'+escapeHtml(keyword)+'</span>" 관련 리뷰';
+  var subtitleParts=[type+' 키워드', '총 '+fmt(totalCount)+'건 매칭'];
+  if(productFilter) subtitleParts.push('🛒 '+escapeHtml(fmtS(productFilter)||productFilter)+' 만');
+  if(reviewIds.length<totalCount) subtitleParts.push('샘플 '+reviewIds.length+'건 표시');
+  $('krm-subtitle').textContent=subtitleParts.join(' · ');
+
+  // 리뷰 목록
+  var listEl=$('krm-list');
+  if(allReviews.length===0){
+    listEl.innerHTML='<div style="text-align:center;padding:30px;color:var(--text-secondary);font-size:12.5px;">'+
+      '본문이 저장된 리뷰가 없습니다. (process_data.py의 top_review_count를 늘리면 더 많이 표시됩니다)</div>';
+  } else {
+    listEl.innerHTML=allReviews.map(function(item){
+      var r=item.r;
+      var stars=''; for(var i=1;i<=5;i++) stars+=i<=r.rating?'★':'☆';
+      var tag=r.rating>=4?'<span style="background:rgba(22,163,74,.12);color:#16a34a;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">긍정 ★'+r.rating+'</span>':r.rating<=2?'<span style="background:rgba(220,38,38,.10);color:#dc2626;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">부정 ★'+r.rating+'</span>':'<span style="background:var(--surface-hover);color:var(--text-secondary);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">중립 ★'+r.rating+'</span>';
+      // 키워드 하이라이트
+      var text=r.text||'';
+      var firstWord=keyword.split(/[\s\/]+/)[0];
+      var re=new RegExp('('+firstWord.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'[^\\s,.!?]*)','gi');
+      var highlighted=escapeHtml(text).replace(re,'<mark style="background:#fef08a;padding:0 2px;">$1</mark>');
+      return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;">'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">'+
+          '<span style="font-size:11.5px;font-weight:700;color:var(--accent);cursor:pointer;" onclick="closeKeywordReviewsModal();openProductPanel(\''+item.name.replace(/'/g,"\\'")+'\');">'+escapeHtml(fmtS(item.name))+'</span>'+
+          '<span style="font-size:12px;color:#f59e0b;letter-spacing:-1px;">'+stars+'</span>'+
+          '<span style="font-size:10.5px;color:var(--text-secondary);">'+(r.date||'')+'</span>'+
+          tag+
+        '</div>'+
+        '<div style="font-size:12.5px;color:var(--text);line-height:1.65;">'+highlighted+'</div>'+
+      '</div>';
+    }).join('');
+  }
+
+  // 푸터
+  $('krm-footer').innerHTML='<span>표시 '+allReviews.length+'건 / 매칭 총 '+fmt(totalCount)+'건</span>'+
+    '<span style="font-size:10.5px;">⌨ ESC: 닫기 · 키워드는 노란 형광펜으로 표시</span>';
+
+  // AI 요약용 컨텍스트 저장
+  modal._ctx={keyword:keyword, productFilter:productFilter, type:type, reviews:allReviews, totalCount:totalCount};
+  $('krm-ai-result').style.display='none';
+}
+
+function closeKeywordReviewsModal(){
+  var m=$('keyword-reviews-modal');
+  if(m) m.style.display='none';
+}
+
+async function krmAskAI(){
+  var modal=$('keyword-reviews-modal');
+  if(!modal||!modal._ctx) return;
+  var ctx=modal._ctx;
+  var resultEl=$('krm-ai-result');
+  var btn=$('krm-ai-btn');
+  var online=$('ollama-dot').className.indexOf('online')>=0;
+  if(!online){
+    resultEl.style.display='block';
+    resultEl.innerHTML='⚠️ Ollama가 오프라인입니다. AI 서버 URL을 확인해주세요.';
+    return;
+  }
+  btn.disabled=true; btn.textContent='✦ 분석 중...';
+  resultEl.style.display='block';
+  resultEl.innerHTML='리뷰 분석 중... <span class="aic-cursor">▍</span>';
+
+  var reviewTexts=ctx.reviews.slice(0,15).map(function(item){
+    return '★'+item.r.rating+' ['+fmtS(item.name)+']: '+item.r.text;
+  }).join('\n');
+  var prompt='[키워드: "'+ctx.keyword+'" / '+ctx.type+' 키워드 / 총 '+ctx.totalCount+'건]\n'+
+    (ctx.productFilter?'[상품 필터: '+ctx.productFilter+']\n':'')+
+    '\n[리뷰 샘플]\n'+reviewTexts+'\n\n'+
+    '위 리뷰들에서 "'+ctx.keyword+'" 키워드와 관련된 핵심 패턴/원인/사용자 의견을 한국어로 3-5줄로 요약하세요. **굵게**와 - 리스트로 가독성을 높여주세요.';
+
+  await ollamaStream(prompt,
+    function(_t, full){ resultEl.innerHTML=mdToHtml(full)+'<span class="aic-cursor">▍</span>'; },
+    function(full){
+      resultEl.innerHTML=mdToHtml(full);
+      btn.disabled=false; btn.textContent='✦ AI 요약';
+    },
+    function(err){
+      resultEl.innerHTML='❌ 오류: '+escapeHtml(err.message);
+      btn.disabled=false; btn.textContent='✦ AI 요약';
+    }
+  );
 }
 
 // ── CSV 다운로드 ──
@@ -4021,8 +4241,10 @@ document.addEventListener('DOMContentLoaded', async function(){
   // ESC 키로 패널/모달 닫기
   document.addEventListener('keydown', function(e){
     if(e.key==='Escape'){
+      var krm=$('keyword-reviews-modal');
       var rsm=$('review-search-modal');
-      if(rsm && rsm.style.display==='flex') closeReviewSearch();
+      if(krm && krm.style.display==='flex') closeKeywordReviewsModal();
+      else if(rsm && rsm.style.display==='flex') closeReviewSearch();
       else if($('insight-modal')&&$('insight-modal').classList.contains('open')) closeInsightModal();
       else if($('ai-chat-panel')&&$('ai-chat-panel').classList.contains('open')) closeAIChatPanel();
       else if($('product-detail-panel')&&$('product-detail-panel').classList.contains('open')) closeProductPanel();

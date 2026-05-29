@@ -948,7 +948,8 @@ def _match_compiled_patterns(
                 "word": label,
                 "count": len(matched_ids),
                 "category": category,
-                "reviews": matched_ids[:10],
+                "reviews": matched_ids[:30],      # UI 표시용 (최대 30건)
+                "_all_review_ids": matched_ids,    # 전체 (by_product 계산용, 후처리 시 제거)
             })
 
     results.sort(key=lambda x: x["count"], reverse=True)
@@ -994,14 +995,42 @@ def extract_keywords_basic(df: pd.DataFrame, top_n: int = 30) -> dict:
     complaint_items = _match_compiled_patterns(_COMPILED_COMPLAINT, low_texts, low_ids)
     improvement_items = _match_compiled_patterns(_COMPILED_IMPROVEMENT, all_texts, all_ids)
 
+    # review_id → product_name 매핑 생성 (by_product 분포 계산용)
+    if "product_name" in df.columns and "review_id" in df.columns:
+        id_to_product = dict(zip(
+            df["review_id"].astype(str),
+            df["product_name"].astype(str),
+        ))
+    else:
+        id_to_product = {}
+
+    def _attach_by_product(items: List[dict]) -> List[dict]:
+        """각 키워드 항목에 by_product 분포 추가 (상품명 → 카운트).
+
+        전체 매칭 review_id (_all_review_ids)로 정확히 계산 후, 임시 필드는 제거.
+        """
+        for item in items:
+            # 전체 ID 우선, 없으면 샘플 사용 (fallback)
+            review_ids = item.pop("_all_review_ids", None) or item.get("reviews", [])
+            counts: dict = {}
+            for rid in review_ids:
+                prod = id_to_product.get(str(rid))
+                if prod:
+                    counts[prod] = counts.get(prod, 0) + 1
+            sorted_counts = sorted(counts.items(), key=lambda x: -x[1])
+            item["by_product"] = [
+                {"product": p, "count": c} for p, c in sorted_counts
+            ]
+        return items
+
     return {
         "negative_keywords": _count_keywords(neg_df, top_n),
         "low_rating_keywords": _count_keywords(low_df, top_n),
         "positive_keywords": _count_keywords(pos_df, top_n),
         "by_intent": {
-            "praise": praise_items[:top_n],
-            "complaint": complaint_items[:top_n],
-            "improvement": improvement_items[:top_n],
+            "praise": _attach_by_product(praise_items[:top_n]),
+            "complaint": _attach_by_product(complaint_items[:top_n]),
+            "improvement": _attach_by_product(improvement_items[:top_n]),
         },
     }
 
