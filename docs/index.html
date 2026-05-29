@@ -3155,7 +3155,7 @@ function krmSetMode(mode){
   if(modal && modal._ctx) krmRenderList();
 }
 
-function openKeywordReviewsModal(keyword, productFilter, type){
+function openKeywordReviewsModal(keyword, productFilter, type, searchTerm){
   var modal=$('keyword-reviews-modal');
   if(!modal){
     // 첫 호출 시 모달 동적 생성
@@ -3198,28 +3198,26 @@ function openKeywordReviewsModal(keyword, productFilter, type){
   var bi=(kw&&kw.by_intent)||{};
   var pool=type==='긍정'?bi.praise||[]:type==='부정'?bi.complaint||[]:bi.improvement||[];
   var kwObj=pool.find(function(k){return k.word===keyword;});
-  if(!kwObj){ $('krm-list').innerHTML='<div style="text-align:center;padding:30px;color:var(--text-secondary);">키워드 데이터를 찾을 수 없습니다.</div>'; return; }
 
-  var totalCount=kwObj.count||0;
+  var totalCount=kwObj?(kwObj.count||0):0;
   var allReviews=[];
+  var dataSource='';  // 'samples' | 'id-match' | 'text-search'
 
-  // 1순위: keywords.json의 review_samples (정밀도 검증된 본문) 사용
-  var samples=kwObj.review_samples||[];
-  if(samples.length>0){
-    samples.forEach(function(s){
+  // 1순위: keywords.json의 review_samples (정밀도 검증된 본문)
+  if(kwObj && kwObj.review_samples && kwObj.review_samples.length>0){
+    dataSource='samples';
+    kwObj.review_samples.forEach(function(s){
       if(productFilter && s.product!==productFilter) return;
       allReviews.push({
         name: s.product || '(상품 미상)',
-        r: {
-          review_id: s.review_id,
-          rating: s.rating,
-          date: s.date,
-          text: s.text
-        }
+        r: {review_id:s.review_id, rating:s.rating, date:s.date, text:s.text}
       });
     });
-  } else {
-    // 2순위 (fallback): products의 top/bottom_reviews에서 review_id 매칭
+  }
+
+  // 2순위: products의 top/bottom_reviews에서 review_id 매칭
+  if(allReviews.length===0 && kwObj && kwObj.reviews){
+    dataSource='id-match';
     var reviewIds=kwObj.reviews||[];
     allProds.forEach(function(p){
       if(productFilter && p.name!==productFilter) return;
@@ -3229,25 +3227,54 @@ function openKeywordReviewsModal(keyword, productFilter, type){
         }
       });
     });
-    // 중복 제거
     var seen={};
     allReviews=allReviews.filter(function(item){
       var k=item.r.review_id;
-      if(seen[k]) return false;
-      seen[k]=true; return true;
+      if(seen[k]) return false; seen[k]=true; return true;
     });
+  }
+
+  // 3순위 (최종 폴백): 본문 텍스트 검색 — 키워드/searchTerm으로 모든 저장된 리뷰 본문 검색
+  if(allReviews.length===0){
+    dataSource='text-search';
+    var q=(searchTerm||keyword).toLowerCase().trim();
+    // 검색어가 너무 길거나 짧으면 첫 토큰 사용
+    var qTokens=q.split(/[\s,·—.\(\)→\/]+/).filter(function(t){return t.length>=2;});
+    var primaryQ=qTokens[0]||q;
+    allProds.forEach(function(p){
+      if(productFilter && p.name!==productFilter) return;
+      (p.top_reviews||[]).concat(p.bottom_reviews||[]).forEach(function(r){
+        var text=(r.text||'').toLowerCase();
+        if(text.indexOf(primaryQ)>=0){
+          allReviews.push({name:p.name, r:r});
+        }
+      });
+    });
+    var seen2={};
+    allReviews=allReviews.filter(function(item){
+      var k=item.r.review_id;
+      if(seen2[k]) return false; seen2[k]=true; return true;
+    });
+    // 검색 결과 카운트
+    totalCount=allReviews.length;
   }
 
   // 헤더
   var typeColor=type==='긍정'?'#16a34a':type==='부정'?'#dc2626':'#d97706';
   $('krm-title').innerHTML='"<span style="color:'+typeColor+';">'+escapeHtml(keyword)+'</span>" 관련 리뷰';
-  var subtitleParts=[type+' 키워드', '총 '+fmt(totalCount)+'건 매칭'];
+  var subtitleParts=[];
+  if(dataSource==='text-search'){
+    subtitleParts.push('🔍 본문 검색 모드');
+    subtitleParts.push('"'+(searchTerm||keyword)+'" 텍스트 매칭');
+  } else {
+    subtitleParts.push(type+' 키워드');
+    subtitleParts.push('매칭 '+fmt(totalCount)+'건');
+  }
   if(productFilter) subtitleParts.push('🛒 '+escapeHtml(fmtS(productFilter)||productFilter)+' 만');
-  if(reviewIds.length<totalCount) subtitleParts.push('샘플 '+reviewIds.length+'건 표시');
   $('krm-subtitle').textContent=subtitleParts.join(' · ');
 
   // AI 요약용 컨텍스트 저장 (krmRenderList에서 mode에 따라 슬라이스)
-  modal._ctx={keyword:keyword, productFilter:productFilter, type:type, reviews:allReviews, totalCount:totalCount};
+  modal._ctx={keyword:keyword, productFilter:productFilter, type:type, reviews:allReviews, totalCount:totalCount, dataSource:dataSource, searchTerm:searchTerm||keyword};
   $('krm-ai-result').style.display='none';
   // 모드 기본값으로 리셋 (15건)
   KRM_MODE='15';
@@ -3271,9 +3298,18 @@ function krmRenderList(){
 
   var listEl=$('krm-list');
   if(allReviews.length===0){
-    var emptyMsg=ctx.productFilter
-      ? '"'+escapeHtml(fmtS(ctx.productFilter)||ctx.productFilter)+'" 상품에 해당 키워드 매칭 리뷰가 저장되어 있지 않습니다.<br><br><span style="font-size:11px;color:var(--text-secondary);">전체 보기로 다시 시도해보세요.</span>'
-      : '본문이 저장된 리뷰가 없습니다.';
+    var emptyMsg;
+    if(ctx.dataSource==='text-search'){
+      emptyMsg='"'+escapeHtml(ctx.searchTerm||ctx.keyword)+'" 키워드가 저장된 리뷰 본문에 나타나지 않습니다.<br><br>'+
+        '<span style="font-size:11px;color:var(--text-secondary);">💡 이 항목은 설명용 문구일 수 있습니다.<br>'+
+        '실제 키워드는 칭찬/불만/개선 차트의 막대를 클릭해보세요.</span>';
+    } else if(ctx.productFilter){
+      emptyMsg='"'+escapeHtml(fmtS(ctx.productFilter)||ctx.productFilter)+'" 상품에 매칭 리뷰가 저장되어 있지 않습니다.<br><br>'+
+        '<span style="font-size:11px;color:var(--text-secondary);">전체 상품 보기로 다시 시도해보세요.</span>';
+    } else {
+      emptyMsg='본문이 저장된 리뷰가 없습니다.<br><br>'+
+        '<span style="font-size:11px;color:var(--text-secondary);">파이프라인 재실행 또는 강력 새로고침 (Ctrl+Shift+R) 시도</span>';
+    }
     listEl.innerHTML='<div style="text-align:center;padding:30px;color:var(--text-secondary);font-size:12.5px;">'+emptyMsg+'</div>';
     $('krm-mode-info').textContent='';
     $('krm-footer').innerHTML='<span>0건</span><span style="font-size:10.5px;">⌨ ESC: 닫기</span>';
@@ -4230,15 +4266,17 @@ function renderPVOCKanban(){
     items=items.slice(0,7);
     var bulletsHtml=items.map(function(it, i){
       var w=it.word||it; var cnt=it.count!=null?it.count:'';
-      // 실제 키워드 데이터에 존재하는 항목만 클릭 가능
+      // 모든 항목 클릭 가능 — 실제 키워드는 review_samples 사용, fallback은 본문 검색
       var realType=findKeywordType(w);
-      var clickable=!!realType;
+      var resolvedType=realType||c.type||'긍정';  // 카드의 type 사용 (긍정/부정/개선)
       var safeWord=w.replace(/'/g,"\\'");
-      var clickAttr=clickable
-        ? ' onclick="openKeywordReviewsModal(\''+safeWord+'\',null,\''+realType+'\')" style="cursor:pointer;" title="클릭하여 \"'+safeWord.replace(/"/g,'&quot;')+'\" 키워드 관련 리뷰 보기"'
-        : ' title="설명용 fallback 항목 — 실제 키워드 데이터 아님"';
-      var hoverCls=clickable?' clickable':'';
-      return '<div class="pvoc-k-item'+hoverCls+'"'+clickAttr+'>'+
+      // fallback 텍스트는 너무 길어서 검색용으로 핵심 단어만 추출 (예: "유튜버 협찬 영상 시청 후 구매 다수" → "유튜버")
+      var searchTerm=realType?w:(w.split(/[\s,·—.\(\)→\/]+/)[0]||w);
+      var safeSearch=searchTerm.replace(/'/g,"\\'");
+      var tooltip=realType
+        ? '클릭하여 "'+safeWord.replace(/"/g,'&quot;')+'" 키워드 관련 리뷰 보기 (매칭 '+cnt+'건)'
+        : '"'+searchTerm.replace(/"/g,'&quot;')+'" 키워드로 본문 검색';
+      return '<div class="pvoc-k-item clickable" onclick="openKeywordReviewsModal(\''+safeWord+'\',null,\''+resolvedType+'\',\''+safeSearch+'\')" style="cursor:pointer;" title="'+tooltip+'">'+
         '<span class="pvoc-k-num">'+(i+1)+'</span>'+
         '<div class="pvoc-k-text">'+w+(cnt!==''?'<span class="pvoc-k-cnt">'+cnt+'</span>':'')+'</div>'+
         '</div>';
