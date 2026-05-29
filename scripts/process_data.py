@@ -936,20 +936,27 @@ def _match_compiled_patterns(
     """
     사전 컴파일된 패턴 리스트로 매칭 수행.
     벡터화: pandas Series.str.contains 활용.
+
+    Returns 각 항목:
+      - word, count, category, reviews(샘플 ID 30개), _all_review_ids(전체),
+        _matched_indices(매칭된 source DataFrame 인덱스)
     """
     text_series = pd.Series(texts, dtype=str)
     results: List[dict] = []
 
     for category, compiled, label in compiled_patterns:
         mask = text_series.str.contains(compiled, na=False)
-        matched_ids = [review_ids[i] for i in mask[mask].index.tolist()]
+        matched_indices = mask[mask].index.tolist()
+        matched_ids = [review_ids[i] for i in matched_indices]
         if matched_ids:
             results.append({
                 "word": label,
                 "count": len(matched_ids),
                 "category": category,
-                "reviews": matched_ids[:30],      # UI 표시용 (최대 30건)
-                "_all_review_ids": matched_ids,    # 전체 (by_product 계산용, 후처리 시 제거)
+                "reviews": matched_ids[:30],
+                "_all_review_ids": matched_ids,
+                "_matched_indices": matched_indices,  # source df의 row index
+                "_pattern": compiled.pattern,         # 검증용
             })
 
     results.sort(key=lambda x: x["count"], reverse=True)
@@ -1005,13 +1012,9 @@ def extract_keywords_basic(df: pd.DataFrame, top_n: int = 30) -> dict:
         id_to_product = {}
 
     def _attach_by_product(items: List[dict]) -> List[dict]:
-        """각 키워드 항목에 by_product 분포 추가 (상품명 → 카운트).
-
-        전체 매칭 review_id (_all_review_ids)로 정확히 계산 후, 임시 필드는 제거.
-        """
+        """각 키워드 항목에 by_product 분포 추가."""
         for item in items:
-            # 전체 ID 우선, 없으면 샘플 사용 (fallback)
-            review_ids = item.pop("_all_review_ids", None) or item.get("reviews", [])
+            review_ids = item.get("_all_review_ids") or item.get("reviews", [])
             counts: dict = {}
             for rid in review_ids:
                 prod = id_to_product.get(str(rid))
@@ -1023,14 +1026,83 @@ def extract_keywords_basic(df: pd.DataFrame, top_n: int = 30) -> dict:
             ]
         return items
 
+    def _attach_review_samples(
+        items: List[dict],
+        source_df: pd.DataFrame,
+        max_samples: int = 15,
+    ) -> List[dict]:
+        """각 키워드 항목에 매칭된 리뷰의 본문/별점/날짜/상품을 추가.
+
+        정밀도 보장:
+          1. _matched_indices로 source_df에서 본문 직접 추출 (정확한 매칭만)
+          2. 본문에 패턴이 실제로 포함되는지 재검증 (false positive 차단)
+          3. 최대 max_samples개만 저장 (파일 크기 관리)
+        """
+        for item in items:
+            matched_idx = item.pop("_matched_indices", [])
+            pattern_str = item.pop("_pattern", "")
+            samples: List[dict] = []
+            if matched_idx and pattern_str:
+                # 재컴파일 (검증용)
+                verify_re = re.compile(pattern_str)
+                # 우선순위: 다양한 상품/별점이 골고루 표시되도록 정렬
+                # 일단 인덱스 순회하며 검증된 것만 채집
+                seen_products: dict = {}
+                for idx in matched_idx:
+                    if len(samples) >= max_samples:
+                        break
+                    try:
+                        row = source_df.iloc[idx]
+                    except (IndexError, KeyError):
+                        continue
+                    text = str(row.get("body", "") if hasattr(row, "get") else row["body"])
+                    # 패턴 재검증 — 본문에 실제 포함되는지
+                    if not verify_re.search(text):
+                        continue
+                    # 상품별 분포 균등화 (한 상품 최대 4건)
+                    prod_name = str(row["product_name"]) if "product_name" in source_df.columns else ""
+                    if seen_products.get(prod_name, 0) >= 4:
+                        continue
+                    seen_products[prod_name] = seen_products.get(prod_name, 0) + 1
+                    # 날짜 포맷
+                    date_str = ""
+                    rv_date = row.get("review_date") if hasattr(row, "get") else (row["review_date"] if "review_date" in source_df.columns else None)
+                    if rv_date is not None and pd.notna(rv_date):
+                        try:
+                            date_str = pd.Timestamp(rv_date).strftime("%Y-%m-%d")
+                        except Exception:
+                            date_str = ""
+                    samples.append({
+                        "review_id": str(row["review_id"]) if "review_id" in source_df.columns else "",
+                        "rating": int(row["rating"]) if "rating" in source_df.columns and pd.notna(row["rating"]) else 0,
+                        "date": date_str,
+                        "text": text[:300],
+                        "product": prod_name,
+                    })
+            item["review_samples"] = samples
+            # 정리: 임시 필드 제거 (이미 pop으로 제거됨, 안전 확인)
+            item.pop("_all_review_ids", None)
+        return items
+
+    # 적용 순서: by_product 먼저 (_all_review_ids 사용) → review_samples (_matched_indices 사용)
+    praise_top = praise_items[:top_n]
+    complaint_top = complaint_items[:top_n]
+    improvement_top = improvement_items[:top_n]
+    _attach_by_product(praise_top)
+    _attach_by_product(complaint_top)
+    _attach_by_product(improvement_top)
+    _attach_review_samples(praise_top, df, max_samples=15)
+    _attach_review_samples(complaint_top, low_df, max_samples=15)
+    _attach_review_samples(improvement_top, df, max_samples=15)
+
     return {
         "negative_keywords": _count_keywords(neg_df, top_n),
         "low_rating_keywords": _count_keywords(low_df, top_n),
         "positive_keywords": _count_keywords(pos_df, top_n),
         "by_intent": {
-            "praise": _attach_by_product(praise_items[:top_n]),
-            "complaint": _attach_by_product(complaint_items[:top_n]),
-            "improvement": _attach_by_product(improvement_items[:top_n]),
+            "praise": praise_top,
+            "complaint": complaint_top,
+            "improvement": improvement_top,
         },
     }
 

@@ -3175,28 +3175,43 @@ function openKeywordReviewsModal(keyword, productFilter, type){
   var kwObj=pool.find(function(k){return k.word===keyword;});
   if(!kwObj){ $('krm-list').innerHTML='<div style="text-align:center;padding:30px;color:var(--text-secondary);">키워드 데이터를 찾을 수 없습니다.</div>'; return; }
 
-  var reviewIds=kwObj.reviews||[]; // 최대 30건
   var totalCount=kwObj.count||0;
   var allReviews=[];
-  // review_id로 products의 top/bottom_reviews에서 본문 찾기
-  allProds.forEach(function(p){
-    if(productFilter && p.name!==productFilter) return;
-    (p.top_reviews||[]).concat(p.bottom_reviews||[]).forEach(function(r){
-      if(reviewIds.indexOf(String(r.review_id))>=0){
-        // 키워드가 본문에 포함된 것만 (이중 확인)
-        if(!r.text || r.text.indexOf(keyword.split(' ')[0])>=0 || true){
+
+  // 1순위: keywords.json의 review_samples (정밀도 검증된 본문) 사용
+  var samples=kwObj.review_samples||[];
+  if(samples.length>0){
+    samples.forEach(function(s){
+      if(productFilter && s.product!==productFilter) return;
+      allReviews.push({
+        name: s.product || '(상품 미상)',
+        r: {
+          review_id: s.review_id,
+          rating: s.rating,
+          date: s.date,
+          text: s.text
+        }
+      });
+    });
+  } else {
+    // 2순위 (fallback): products의 top/bottom_reviews에서 review_id 매칭
+    var reviewIds=kwObj.reviews||[];
+    allProds.forEach(function(p){
+      if(productFilter && p.name!==productFilter) return;
+      (p.top_reviews||[]).concat(p.bottom_reviews||[]).forEach(function(r){
+        if(reviewIds.indexOf(String(r.review_id))>=0){
           allReviews.push({name:p.name, r:r});
         }
-      }
+      });
     });
-  });
-  // 중복 제거
-  var seen={};
-  allReviews=allReviews.filter(function(item){
-    var k=item.r.review_id;
-    if(seen[k]) return false;
-    seen[k]=true; return true;
-  });
+    // 중복 제거
+    var seen={};
+    allReviews=allReviews.filter(function(item){
+      var k=item.r.review_id;
+      if(seen[k]) return false;
+      seen[k]=true; return true;
+    });
+  }
 
   // 헤더
   var typeColor=type==='긍정'?'#16a34a':type==='부정'?'#dc2626':'#d97706';
@@ -3209,8 +3224,10 @@ function openKeywordReviewsModal(keyword, productFilter, type){
   // 리뷰 목록
   var listEl=$('krm-list');
   if(allReviews.length===0){
-    listEl.innerHTML='<div style="text-align:center;padding:30px;color:var(--text-secondary);font-size:12.5px;">'+
-      '본문이 저장된 리뷰가 없습니다. (process_data.py의 top_review_count를 늘리면 더 많이 표시됩니다)</div>';
+    var emptyMsg=productFilter
+      ? '"'+escapeHtml(fmtS(productFilter)||productFilter)+'" 상품에 해당 키워드 매칭 리뷰가 저장되어 있지 않습니다.<br><br><span style="font-size:11px;color:var(--text-secondary);">전체 보기로 다시 시도해보세요.</span>'
+      : '본문이 저장된 리뷰가 없습니다.<br><br><span style="font-size:11px;color:var(--text-secondary);">파이프라인을 재실행하여 review_samples를 생성하세요.</span>';
+    listEl.innerHTML='<div style="text-align:center;padding:30px;color:var(--text-secondary);font-size:12.5px;">'+emptyMsg+'</div>';
   } else {
     listEl.innerHTML=allReviews.map(function(item){
       var r=item.r;
