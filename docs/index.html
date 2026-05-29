@@ -3334,13 +3334,23 @@ function showCIPKeyword(word, cnt, type, anchorEl, evt){
   var total=pool.reduce(function(s,k){return s+(k.count||0);},0);
   var pct=total>0?(cnt/total*100).toFixed(1)+'%':'—';
 
-  // 키워드 객체 찾기 (by_product 데이터 활용)
-  var kwObj=pool.find(function(k){return k.word===word;}) || {};
+  // Taxonomy 수동 분류 보강
+  var kwObjRaw=pool.find(function(k){return k.word===word;}) || {};
+  var kwObj=enhanceKeywordWithTaxonomy(kwObjRaw)||{};
   var byProduct=kwObj.by_product||[];
+  // 수동 분류 보강 표시
+  if(kwObj._manualBoost>0){
+    cnt=kwObj.count;
+    pct=total>0?(cnt/total*100).toFixed(1)+'%':'—';
+  }
 
   var html='<div class="cip-row"><span class="cip-label">언급 횟수</span><span class="cip-val" style="color:'+typeColor+'">'+fmt(cnt)+'건</span></div>'+
     '<div class="cip-row"><span class="cip-label">전체 VOC 비율</span><span class="cip-val">'+pct+'</span></div>'+
     '<div class="cip-row"><span class="cip-label">유형</span><span class="cip-val">'+type+' 키워드</span></div>';
+  // 수동 분류 보강 표시
+  if(kwObj._manualBoost>0){
+    html+='<div class="cip-row" style="background:rgba(202,138,4,.08);margin:4px -10px;padding:4px 10px;border-radius:6px;"><span class="cip-label" style="color:#854d0e;font-weight:700;">📂 Taxonomy 수동 보강</span><span class="cip-val" style="color:#854d0e;">+'+kwObj._manualBoost+'건 (자동 '+kwObj._origCount+' + 수동 '+kwObj._manualBoost+')</span></div>';
+  }
 
   // 1) 키워드별 상품 분포 (합 100%) — 방안 C
   if(byProduct.length>0){
@@ -3429,20 +3439,23 @@ function openKeywordReviewsModal(keyword, productFilter, type, searchTerm){
   var kw=STATE.keywords||REAL_DATA.keywords;
   var bi=(kw&&kw.by_intent)||{};
   var pool=type==='긍정'?bi.praise||[]:type==='부정'?bi.complaint||[]:bi.improvement||[];
-  var kwObj=pool.find(function(k){return k.word===keyword;});
+  var kwObjRaw=pool.find(function(k){return k.word===keyword;});
+  // Taxonomy 수동 분류로 키워드 보강
+  var kwObj=kwObjRaw ? enhanceKeywordWithTaxonomy(kwObjRaw) : null;
 
   var totalCount=kwObj?(kwObj.count||0):0;
   var allReviews=[];
   var dataSource='';  // 'samples' | 'id-match' | 'text-search'
 
-  // 1순위: keywords.json의 review_samples (정밀도 검증된 본문)
+  // 1순위: keywords.json의 review_samples (정밀도 검증된 본문) — Taxonomy 보강 포함
   if(kwObj && kwObj.review_samples && kwObj.review_samples.length>0){
     dataSource='samples';
     kwObj.review_samples.forEach(function(s){
       if(productFilter && s.product!==productFilter) return;
       allReviews.push({
         name: s.product || '(상품 미상)',
-        r: {review_id:s.review_id, rating:s.rating, date:s.date, text:s.text}
+        r: {review_id:s.review_id, rating:s.rating, date:s.date, text:s.text,
+            _manual:s._manual, _manualSource:s._manualSource}
       });
     });
   }
@@ -3539,9 +3552,13 @@ function openKeywordReviewsModal(keyword, productFilter, type, searchTerm){
   } else {
     subtitleParts.push(type+' 키워드');
     subtitleParts.push('매칭 '+fmt(totalCount)+'건');
+    // Taxonomy 보강 표시
+    if(kwObj && kwObj._manualBoost>0){
+      subtitleParts.push('📂 자동 '+kwObj._origCount+' + 수동 '+kwObj._manualBoost);
+    }
   }
   if(productFilter) subtitleParts.push('🛒 '+escapeHtml(fmtS(productFilter)||productFilter)+' 만');
-  $('krm-subtitle').textContent=subtitleParts.join(' · ');
+  $('krm-subtitle').innerHTML=subtitleParts.join(' · ');
 
   // AI 요약용 컨텍스트 저장 (krmRenderList에서 mode에 따라 슬라이스)
   modal._ctx={keyword:keyword, productFilter:productFilter, type:type, reviews:allReviews, totalCount:totalCount, dataSource:dataSource, searchTerm:searchTerm||keyword};
@@ -3625,9 +3642,15 @@ function krmRenderList(){
       var re=new RegExp('('+safe+'[^\\s,.!?]*)','gi');
       highlighted=highlighted.replace(re,'<mark style="background:#fef08a;padding:0 2px;">$1</mark>');
     });
-    return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;">'+
+    // 수동 분류 배지
+    var manualBadge='';
+    if(r._manual && r._manualSource){
+      manualBadge='<span style="background:rgba(202,138,4,.12);color:#854d0e;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:9px;" title="Taxonomy &quot;'+escapeHtml(r._manualSource.taxonomyName)+' / '+escapeHtml(r._manualSource.topicName)+'&quot;에서 수동 분류됨">📂 수동 분류</span>';
+    }
+    return '<div style="background:'+(r._manual?'rgba(202,138,4,.04)':'var(--surface)')+';border:1px solid '+(r._manual?'rgba(202,138,4,.25)':'var(--border)')+';border-radius:10px;padding:12px 14px;margin-bottom:10px;">'+
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">'+
         '<span style="font-size:11.5px;font-weight:700;color:var(--accent);cursor:pointer;" onclick="closeKeywordReviewsModal();openProductPanel(\''+item.name.replace(/'/g,"\\'")+'\');">'+escapeHtml(fmtS(item.name))+'</span>'+
+        manualBadge+
         '<span style="font-size:12px;color:#f59e0b;letter-spacing:-1px;">'+stars+'</span>'+
         '<span style="font-size:10.5px;color:var(--text-secondary);">'+(r.date||'')+'</span>'+
         tag+
@@ -4867,6 +4890,124 @@ function txMatchTopic(topic, reviews, taxonomy){
   });
 
   return matched;
+}
+
+// ─────────────────────────────────────────────
+// 키워드 ↔ Taxonomy 연동 — 수동 분류를 키워드에 반영
+// ─────────────────────────────────────────────
+
+// 키워드 이름과 매칭되는 Taxonomy Topic 찾기 (다중 매칭 허용)
+function txFindTopicsMatchingKeyword(keywordName){
+  if(!keywordName || typeof TAXONOMIES==='undefined') return [];
+  var name=String(keywordName).trim().toLowerCase();
+  var matches=[];
+  TAXONOMIES.forEach(function(tax){
+    if(tax.system) return; // Saved topics 제외
+    (tax.topics||[]).forEach(function(tp){
+      var tn=String(tp.name||'').trim().toLowerCase();
+      if(!tn) return;
+      // 매칭 우선순위: 1) 완전 일치 2) 키워드가 Topic명에 포함 3) Topic명이 키워드에 포함
+      if(tn===name || tn.indexOf(name)>=0 || name.indexOf(tn)>=0){
+        matches.push({taxonomy:tax, topic:tp});
+      }
+    });
+  });
+  return matches;
+}
+
+// Taxonomy의 모든 수동 분류 결과를 review_id별로 집계
+//   { review_id: [{topicId, taxonomyId, topicName, taxonomyName}, ...] }
+function txGetAllManualClassifications(){
+  var result={};
+  if(typeof TAXONOMIES==='undefined') return result;
+  TAXONOMIES.forEach(function(tax){
+    if(tax.system) return;
+    var manual=tax.manualClassifications||{};
+    Object.keys(manual).forEach(function(rid){
+      var cls=manual[rid];
+      if(!cls||!cls.include||cls.include.length===0) return;
+      cls.include.forEach(function(topicId){
+        var tp=(tax.topics||[]).find(function(x){return x.id===topicId;});
+        if(!tp) return;
+        if(!result[rid]) result[rid]=[];
+        result[rid].push({
+          topicId:topicId, taxonomyId:tax.id,
+          topicName:tp.name, taxonomyName:tax.name
+        });
+      });
+    });
+  });
+  return result;
+}
+
+// 키워드 객체를 Taxonomy 수동 분류로 보강
+//   원본 keyword의 review_samples + count + by_product에 수동 분류된 리뷰들 합치기
+function enhanceKeywordWithTaxonomy(keyword){
+  if(!keyword || !keyword.word) return keyword;
+  var matches=txFindTopicsMatchingKeyword(keyword.word);
+  if(matches.length===0) return keyword;
+
+  // 매칭된 Topic들의 수동 include 리뷰 ID 수집
+  var manualIds=new Set();
+  var manualRefs={}; // rid → {topicName, taxonomyName}
+  matches.forEach(function(m){
+    var manual=m.taxonomy.manualClassifications||{};
+    Object.keys(manual).forEach(function(rid){
+      var cls=manual[rid];
+      if(cls && cls.include && cls.include.indexOf(m.topic.id)>=0){
+        manualIds.add(rid);
+        manualRefs[rid]={topicName:m.topic.name, taxonomyName:m.taxonomy.name};
+      }
+    });
+  });
+  if(manualIds.size===0) return keyword;
+
+  // 기존 review_samples의 ID set
+  var baseIds=new Set((keyword.review_samples||[]).map(function(s){return String(s.review_id);}));
+
+  // 추가할 리뷰 (기존 샘플에 없는 것만)
+  var newIds=Array.from(manualIds).filter(function(rid){return !baseIds.has(String(rid));});
+  if(newIds.length===0) return keyword;
+
+  // 모든 리뷰에서 매칭되는 본문 찾기
+  var allReviews=txGetAllReviews();
+  var newSamples=[];
+  newIds.forEach(function(rid){
+    var r=allReviews.find(function(rv){return String(rv.review_id)===String(rid);});
+    if(r){
+      newSamples.push({
+        review_id:r.review_id, rating:r.rating, date:r.date,
+        text:r.text, product:r.product, _manual:true,
+        _manualSource:manualRefs[rid]
+      });
+    }
+  });
+
+  // by_product 보강
+  var by_product=(keyword.by_product||[]).slice();
+  newSamples.forEach(function(s){
+    var existing=by_product.find(function(bp){return bp.product===s.product;});
+    if(existing) existing.count+=1;
+    else by_product.push({product:s.product, count:1});
+  });
+  by_product.sort(function(a,b){return b.count-a.count;});
+
+  return {
+    word:keyword.word,
+    count:(keyword.count||0)+newSamples.length,
+    category:keyword.category,
+    reviews:keyword.reviews,
+    review_samples:(keyword.review_samples||[]).concat(newSamples),
+    by_product:by_product,
+    _manualBoost:newSamples.length,
+    _origCount:keyword.count||0
+  };
+}
+
+// 키워드 배열 일괄 보강
+function enhanceKeywordsArrayWithTaxonomy(keywords){
+  if(!keywords || typeof TAXONOMIES==='undefined' || TAXONOMIES.length===0) return keywords;
+  return keywords.map(enhanceKeywordWithTaxonomy);
 }
 
 // 미분류 리뷰 — 어느 토픽에도 매칭되지 않는 리뷰
