@@ -513,6 +513,7 @@
     .pvoc-k-cat.post { background:rgba(245,158,11,.12); color:#d97706; }
     .pvoc-k-cat.exp { background:rgba(22,163,74,.1); color:#16a34a; }
     .pvoc-k-cat.issue { background:rgba(220,38,38,.1); color:#dc2626; }
+    .pvoc-k-cat.taxonomy { background:rgba(202,138,4,.12); color:#854d0e; }
     .pvoc-k-actions { display:flex; gap:4px; }
     .pvoc-k-title { font-size:14px; font-weight:800; color:var(--text); margin-bottom:14px; line-height:1.3; }
     .pvoc-k-divider { height:1px; background:var(--border); margin-bottom:12px; }
@@ -1278,6 +1279,7 @@
     <span class="aic-ctx-chip" data-ctx="kpi">KPI</span>
     <span class="aic-ctx-chip" data-ctx="sku">SKU</span>
     <span class="aic-ctx-chip" data-ctx="voc">VOC 키워드</span>
+    <span class="aic-ctx-chip" data-ctx="taxonomy">📂 Taxonomy</span>
     <span class="aic-ctx-chip" data-ctx="product" id="aic-ctx-product" style="display:none;"></span>
   </div>
   <div class="aic-messages" id="aic-messages">
@@ -2861,6 +2863,12 @@ function imRenderInsightCards(p){
 
   // 카드 4: 종합 요약 (별점 분포 + MoM)
   cards.appendChild(imBuildSummaryCard(p));
+
+  // 카드: Taxonomy 매칭 (사용자 정의 분류 결과)
+  if(typeof TAXONOMIES!=='undefined' && TAXONOMIES.length>0){
+    var taxCard=imBuildTaxonomyCard(p);
+    if(taxCard) cards.appendChild(taxCard);
+  }
 }
 
 // 키워드 배열을 의미별 블록(번호 인사이트)으로 그룹화
@@ -3052,6 +3060,80 @@ function imBuildSummaryCard(p){
         '</ul>'+
       '</div>'+
     '</div>'+
+    '<div class="im-card-footer">'+
+      '<span class="im-card-ts">Updated on '+ts+'</span>'+
+      '<div class="im-card-vote"><button title="유용함" onclick="this.classList.toggle(\'active\')">👍</button><button title="아쉬움" onclick="this.classList.toggle(\'active\')">👎</button></div>'+
+    '</div>';
+  return card;
+}
+
+// ── Taxonomy 매칭 카드 (이 상품의 리뷰가 각 Topic에 얼마나 매칭됐는지) ──
+function imBuildTaxonomyCard(p){
+  if(!p || typeof TAXONOMIES==='undefined' || TAXONOMIES.length===0) return null;
+  // 이 상품의 리뷰만 추출 (top + bottom_reviews)
+  var prodReviews=[];
+  (p.top_reviews||[]).forEach(function(r){
+    prodReviews.push({review_id:r.review_id, rating:r.rating, date:r.date, text:r.text, product:p.name});
+  });
+  (p.bottom_reviews||[]).forEach(function(r){
+    prodReviews.push({review_id:r.review_id, rating:r.rating, date:r.date, text:r.text, product:p.name});
+  });
+  if(prodReviews.length===0) return null;
+
+  // 시스템 토픽 (Saved topics) 제외, 즐겨찾기 우선
+  var taxonomies=TAXONOMIES.filter(function(t){return !t.system;}).sort(function(a,b){
+    return (b.favorite?1:0)-(a.favorite?1:0);
+  });
+  if(taxonomies.length===0) return null;
+
+  var card=document.createElement('div');
+  card.className='im-card';
+  var ts=new Date().toLocaleString('ko-KR',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+
+  var blocksHtml=taxonomies.slice(0,3).map(function(tax, blockIdx){
+    var topicMatches=[];
+    (tax.topics||[]).forEach(function(tp){
+      var matched=txMatchTopic(tp, prodReviews, tax);
+      if(matched.length>0) topicMatches.push({topic:tp, count:matched.length});
+    });
+    topicMatches.sort(function(a,b){return b.count-a.count;});
+    if(topicMatches.length===0){
+      return '<div class="im-insight-block">'+
+        '<div class="im-insight-num summary">'+(blockIdx+1)+'</div>'+
+        '<div class="im-insight-body">'+
+          '<div class="im-insight-h">'+escapeHtml(tax.name)+(tax.favorite?' ⭐':'')+'</div>'+
+          '<div style="font-size:11.5px;color:var(--text-secondary);">이 상품에 매칭된 Topic 없음</div>'+
+        '</div>'+
+      '</div>';
+    }
+    var listHtml=topicMatches.slice(0,5).map(function(tm){
+      var pct=(tm.count/prodReviews.length*100).toFixed(0);
+      var safeTaxId=tax.id.replace(/'/g,"\\'");
+      var safeTopicId=tm.topic.id.replace(/'/g,"\\'");
+      return '<li style="cursor:pointer;" onclick="closeInsightModal();showTaxonomyPage();setTimeout(function(){txOpenTaxonomy(\''+safeTaxId+'\');setTimeout(function(){txSelectTopic(\''+safeTopicId+'\');},100);},100);" title="클릭하여 Taxonomy로 이동">'+
+        '<span style="font-weight:600;color:var(--text);">'+escapeHtml(tm.topic.name)+'</span>'+
+        ' <span class="im-cnt">'+tm.count+'건 '+pct+'%</span>'+
+      '</li>';
+    }).join('');
+    return '<div class="im-insight-block">'+
+      '<div class="im-insight-num summary">'+(blockIdx+1)+'</div>'+
+      '<div class="im-insight-body">'+
+        '<div class="im-insight-h">'+escapeHtml(tax.name)+(tax.favorite?' ⭐':'')+
+          ' <span style="font-size:10px;color:var(--text-secondary);font-weight:500;">('+topicMatches.length+' / '+(tax.topics||[]).length+' Topics)</span>'+
+        '</div>'+
+        '<ul class="im-insight-list">'+listHtml+'</ul>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+
+  card.innerHTML=
+    '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">'+
+      '<span class="im-card-brand-tag">Brand Insights</span>'+
+      '<span class="im-card-label">TAXONOMY</span>'+
+    '</div>'+
+    '<div class="im-card-question">이 상품은 어떤 분류 카테고리에 해당하나요?</div>'+
+    '<div class="im-card-summary">Taxonomy의 Topic별로 이 상품의 리뷰가 매칭된 분포를 보여줍니다. 클릭하면 해당 Taxonomy로 이동합니다.</div>'+
+    blocksHtml+
     '<div class="im-card-footer">'+
       '<span class="im-card-ts">Updated on '+ts+'</span>'+
       '<div class="im-card-vote"><button title="유용함" onclick="this.classList.toggle(\'active\')">👍</button><button title="아쉬움" onclick="this.classList.toggle(\'active\')">👎</button></div>'+
@@ -4321,6 +4403,18 @@ function aicBuildContext(){
     if(bi.complaint) ctx.push('[불만키워드] '+bi.complaint.slice(0,6).map(function(k){return k.word+'('+k.count+')';}).join(', '));
     if(bi.improvement) ctx.push('[개선요청] '+bi.improvement.slice(0,6).map(function(k){return k.word+'('+k.count+')';}).join(', '));
   }
+  // Taxonomy 컨텍스트 — 사용자 정의 분류 결과
+  if(AIC_CTX==='all'||AIC_CTX==='taxonomy'){
+    if(typeof TAXONOMIES!=='undefined' && TAXONOMIES.length>0){
+      var allReviews=txGetAllReviews();
+      TAXONOMIES.filter(function(t){return !t.system && (t.topics||[]).length>0;}).slice(0,3).forEach(function(tax){
+        var stats=txComputeStats(tax);
+        var topTopics=(tax.topics||[]).slice().sort(function(a,b){return (b.count||0)-(a.count||0);}).slice(0,5);
+        ctx.push('[Taxonomy: '+tax.name+'] 총 '+stats.total+'건 중 분류 '+stats.classified+'건('+(100-stats.notClassifiedPct).toFixed(1)+'%)');
+        ctx.push('  Top Topics: '+topTopics.map(function(tp){return tp.name+'('+(tp.count||0)+')';}).join(' | '));
+      });
+    }
+  }
   return ctx.join('\n');
 }
 
@@ -4532,6 +4626,29 @@ function renderPVOCKanban(){
     }
   ];
 
+  // ── 즐겨찾기(⭐) Taxonomy를 카반 카드로 자동 추가 ──
+  if(typeof TAXONOMIES!=='undefined' && TAXONOMIES.length>0){
+    var allReviews=txGetAllReviews();
+    var favTaxonomies=TAXONOMIES.filter(function(t){return t.favorite && !t.system && (t.topics||[]).length>0;});
+    favTaxonomies.forEach(function(tax){
+      // 각 Topic별 매칭 카운트
+      var topicCounts=(tax.topics||[]).map(function(tp){
+        var matched=txMatchTopic(tp, allReviews, tax);
+        return {word:tp.name, count:matched.length, topicId:tp.id, taxonomyId:tax.id};
+      }).filter(function(x){return x.count>0;}).sort(function(a,b){return b.count-a.count;});
+
+      if(topicCounts.length===0) return; // 매칭 없으면 skip
+      cards.push({
+        cat:'taxonomy', catLbl:'📂 '+tax.name, type:'taxonomy',
+        title:tax.name+' Taxonomy',
+        data: topicCounts.slice(0,7),
+        fallback: [],
+        isTaxonomy: true,
+        taxonomyId: tax.id
+      });
+    });
+  }
+
   PVOC_CARDS=[];
   container.innerHTML=cards.map(function(c, idx){
     // 데이터가 4개 미만이면 fallback으로 보충
@@ -4548,11 +4665,19 @@ function renderPVOCKanban(){
     };
     var bulletsHtml=items.map(function(it, i){
       var w=it.word||it; var cnt=it.count!=null?it.count:'';
-      // 모든 항목 클릭 가능 — 실제 키워드는 review_samples 사용, fallback은 본문 검색
+      // Taxonomy 카드는 Topic 페이지로 이동
+      if(c.isTaxonomy && it.topicId){
+        var safeTaxId=it.taxonomyId.replace(/'/g,"\\'");
+        var safeTopicId=it.topicId.replace(/'/g,"\\'");
+        return '<div class="pvoc-k-item clickable" onclick="showTaxonomyPage();setTimeout(function(){txOpenTaxonomy(\''+safeTaxId+'\');setTimeout(function(){txSelectTopic(\''+safeTopicId+'\');},80);},80);" style="cursor:pointer;" title="Taxonomy로 이동: '+escapeHtml(w)+'">'+
+          '<span class="pvoc-k-num">'+(i+1)+'</span>'+
+          '<div class="pvoc-k-text">'+escapeHtml(w)+(cnt!==''?'<span class="pvoc-k-cnt">'+cnt+'</span>':'')+'</div>'+
+          '</div>';
+      }
+      // 일반 카드 — 키워드 리뷰 모달
       var realType=findKeywordType(w);
-      var resolvedType=realType||c.type||'긍정';  // 카드의 type 사용 (긍정/부정/개선)
+      var resolvedType=realType||c.type||'긍정';
       var safeWord=w.replace(/'/g,"\\'");
-      // fallback 텍스트는 너무 길어서 검색용으로 핵심 단어만 추출 (예: "유튜버 협찬 영상 시청 후 구매 다수" → "유튜버")
       var searchTerm=realType?w:(w.split(/[\s,·—.\(\)→\/]+/)[0]||w);
       var safeSearch=searchTerm.replace(/'/g,"\\'");
       var tooltip=realType
