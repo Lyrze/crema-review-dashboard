@@ -698,6 +698,59 @@
     .tx-rule-actions .cancel { background:var(--bg); border:1px solid var(--border); color:var(--text); }
     .tx-rule-actions .apply { background:var(--accent); color:#fff; border:none; }
     .tx-rule-actions .delete { background:transparent; color:var(--negative); border:1px solid var(--negative); margin-right:auto; }
+    /* ───────────────── SKU 1 vs 1 비교 ───────────────── */
+    #sku-compare-page { display:none; }
+    #sku-compare-page.active { display:block; }
+    body.compare-sku-mode .section { display:none; }
+    body.compare-sku-mode .sync-filter-bar { display:none; }
+    body.compare-sku-mode #compare-banner { display:none; }
+    body.compare-sku-mode #taxonomy-page { display:none; }
+    body.compare-sku-mode #taxonomy-detail { display:none; }
+    .sc-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px; gap:16px; flex-wrap:wrap; }
+    .sc-title { font-size:22px; font-weight:800; color:var(--text); letter-spacing:-.4px; display:flex; align-items:center; gap:10px; }
+    .sc-subtitle { font-size:12.5px; color:var(--text-secondary); margin-top:5px; }
+    .sc-selector-bar { display:grid; grid-template-columns:1fr auto 1fr; gap:16px; align-items:center; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px 18px; margin-bottom:20px; }
+    .sc-selector { display:flex; flex-direction:column; gap:6px; }
+    .sc-selector label { font-size:10.5px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.5px; }
+    .sc-selector .sc-label-with-color { display:flex; align-items:center; gap:8px; }
+    .sc-selector .sc-color-dot { width:12px; height:12px; border-radius:50%; }
+    .sc-selector select { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:9px; font-size:13px; font-weight:600; color:var(--text); background:var(--bg); font-family:inherit; outline:none; }
+    .sc-selector select:focus { border-color:var(--accent); }
+    .sc-vs { font-size:22px; font-weight:800; color:var(--text-secondary); padding:0 4px; align-self:end; padding-bottom:8px; }
+    /* KPI 비교 카드 */
+    .sc-kpi-grid { display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-bottom:20px; }
+    .sc-kpi-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px 16px; display:flex; flex-direction:column; }
+    .sc-kpi-title { font-size:11.5px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.5px; margin-bottom:14px; display:flex; align-items:center; gap:6px; }
+    .sc-kpi-row { display:flex; align-items:center; justify-content:space-between; padding:6px 0; }
+    .sc-kpi-row + .sc-kpi-row { border-top:1px dashed var(--border); }
+    .sc-kpi-name { font-size:11px; color:var(--text-secondary); display:flex; align-items:center; gap:5px; max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .sc-kpi-val { font-size:18px; font-weight:800; color:var(--text); }
+    .sc-kpi-val.up { color:var(--positive); }
+    .sc-kpi-val.dn { color:var(--negative); }
+    .sc-delta { font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:8px; margin-top:2px; display:inline-block; }
+    /* 차트 카드 */
+    .sc-charts-row { display:grid; grid-template-columns:repeat(2, 1fr); gap:14px; margin-bottom:20px; }
+    .sc-chart-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; display:flex; flex-direction:column; }
+    .sc-chart-head { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px; gap:8px; }
+    .sc-chart-title { font-size:13.5px; font-weight:800; color:var(--text); }
+    .sc-chart-sub { font-size:11px; color:var(--text-secondary); margin-top:2px; }
+    .sc-chart-pill { font-size:10px; font-weight:700; padding:2px 9px; border-radius:10px; }
+    .sc-chart-pill.sku1 { color:#5b5ef4; background:rgba(91,94,244,.1); }
+    .sc-chart-pill.sku2 { color:#16a34a; background:rgba(22,163,74,.1); }
+    .sc-chart-wrap { position:relative; flex:1; min-height:280px; }
+    .sc-chart-wrap.tall { min-height:480px; }
+    .sc-empty { text-align:center; padding:40px 20px; color:var(--text-secondary); font-size:12px; }
+    /* 색상 코드 */
+    .sc-c-sku1 { color:#5b5ef4; }
+    .sc-c-sku2 { color:#16a34a; }
+    .sc-bg-sku1 { background:#5b5ef4; }
+    .sc-bg-sku2 { background:#16a34a; }
+    @media (max-width:900px){
+      .sc-kpi-grid { grid-template-columns:repeat(2,1fr); }
+      .sc-charts-row { grid-template-columns:1fr; }
+      .sc-selector-bar { grid-template-columns:1fr; }
+      .sc-vs { display:none; }
+    }
   </style>
 </head>
 <body>
@@ -729,7 +782,8 @@
     <div class="nav-divider"></div>
     <div class="nav-group">분류 / 분석</div>
     <a href="#" onclick="event.preventDefault();showTaxonomyPage();" id="nav-taxonomy"><span class="icon">📂</span> Taxonomy</a>
-    <a href="#sec-custom-chart" onclick="hideTaxonomyPage();"><span class="icon">🛠</span> 커스텀 차트</a>
+    <a href="#" onclick="event.preventDefault();showCompareSKUPage();" id="nav-compare-sku"><span class="icon">🆚</span> SKU 1 vs 1 분석</a>
+    <a href="#sec-custom-chart" onclick="hideTaxonomyPage();hideCompareSKUPage();"><span class="icon">🛠</span> 커스텀 차트</a>
     <a href="#" onclick="event.preventDefault();openAIChatPanel();"><span class="icon">✦</span> Hey Sloom 챗</a>
   </nav>
   <div class="sb-footer">
@@ -779,6 +833,112 @@
     <div class="tx-grid" id="tx-grid"></div>
   </div>
   <div id="taxonomy-detail"></div>
+
+  <!-- ───────── SKU 1 vs 1 정밀 비교 페이지 ───────── -->
+  <div id="sku-compare-page">
+    <div class="sc-header">
+      <div>
+        <div class="sc-title">🆚 SKU 1 vs 1 분석</div>
+        <div class="sc-subtitle">두 SKU를 정밀하게 비교 분석합니다. 리뷰 수, 별점, 긍부정 비율, 키워드 TOP 30 등</div>
+      </div>
+    </div>
+    <!-- 상품 선택 바 -->
+    <div class="sc-selector-bar">
+      <div class="sc-selector">
+        <label class="sc-label-with-color"><span class="sc-color-dot sc-bg-sku1"></span>SKU 1</label>
+        <select id="sc-sku1-select" onchange="scOnSelectChange()"></select>
+      </div>
+      <div class="sc-vs">vs</div>
+      <div class="sc-selector">
+        <label class="sc-label-with-color"><span class="sc-color-dot sc-bg-sku2"></span>SKU 2</label>
+        <select id="sc-sku2-select" onchange="scOnSelectChange()"></select>
+      </div>
+    </div>
+
+    <!-- 1, 2, 3, 4: KPI 비교 (4개 카드) -->
+    <div class="sc-kpi-grid">
+      <div class="sc-kpi-card">
+        <div class="sc-kpi-title">💬 리뷰 수</div>
+        <div id="sc-kpi-reviews"></div>
+      </div>
+      <div class="sc-kpi-card">
+        <div class="sc-kpi-title">⭐ 평균 별점</div>
+        <div id="sc-kpi-rating"></div>
+      </div>
+      <div class="sc-kpi-card">
+        <div class="sc-kpi-title">📈 리뷰 변화 (MoM)</div>
+        <div id="sc-kpi-mom-reviews"></div>
+      </div>
+      <div class="sc-kpi-card">
+        <div class="sc-kpi-title">🎯 긍/부정 비율</div>
+        <div id="sc-kpi-sentiment"></div>
+      </div>
+    </div>
+
+    <!-- 1, 2, 3, 4: 비교 차트 -->
+    <div class="sc-charts-row">
+      <div class="sc-chart-card">
+        <div class="sc-chart-head">
+          <div><div class="sc-chart-title">1️⃣ SKU별 리뷰 변화 (전월 → 현재)</div><div class="sc-chart-sub">월간 리뷰 수 변동</div></div>
+        </div>
+        <div class="sc-chart-wrap"><canvas id="sc-chart-review-change"></canvas></div>
+      </div>
+      <div class="sc-chart-card">
+        <div class="sc-chart-head">
+          <div><div class="sc-chart-title">2️⃣ SKU별 별점 변화 (전월 → 현재)</div><div class="sc-chart-sub">월간 평균 별점 변동</div></div>
+        </div>
+        <div class="sc-chart-wrap"><canvas id="sc-chart-rating-change"></canvas></div>
+      </div>
+      <div class="sc-chart-card">
+        <div class="sc-chart-head">
+          <div><div class="sc-chart-title">3️⃣ SKU별 리뷰 수 / 별점 분포</div><div class="sc-chart-sub">★1~★5 별점 분포 비교</div></div>
+        </div>
+        <div class="sc-chart-wrap"><canvas id="sc-chart-rating-dist"></canvas></div>
+      </div>
+      <div class="sc-chart-card">
+        <div class="sc-chart-head">
+          <div><div class="sc-chart-title">4️⃣ SKU별 리뷰의 긍/부정 비율</div><div class="sc-chart-sub">Sentiment 분포 비교</div></div>
+        </div>
+        <div class="sc-chart-wrap"><canvas id="sc-chart-sentiment"></canvas></div>
+      </div>
+    </div>
+
+    <!-- 5: 전체 키워드 TOP 30 (긍+부정 통합) -->
+    <div class="sc-chart-card" style="margin-bottom:14px;">
+      <div class="sc-chart-head">
+        <div><div class="sc-chart-title">5️⃣ 전체 키워드 TOP 30 (긍 + 부정)</div><div class="sc-chart-sub">두 SKU의 통합 키워드 분포 비교 (그 SKU에서 매칭된 카운트)</div></div>
+        <div style="display:flex;gap:6px;">
+          <span class="sc-chart-pill sku1" id="sc-pill-all-1">SKU 1</span>
+          <span class="sc-chart-pill sku2" id="sc-pill-all-2">SKU 2</span>
+        </div>
+      </div>
+      <div class="sc-chart-wrap tall"><canvas id="sc-chart-kw-all"></canvas></div>
+    </div>
+
+    <!-- 6, 7: 긍정 / 부정 키워드 비교 (좌우 2개) -->
+    <div class="sc-charts-row">
+      <div class="sc-chart-card">
+        <div class="sc-chart-head">
+          <div><div class="sc-chart-title">6️⃣ 긍정 키워드 TOP 30</div><div class="sc-chart-sub">두 SKU의 긍정 키워드 카운트</div></div>
+          <div style="display:flex;gap:6px;">
+            <span class="sc-chart-pill sku1" id="sc-pill-pos-1">SKU 1</span>
+            <span class="sc-chart-pill sku2" id="sc-pill-pos-2">SKU 2</span>
+          </div>
+        </div>
+        <div class="sc-chart-wrap tall"><canvas id="sc-chart-kw-pos"></canvas></div>
+      </div>
+      <div class="sc-chart-card">
+        <div class="sc-chart-head">
+          <div><div class="sc-chart-title">7️⃣ 부정 키워드 TOP 30</div><div class="sc-chart-sub">두 SKU의 부정 + 개선 키워드 카운트</div></div>
+          <div style="display:flex;gap:6px;">
+            <span class="sc-chart-pill sku1" id="sc-pill-neg-1">SKU 1</span>
+            <span class="sc-chart-pill sku2" id="sc-pill-neg-2">SKU 2</span>
+          </div>
+        </div>
+        <div class="sc-chart-wrap tall"><canvas id="sc-chart-kw-neg"></canvas></div>
+      </div>
+    </div>
+  </div>
 
   <!-- Rule 편집 모달 -->
   <div class="tx-rule-modal" id="tx-rule-modal" onclick="if(event.target===this)txCloseRule();">
@@ -4788,6 +4948,310 @@ function toggleCardMenu(btn){
 
 // ── 초기화 ──
 // ───────────────────────────────────────────────
+//  SKU 1 vs 1 정밀 비교 분석
+// ───────────────────────────────────────────────
+var SC_STATE = { sku1:null, sku2:null, charts:{} };
+var SC_COLOR_1 = 'rgba(91, 94, 244, 0.85)';
+var SC_COLOR_2 = 'rgba(22, 163, 74, 0.85)';
+var SC_COLOR_1_LIGHT = 'rgba(91, 94, 244, 0.5)';
+var SC_COLOR_2_LIGHT = 'rgba(22, 163, 74, 0.5)';
+
+function showCompareSKUPage(){
+  document.body.classList.add('compare-sku-mode');
+  document.body.classList.remove('taxonomy-mode');
+  if($('taxonomy-page')) $('taxonomy-page').classList.remove('active');
+  if($('taxonomy-detail')) $('taxonomy-detail').classList.remove('active');
+  $('sku-compare-page').classList.add('active');
+  document.querySelectorAll('aside nav a').forEach(function(a){a.classList.remove('active');});
+  $('nav-compare-sku').classList.add('active');
+  scInit();
+}
+
+function hideCompareSKUPage(){
+  document.body.classList.remove('compare-sku-mode');
+  $('sku-compare-page').classList.remove('active');
+}
+
+function scInit(){
+  var prods=(STATE.products||REAL_DATA.products).slice().sort(function(a,b){return b.review_count-a.review_count;});
+  if(prods.length<2){
+    showToast('비교할 상품이 2개 이상 필요합니다');
+    return;
+  }
+  // localStorage에서 마지막 선택 복원, 없으면 Top 2
+  var s1=localStorage.getItem('sc_sku1') || prods[0].name;
+  var s2=localStorage.getItem('sc_sku2') || prods[1].name;
+  // 유효성 검증
+  if(!prods.find(function(p){return p.name===s1;})) s1=prods[0].name;
+  if(!prods.find(function(p){return p.name===s2;}) || s2===s1) s2=prods[1].name;
+  SC_STATE.sku1=s1; SC_STATE.sku2=s2;
+
+  // select 옵션 채우기
+  var opts=prods.map(function(p){
+    return '<option value="'+escapeHtml(p.name)+'">'+escapeHtml(fmtS(p.name))+' ('+fmt(p.review_count)+'건)</option>';
+  }).join('');
+  $('sc-sku1-select').innerHTML=opts;
+  $('sc-sku2-select').innerHTML=opts;
+  $('sc-sku1-select').value=s1;
+  $('sc-sku2-select').value=s2;
+  scRender();
+}
+
+function scOnSelectChange(){
+  var s1=$('sc-sku1-select').value;
+  var s2=$('sc-sku2-select').value;
+  if(s1===s2){
+    showToast('동일 SKU는 비교할 수 없습니다. 다른 SKU를 선택하세요.');
+    // SKU2를 자동 변경
+    var prods=(STATE.products||REAL_DATA.products);
+    var alt=prods.find(function(p){return p.name!==s1;});
+    if(alt){ s2=alt.name; $('sc-sku2-select').value=s2; }
+  }
+  SC_STATE.sku1=s1; SC_STATE.sku2=s2;
+  localStorage.setItem('sc_sku1', s1);
+  localStorage.setItem('sc_sku2', s2);
+  scRender();
+}
+
+// 상품별 키워드 TOP N 추출 (by_intent.X.by_product 활용)
+function scGetSKUKeywords(productName, category, topN){
+  if(!topN) topN=30;
+  var kw=STATE.keywords||REAL_DATA.keywords||{};
+  var bi=kw.by_intent||{};
+  var pools=[];
+  if(category==='all'){
+    pools=(bi.praise||[]).concat(bi.complaint||[]).concat(bi.improvement||[]);
+  } else if(category==='positive'){
+    pools=bi.praise||[];
+  } else if(category==='negative'){
+    pools=(bi.complaint||[]).concat(bi.improvement||[]);
+  }
+  // 같은 word가 여러 카테고리에 있을 수 있으므로 합산
+  var map={};
+  pools.forEach(function(k){
+    if(!k || !k.word) return;
+    var bp=(k.by_product||[]).find(function(p){return p.product===productName;});
+    if(bp && bp.count>0){
+      if(!map[k.word]) map[k.word]=0;
+      map[k.word]+=bp.count;
+    }
+  });
+  return Object.keys(map).map(function(w){return {word:w, count:map[w]};})
+    .sort(function(a,b){return b.count-a.count;}).slice(0,topN);
+}
+
+// 두 SKU 키워드 통합 (Top N 키워드 union)
+function scBuildCompareKeywords(sku1, sku2, category, topN){
+  if(!topN) topN=30;
+  var kw1=scGetSKUKeywords(sku1, category, 50);
+  var kw2=scGetSKUKeywords(sku2, category, 50);
+  // 모든 단어 집합
+  var wordSet={};
+  kw1.forEach(function(k){wordSet[k.word]={a:k.count,b:0};});
+  kw2.forEach(function(k){
+    if(wordSet[k.word]) wordSet[k.word].b=k.count;
+    else wordSet[k.word]={a:0,b:k.count};
+  });
+  // 합산 기준 정렬 (둘 다 큰 키워드 위로)
+  return Object.keys(wordSet).map(function(w){
+    return {word:w, sku1:wordSet[w].a, sku2:wordSet[w].b, total:wordSet[w].a+wordSet[w].b};
+  }).sort(function(a,b){return b.total-a.total;}).slice(0,topN);
+}
+
+function scRender(){
+  var prods=STATE.products||REAL_DATA.products;
+  var p1=prods.find(function(p){return p.name===SC_STATE.sku1;});
+  var p2=prods.find(function(p){return p.name===SC_STATE.sku2;});
+  if(!p1||!p2) return;
+
+  // 칩 라벨에 짧은 상품명
+  $('sc-pill-all-1').textContent='🔵 '+(fmtS(p1.name)||p1.name);
+  $('sc-pill-all-2').textContent='🟢 '+(fmtS(p2.name)||p2.name);
+  $('sc-pill-pos-1').textContent='🔵 '+(fmtS(p1.name)||p1.name);
+  $('sc-pill-pos-2').textContent='🟢 '+(fmtS(p2.name)||p2.name);
+  $('sc-pill-neg-1').textContent='🔵 '+(fmtS(p1.name)||p1.name);
+  $('sc-pill-neg-2').textContent='🟢 '+(fmtS(p2.name)||p2.name);
+
+  // KPI 카드
+  scRenderKPIs(p1, p2);
+  // 차트들
+  scRenderReviewChangeChart(p1, p2);
+  scRenderRatingChangeChart(p1, p2);
+  scRenderRatingDistChart(p1, p2);
+  scRenderSentimentChart(p1, p2);
+  scRenderKeywordChart('sc-chart-kw-all', p1, p2, 'all');
+  scRenderKeywordChart('sc-chart-kw-pos', p1, p2, 'positive');
+  scRenderKeywordChart('sc-chart-kw-neg', p1, p2, 'negative');
+}
+
+function scRenderKPIs(p1, p2){
+  // 리뷰 수
+  $('sc-kpi-reviews').innerHTML=
+    '<div class="sc-kpi-row"><span class="sc-kpi-name"><span class="sc-color-dot sc-bg-sku1" style="width:8px;height:8px;display:inline-block;border-radius:50%;"></span>'+escapeHtml(fmtS(p1.name))+'</span><span class="sc-kpi-val sc-c-sku1">'+fmt(p1.review_count)+'</span></div>'+
+    '<div class="sc-kpi-row"><span class="sc-kpi-name"><span class="sc-color-dot sc-bg-sku2" style="width:8px;height:8px;display:inline-block;border-radius:50%;"></span>'+escapeHtml(fmtS(p2.name))+'</span><span class="sc-kpi-val sc-c-sku2">'+fmt(p2.review_count)+'</span></div>';
+
+  // 별점
+  $('sc-kpi-rating').innerHTML=
+    '<div class="sc-kpi-row"><span class="sc-kpi-name"><span class="sc-color-dot sc-bg-sku1" style="width:8px;height:8px;display:inline-block;border-radius:50%;"></span>'+escapeHtml(fmtS(p1.name))+'</span><span class="sc-kpi-val" style="color:#f59e0b;">★'+p1.avg_rating.toFixed(2)+'</span></div>'+
+    '<div class="sc-kpi-row"><span class="sc-kpi-name"><span class="sc-color-dot sc-bg-sku2" style="width:8px;height:8px;display:inline-block;border-radius:50%;"></span>'+escapeHtml(fmtS(p2.name))+'</span><span class="sc-kpi-val" style="color:#f59e0b;">★'+p2.avg_rating.toFixed(2)+'</span></div>';
+
+  // MoM 리뷰 변화
+  function fmtMoM(cur, prev){
+    if(prev==null) return '<span class="sc-delta" style="background:var(--surface);color:var(--text-secondary);">전월 없음</span>';
+    var d=cur-prev;
+    var pct=prev>0?(d/prev*100).toFixed(1):0;
+    var cls=d>=0?'up':'dn';
+    var ic=d>=0?'▲':'▼';
+    var bg=d>=0?'rgba(22,163,74,.1)':'rgba(220,38,38,.1)';
+    var color=d>=0?'#16a34a':'#dc2626';
+    return '<span class="sc-delta" style="background:'+bg+';color:'+color+';">'+ic+' '+(d>=0?'+':'')+fmt(d)+' ('+pct+'%)</span>';
+  }
+  $('sc-kpi-mom-reviews').innerHTML=
+    '<div class="sc-kpi-row"><span class="sc-kpi-name"><span class="sc-color-dot sc-bg-sku1" style="width:8px;height:8px;display:inline-block;border-radius:50%;"></span>'+escapeHtml(fmtS(p1.name))+'</span>'+fmtMoM(p1.review_count, p1.prev_review_count)+'</div>'+
+    '<div class="sc-kpi-row"><span class="sc-kpi-name"><span class="sc-color-dot sc-bg-sku2" style="width:8px;height:8px;display:inline-block;border-radius:50%;"></span>'+escapeHtml(fmtS(p2.name))+'</span>'+fmtMoM(p2.review_count, p2.prev_review_count)+'</div>';
+
+  // 긍/부정 비율
+  $('sc-kpi-sentiment').innerHTML=
+    '<div class="sc-kpi-row"><span class="sc-kpi-name"><span class="sc-color-dot sc-bg-sku1" style="width:8px;height:8px;display:inline-block;border-radius:50%;"></span>'+escapeHtml(fmtS(p1.name))+'</span><span style="font-size:11.5px;"><strong style="color:#16a34a;">'+p1.positive_rate.toFixed(1)+'%</strong> / <strong style="color:#dc2626;">'+p1.negative_rate.toFixed(2)+'%</strong></span></div>'+
+    '<div class="sc-kpi-row"><span class="sc-kpi-name"><span class="sc-color-dot sc-bg-sku2" style="width:8px;height:8px;display:inline-block;border-radius:50%;"></span>'+escapeHtml(fmtS(p2.name))+'</span><span style="font-size:11.5px;"><strong style="color:#16a34a;">'+p2.positive_rate.toFixed(1)+'%</strong> / <strong style="color:#dc2626;">'+p2.negative_rate.toFixed(2)+'%</strong></span></div>';
+}
+
+function scDestroyChart(id){
+  if(SC_STATE.charts[id]){
+    try{ SC_STATE.charts[id].destroy(); }catch(e){}
+    delete SC_STATE.charts[id];
+  }
+  var c=$(id);
+  var existing=c?Chart.getChart(c):null;
+  if(existing) existing.destroy();
+}
+
+function scRenderReviewChangeChart(p1, p2){
+  var ctx=$('sc-chart-review-change');
+  if(!ctx) return;
+  scDestroyChart('sc-chart-review-change');
+  var labels=['전월', '현재 ('+STATE.month+')'];
+  var data1=[p1.prev_review_count!=null?p1.prev_review_count:null, p1.review_count];
+  var data2=[p2.prev_review_count!=null?p2.prev_review_count:null, p2.review_count];
+  SC_STATE.charts['sc-chart-review-change']=new Chart(ctx,{
+    type:'line',
+    data:{labels:labels,datasets:[
+      {label:fmtS(p1.name),data:data1,borderColor:SC_COLOR_1,backgroundColor:SC_COLOR_1_LIGHT,borderWidth:3,tension:0.3,pointRadius:6,pointBackgroundColor:SC_COLOR_1,fill:false},
+      {label:fmtS(p2.name),data:data2,borderColor:SC_COLOR_2,backgroundColor:SC_COLOR_2_LIGHT,borderWidth:3,tension:0.3,pointRadius:6,pointBackgroundColor:SC_COLOR_2,fill:false}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{font:{size:11}}},
+        tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+(c.parsed.y==null?'데이터 없음':fmt(c.parsed.y)+'건');}}}},
+      scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10}}},x:{grid:{display:false},ticks:{font:{size:11}}}}}
+  });
+}
+
+function scRenderRatingChangeChart(p1, p2){
+  var ctx=$('sc-chart-rating-change');
+  if(!ctx) return;
+  scDestroyChart('sc-chart-rating-change');
+  var labels=['전월', '현재 ('+STATE.month+')'];
+  var data1=[p1.prev_avg_rating!=null?p1.prev_avg_rating:null, p1.avg_rating];
+  var data2=[p2.prev_avg_rating!=null?p2.prev_avg_rating:null, p2.avg_rating];
+  SC_STATE.charts['sc-chart-rating-change']=new Chart(ctx,{
+    type:'line',
+    data:{labels:labels,datasets:[
+      {label:fmtS(p1.name),data:data1,borderColor:SC_COLOR_1,backgroundColor:SC_COLOR_1_LIGHT,borderWidth:3,tension:0.3,pointRadius:6,pointBackgroundColor:SC_COLOR_1,fill:false},
+      {label:fmtS(p2.name),data:data2,borderColor:SC_COLOR_2,backgroundColor:SC_COLOR_2_LIGHT,borderWidth:3,tension:0.3,pointRadius:6,pointBackgroundColor:SC_COLOR_2,fill:false}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{font:{size:11}}},
+        tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+(c.parsed.y==null?'데이터 없음':'★'+c.parsed.y.toFixed(2));}}}},
+      scales:{y:{min:1,max:5,grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10}}},x:{grid:{display:false},ticks:{font:{size:11}}}}}
+  });
+}
+
+function scRenderRatingDistChart(p1, p2){
+  var ctx=$('sc-chart-rating-dist');
+  if(!ctx) return;
+  scDestroyChart('sc-chart-rating-dist');
+  var d1=p1.rating_distribution||{};
+  var d2=p2.rating_distribution||{};
+  var labels=['★1','★2','★3','★4','★5'];
+  var data1=[d1['1']||0,d1['2']||0,d1['3']||0,d1['4']||0,d1['5']||0];
+  var data2=[d2['1']||0,d2['2']||0,d2['3']||0,d2['4']||0,d2['5']||0];
+  SC_STATE.charts['sc-chart-rating-dist']=new Chart(ctx,{
+    type:'bar',
+    data:{labels:labels,datasets:[
+      {label:fmtS(p1.name),data:data1,backgroundColor:SC_COLOR_1,borderRadius:4,maxBarThickness:32},
+      {label:fmtS(p2.name),data:data2,backgroundColor:SC_COLOR_2,borderRadius:4,maxBarThickness:32}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{font:{size:11}}},tooltip:{enabled:true}},
+      scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10}}},x:{grid:{display:false},ticks:{font:{size:12}}}}}
+  });
+}
+
+function scRenderSentimentChart(p1, p2){
+  var ctx=$('sc-chart-sentiment');
+  if(!ctx) return;
+  scDestroyChart('sc-chart-sentiment');
+  var s1=p1.sentiment||{positive:0,neutral:0,negative:0};
+  var s2=p2.sentiment||{positive:0,neutral:0,negative:0};
+  SC_STATE.charts['sc-chart-sentiment']=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:['긍정','중립','부정'],
+      datasets:[
+        {label:fmtS(p1.name),data:[s1.positive||0, s1.neutral||0, s1.negative||0],backgroundColor:SC_COLOR_1,borderRadius:4,maxBarThickness:40},
+        {label:fmtS(p2.name),data:[s2.positive||0, s2.neutral||0, s2.negative||0],backgroundColor:SC_COLOR_2,borderRadius:4,maxBarThickness:40}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{font:{size:11}}},tooltip:{enabled:true}},
+      scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10}}},x:{grid:{display:false},ticks:{font:{size:12}}}}}
+  });
+}
+
+function scRenderKeywordChart(canvasId, p1, p2, category){
+  var ctx=$(canvasId);
+  if(!ctx) return;
+  scDestroyChart(canvasId);
+  var compareData=scBuildCompareKeywords(p1.name, p2.name, category, 30);
+  if(compareData.length===0){
+    var c=ctx.getContext('2d');
+    c.clearRect(0,0,ctx.width,ctx.height);
+    c.fillStyle=getComputedStyle(document.body).color;
+    c.font='13px sans-serif';
+    c.textAlign='center';
+    c.fillText('두 SKU에서 매칭된 '+(category==='positive'?'긍정':category==='negative'?'부정':'')+' 키워드가 없습니다', ctx.width/2, 50);
+    return;
+  }
+  var labels=compareData.map(function(k){return k.word;});
+  var data1=compareData.map(function(k){return k.sku1;});
+  var data2=compareData.map(function(k){return k.sku2;});
+  SC_STATE.charts[canvasId]=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:labels,
+      datasets:[
+        {label:fmtS(p1.name),data:data1,backgroundColor:SC_COLOR_1,borderRadius:4,maxBarThickness:14},
+        {label:fmtS(p2.name),data:data2,backgroundColor:SC_COLOR_2,borderRadius:4,maxBarThickness:14}
+      ]
+    },
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      onClick:function(evt,els){if(els.length){
+        var idx=els[0].index;
+        var word=labels[idx];
+        // 키워드 클릭 시 작은 팝업으로 의미 보여주기
+        showCIPGeneric('"'+word+'" 키워드 — SKU 비교',[
+          {label:fmtS(p1.name),val:data1[idx]+'건',color:'#5b5ef4'},
+          {label:fmtS(p2.name),val:data2[idx]+'건',color:'#16a34a'},
+          {label:'차이',val:(data1[idx]>data2[idx]?'+'+(data1[idx]-data2[idx]):data2[idx]-data1[idx]+' 더많음('+(data1[idx]>data2[idx]?fmtS(p1.name):fmtS(p2.name))+')'),color:'var(--text)'}
+        ], ctx, evt);
+      }},
+      plugins:{legend:{position:'bottom',labels:{font:{size:11}}},tooltip:{enabled:true}},
+      scales:{x:{beginAtZero:true,grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10}}},
+        y:{ticks:{font:{size:10},autoSkip:false},grid:{display:false}}}}
+  });
+}
+
+// ───────────────────────────────────────────────
 //  Taxonomy 기능 (Syncly 벤치마크)
 // ───────────────────────────────────────────────
 var TAXONOMIES = []; // [{id, name, favorite, description, topics:[{...}], manualClassifications:{review_id:{include:[topicId],exclude:[topicId]}}}]
@@ -5075,6 +5539,8 @@ function txComputeStats(taxonomy){
 // ── 페이지 전환 ──
 function showTaxonomyPage(){
   document.body.classList.add('taxonomy-mode');
+  document.body.classList.remove('compare-sku-mode');
+  if($('sku-compare-page')) $('sku-compare-page').classList.remove('active');
   $('taxonomy-page').classList.add('active');
   $('taxonomy-detail').classList.remove('active');
   TX_STATE.activeTaxonomyId=null;
