@@ -679,7 +679,7 @@
     /* ───────────────── Taxonomy ───────────────── */
     #taxonomy-page { display:none; padding:0; }
     #taxonomy-page.active { display:block; }
-    body.taxonomy-mode .section { display:none; }
+    body.taxonomy-mode .section, body.taxonomy-mode .page-header { display:none; }
     body.taxonomy-mode .sync-filter-bar { display:none; }
     body.taxonomy-mode .product-focus-bar { display:none; }
     body.taxonomy-mode #compare-banner { display:none; }
@@ -778,7 +778,7 @@
     /* ───────────────── SKU 1 vs 1 비교 ───────────────── */
     #sku-compare-page { display:none; }
     #sku-compare-page.active { display:block; }
-    body.compare-sku-mode .section { display:none; }
+    body.compare-sku-mode .section, body.compare-sku-mode .page-header { display:none; }
     body.compare-sku-mode .sync-filter-bar { display:none; }
     body.compare-sku-mode #compare-banner { display:none; }
     body.compare-sku-mode #taxonomy-page { display:none; }
@@ -847,20 +847,20 @@
   </div>
   <nav>
     <div class="nav-group">분석 섹션</div>
-    <a href="#sec-exec" class="active"><span class="icon">📊</span> Executive Summary</a>
-    <a href="#sec-kpi"><span class="icon">📈</span> 리뷰 지표</a>
-    <a href="#sec-sku-table"><span class="icon">📋</span> SKU별 데이터</a>
-    <a href="#sec-sku-combo"><span class="icon">📉</span> SKU 콤보차트</a>
-    <a href="#sec-sku-change"><span class="icon">🔄</span> SKU 변화</a>
+    <a href="#sec-exec" class="active" onclick="goToSection(this,'#sec-exec',event)"><span class="icon">📊</span> Executive Summary</a>
+    <a href="#sec-kpi" onclick="goToSection(this,'#sec-kpi',event)"><span class="icon">📈</span> 리뷰 지표</a>
+    <a href="#sec-sku-table" onclick="goToSection(this,'#sec-sku-table',event)"><span class="icon">📋</span> SKU별 데이터</a>
+    <a href="#sec-sku-combo" onclick="goToSection(this,'#sec-sku-combo',event)"><span class="icon">📉</span> SKU 콤보차트</a>
+    <a href="#sec-sku-change" onclick="goToSection(this,'#sec-sku-change',event)"><span class="icon">🔄</span> SKU 변화</a>
     <div class="nav-divider"></div>
     <div class="nav-group">VOC 분석</div>
-    <a href="#sec-voc"><span class="icon">💬</span> 상품 VOC</a>
-    <a href="#sec-pvoc"><span class="icon">🛒</span> 구매경험 VOC</a>
+    <a href="#sec-voc" onclick="goToSection(this,'#sec-voc',event)"><span class="icon">💬</span> 상품 VOC</a>
+    <a href="#sec-pvoc" onclick="goToSection(this,'#sec-pvoc',event)"><span class="icon">🛒</span> 구매경험 VOC</a>
     <div class="nav-divider"></div>
     <div class="nav-group">분류 / 분석</div>
     <a href="#" onclick="event.preventDefault();showTaxonomyPage();" id="nav-taxonomy"><span class="icon">📂</span> Taxonomy</a>
     <a href="#" onclick="event.preventDefault();showCompareSKUPage();" id="nav-compare-sku"><span class="icon">🆚</span> SKU 1 vs 1 분석</a>
-    <a href="#sec-custom-chart" onclick="hideTaxonomyPage();hideCompareSKUPage();"><span class="icon">🛠</span> 커스텀 차트</a>
+    <a href="#sec-custom-chart" onclick="goToSection(this,'#sec-custom-chart',event)"><span class="icon">🛠</span> 커스텀 차트</a>
     <a href="#" onclick="event.preventDefault();openAIChatPanel();"><span class="icon">✦</span> Hey Sloom 챗</a>
   </nav>
   <div class="sb-footer">
@@ -5047,6 +5047,37 @@ function showCompareSKUPage(){
 function hideCompareSKUPage(){
   document.body.classList.remove('compare-sku-mode');
   $('sku-compare-page').classList.remove('active');
+}
+
+// ───────────────────────────────────────────────
+//  통합 페이지 전환 — 모든 mode 해제 + nav active 갱신
+// ───────────────────────────────────────────────
+function goToSection(linkEl, hash, evt){
+  if(evt) evt.preventDefault();
+  // 모든 특수 모드 해제
+  document.body.classList.remove('taxonomy-mode');
+  document.body.classList.remove('compare-sku-mode');
+  if($('taxonomy-page')) $('taxonomy-page').classList.remove('active');
+  if($('taxonomy-detail')) $('taxonomy-detail').classList.remove('active');
+  if($('sku-compare-page')) $('sku-compare-page').classList.remove('active');
+  // nav active 갱신
+  document.querySelectorAll('aside nav a').forEach(function(a){a.classList.remove('active');});
+  if(linkEl) linkEl.classList.add('active');
+  // 모바일 사이드바 닫기
+  var sb=$('sidebar'); if(sb) sb.classList.remove('open');
+  // 해당 섹션으로 스크롤
+  setTimeout(function(){
+    if(hash){
+      var target=document.querySelector(hash);
+      if(target){
+        target.scrollIntoView({behavior:'smooth', block:'start'});
+        // hash 갱신 (URL)
+        history.replaceState(null, '', hash);
+      }
+    } else {
+      window.scrollTo({top:0, behavior:'smooth'});
+    }
+  }, 50);
 }
 
 function scInit(){
