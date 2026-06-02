@@ -2184,11 +2184,14 @@ function populateMonths(){
 
 async function loadData(brand,month){
   var base='data/'+encodeURIComponent(brand)+'/'+month;
-  var res=await Promise.allSettled([fetchJSON(base+'/summary.json'),fetchJSON(base+'/products.json'),fetchJSON(base+'/keywords.json')]);
-  var anyFailed=res.some(function(r){return r.status==='rejected';});
+  var res=await Promise.allSettled([fetchJSON(base+'/summary.json'),fetchJSON(base+'/products.json'),fetchJSON(base+'/keywords.json'),fetchJSON(base+'/reviews.json')]);
+  // reviews.json(4번째)은 선택 — 실패해도 배너 띄우지 않음 (구버전 데이터 호환)
+  var anyFailed=res.slice(0,3).some(function(r){return r.status==='rejected';});
   STATE.summary  = res[0].status==='fulfilled' ? res[0].value : REAL_DATA.summary;
   STATE.products = res[1].status==='fulfilled' ? (res[1].value.products||[]) : REAL_DATA.products;
   STATE.keywords = res[2].status==='fulfilled' ? res[2].value : REAL_DATA.keywords;
+  // 전체 리뷰 인덱스 (review_id → {rating,date,product,text})
+  STATE.reviewsById = (res[3].status==='fulfilled' && res[3].value && res[3].value.reviews) ? res[3].value.reviews : null;
   STATE.brand=brand; STATE.month=month;
   var banner=document.getElementById('data-load-banner');
   if(banner) banner.style.display=anyFailed?'block':'none';
@@ -3766,10 +3769,32 @@ function openKeywordReviewsModal(keyword, productFilter, type, searchTerm){
 
   var totalCount=kwObj?(kwObj.count||0):0;
   var allReviews=[];
-  var dataSource='';  // 'samples' | 'id-match' | 'text-search'
+  var dataSource='';  // 'full' | 'samples' | 'id-match' | 'text-search'
 
-  // 1순위: keywords.json의 review_samples (정밀도 검증된 본문) — Taxonomy 보강 포함
-  if(kwObj && kwObj.review_samples && kwObj.review_samples.length>0){
+  // 0순위 (최우선): all_review_ids + reviews.json → 진짜 전체 매칭 리뷰
+  if(kwObj && kwObj.all_review_ids && kwObj.all_review_ids.length>0 && STATE.reviewsById){
+    dataSource='full';
+    var seenF={};
+    kwObj.all_review_ids.forEach(function(rid){
+      var rv=STATE.reviewsById[String(rid)];
+      if(!rv) return;
+      if(productFilter && rv.product!==productFilter) return;
+      if(seenF[rid]) return; seenF[rid]=true;
+      allReviews.push({name: rv.product||'(상품 미상)', r:{review_id:String(rid), rating:rv.rating, date:rv.date, text:rv.text}});
+    });
+    // Taxonomy 수동 분류 리뷰 병합 (자동 매칭엔 없을 수 있음)
+    if(kwObj.review_samples){
+      kwObj.review_samples.forEach(function(s){
+        if(!s._manual) return;
+        if(productFilter && s.product!==productFilter) return;
+        if(seenF[s.review_id]) return; seenF[s.review_id]=true;
+        allReviews.push({name:s.product||'(상품 미상)', r:{review_id:s.review_id, rating:s.rating, date:s.date, text:s.text, _manual:s._manual, _manualSource:s._manualSource}});
+      });
+    }
+  }
+
+  // 1순위 (폴백): keywords.json의 review_samples (reviews.json 없을 때) — Taxonomy 보강 포함
+  if(allReviews.length===0 && kwObj && kwObj.review_samples && kwObj.review_samples.length>0){
     dataSource='samples';
     kwObj.review_samples.forEach(function(s){
       if(productFilter && s.product!==productFilter) return;

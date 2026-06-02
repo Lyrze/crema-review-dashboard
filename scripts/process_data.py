@@ -1080,8 +1080,11 @@ def extract_keywords_basic(df: pd.DataFrame, top_n: int = 30) -> dict:
                         "product": prod_name,
                     })
             item["review_samples"] = samples
-            # 정리: 임시 필드 제거 (이미 pop으로 제거됨, 안전 확인)
-            item.pop("_all_review_ids", None)
+            # 전체 매칭 리뷰 ID 보존 — 대시보드 '전체 보기'(reviews.json 조회) + 재분류용
+            all_ids = item.pop("_all_review_ids", None)
+            if all_ids is None:
+                all_ids = item.get("reviews", [])
+            item["all_review_ids"] = [str(x) for x in all_ids]
         return items
 
     # 적용 순서: by_product 먼저 (_all_review_ids 사용) → review_samples (_matched_indices 사용)
@@ -1171,6 +1174,42 @@ def reclassify_keyword_samples(
         "AI 재분류 완료: %d건 유지 / %d건 오매칭 제거 (mode=%s)",
         total_kept, total_removed, mode,
     )
+
+
+# ────────────────────────────────────────────
+# 전체 리뷰 인덱스 (reviews.json)
+# ────────────────────────────────────────────
+
+def build_reviews_index(df: pd.DataFrame, max_body: int = 600) -> dict:
+    """해당 월 전체 리뷰를 대시보드용 경량 인덱스로 변환.
+
+    review_id 로 조회 가능한 형태로 저장한다. (익명화 본문, PII 컬럼 미포함)
+    형식: {"count": N, "reviews": {review_id: {rating, date, product, text}}}
+    """
+    reviews: dict = {}
+    has_rid = "review_id" in df.columns
+    has_date = "review_date" in df.columns
+    has_prod = "product_name" in df.columns
+    has_rating = "rating" in df.columns
+    for row in df.itertuples(index=False):
+        rid = str(getattr(row, "review_id", "")) if has_rid else ""
+        if not rid:
+            continue
+        date_str = ""
+        if has_date:
+            rv_date = getattr(row, "review_date", None)
+            if rv_date is not None and pd.notna(rv_date):
+                try:
+                    date_str = pd.Timestamp(rv_date).strftime("%Y-%m-%d")
+                except Exception:
+                    date_str = ""
+        reviews[rid] = {
+            "rating": int(getattr(row, "rating")) if has_rating and pd.notna(getattr(row, "rating", None)) else 0,
+            "date": date_str,
+            "product": str(getattr(row, "product_name", "")) if has_prod else "",
+            "text": str(getattr(row, "body", ""))[:max_body],
+        }
+    return {"count": len(reviews), "reviews": reviews}
 
 
 # ────────────────────────────────────────────
@@ -1435,10 +1474,14 @@ def run_pipeline(args: argparse.Namespace) -> None:
         logger.error("출력 경오류: %s", exc)
         sys.exit(1)
 
+    # ── 전체 리뷰 인덱스 (대시보드 '전체 보기' + 재분류용)
+    reviews_index = build_reviews_index(df)
+
     # ── 저장
     save_json(summary, out_dir / "summary.json")
     save_json(products_data, out_dir / "products.json")
     save_json(keywords_data, out_dir / "keywords.json")
+    save_json(reviews_index, out_dir / "reviews.json")
     if ai_analysis is not None:
         save_json(ai_analysis, out_dir / "ai_analysis.json")
 
