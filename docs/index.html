@@ -2229,8 +2229,8 @@ async function loadData(brand,month){
   // 전체 리뷰 인덱스 (review_id → {rating,date,product,text})
   STATE.reviewsById = (res[3].status==='fulfilled' && res[3].value && res[3].value.reviews) ? res[3].value.reviews : null;
   STATE.brand=brand; STATE.month=month;
-  // 전체 재분류 캐시 적용 (이 브라우저에서 일괄 재분류한 적 있으면 키워드 데이터 갱신)
-  try{ applyFullReclassCache(); }catch(e){ console.warn('전체 재분류 캐시 적용 실패', e); }
+  // 분류 조정 통합 반영 (전체 재분류 캐시 + Taxonomy 수동 분류) → 차트/카드/표 일관
+  applyClassificationAdjustments();
   var banner=document.getElementById('data-load-banner');
   if(banner) banner.style.display=anyFailed?'block':'none';
   if(anyFailed) console.warn('일부 JSON 로드 실패 — 기본 데이터로 표시 중');
@@ -2240,7 +2240,15 @@ function onBrandChange(v){ STATE.brand=v; populateMonths(); reload(); }
 function onMonthChange(v){ STATE.month=v; reload(); }
 async function reload(){ await loadData(STATE.brand,STATE.month); render(); }
 
-function render(){ renderHeader(); renderExec(); renderKPI(); renderTimeline(); renderSKUTable(); renderSKUCombo(); renderChangeTables(); renderVOC(); updateProductFocusBar(); updateCustomAIModelLabel(); populateCompareMonths(); updateCompareBanner(); renderPVOCKanban(); syncChipBarFromState(); setTimeout(enhanceCardActions,50); }
+function render(){ renderHeader(); renderExec(); renderKPI(); renderTimeline(); renderSKUTable(); renderSKUCombo(); renderChangeTables(); renderVOC(); updateProductFocusBar(); updateCustomAIModelLabel(); populateCompareMonths(); updateCompareBanner(); renderPVOCKanban(); syncChipBarFromState(); refreshOpenInsightModal(); setTimeout(enhanceCardActions,50); }
+
+// View Insight 모달이 열려 있으면 인사이트 카드 숫자도 즉시 갱신
+function refreshOpenInsightModal(){
+  var m=$('insight-modal');
+  if(m && m.classList.contains('open') && typeof IM_CURRENT_PRODUCT!=='undefined' && IM_CURRENT_PRODUCT && typeof imRenderInsightCards==='function'){
+    try{ imRenderInsightCards(IM_CURRENT_PRODUCT); }catch(e){}
+  }
+}
 
 function renderHeader(){
   var p=STATE.month.split('-');
@@ -4240,7 +4248,14 @@ async function krmReclassify(){
       }));
     }catch(e){}
     var capNote=capped?' · ⚠️ 후보 '+CAP+'건 상한':'';
-    if(statusEl) statusEl.innerHTML='✓ 전체 재분류 완료 — A 귀속 <strong>'+kept.length+'건</strong> (신규 +'+added+' · 제외 -'+removed+')'+capNote;
+    // 전체 상품 대상(상품 필터 없음)일 때만 STATE.keywords 에 반영 → 차트/카드/표 갱신
+    var pushedToDash=false;
+    if(!ctx.productFilter && STATE.keywords && STATE.keywords.by_intent){
+      var poolKey = ctx.type==='긍정'?'praise':ctx.type==='부정'?'complaint':'improvement';
+      var liveKw=(STATE.keywords.by_intent[poolKey]||[]).find(function(k){return k.word===ctx.keyword;});
+      if(liveKw){ rebuildKeywordFromIds(liveKw, Object.keys(keptIds)); render(); pushedToDash=true; }
+    }
+    if(statusEl) statusEl.innerHTML='✓ 전체 재분류 완료 — A 귀속 <strong>'+kept.length+'건</strong> (신규 +'+added+' · 제외 -'+removed+')'+capNote+(pushedToDash?' · 📊 차트 반영됨':(ctx.productFilter?' · (상품 필터 — 차트 미반영)':''));
     if(resetEl) resetEl.style.display='inline-block';
     krmRenderList();
   }catch(err){
@@ -4410,6 +4425,63 @@ function applyFullReclassCache(){
       if(map[kwObj.word]) rebuildKeywordFromIds(kwObj, map[kwObj.word]);
     });
   });
+}
+
+// ── Taxonomy 수동 분류를 키워드 데이터에 반영 (include 추가 / exclude 제거) ──
+function applyTaxonomyToKeywords(){
+  if(!STATE.keywords || !STATE.keywords.by_intent) return;
+  if(typeof TAXONOMIES==='undefined' || TAXONOMIES.length===0) return;
+  ['praise','complaint','improvement'].forEach(function(t){
+    (STATE.keywords.by_intent[t]||[]).forEach(function(kwObj){
+      if(!kwObj || !kwObj.word) return;
+      // (1) include: 수동으로 이 키워드(매칭 토픽)에 넣은 리뷰 추가
+      var enh=enhanceKeywordWithTaxonomy(kwObj);
+      if(enh && enh._manualBoost>0){
+        kwObj.review_samples=enh.review_samples;
+        kwObj.by_product=enh.by_product;
+        var idset={}; (kwObj.all_review_ids||[]).forEach(function(id){idset[String(id)]=true;});
+        (enh.review_samples||[]).forEach(function(s){ if(s._manual) idset[String(s.review_id)]=true; });
+        kwObj.all_review_ids=Object.keys(idset);
+        kwObj._manualBoost=enh._manualBoost; kwObj._origCount=enh._origCount;
+      }
+      // (2) exclude: 수동으로 이 키워드(매칭 토픽)에서 제외한 리뷰 제거
+      var matches=(typeof txFindTopicsMatchingKeyword==='function')?txFindTopicsMatchingKeyword(kwObj.word):[];
+      if(matches.length){
+        var exSet={};
+        matches.forEach(function(m){
+          var manual=m.taxonomy.manualClassifications||{};
+          Object.keys(manual).forEach(function(rid){
+            var cls=manual[rid];
+            if(cls&&cls.exclude&&cls.exclude.indexOf(m.topic.id)>=0) exSet[String(rid)]=true;
+          });
+        });
+        if(Object.keys(exSet).length){
+          kwObj.all_review_ids=(kwObj.all_review_ids||[]).filter(function(id){return !exSet[String(id)];});
+          kwObj.review_samples=(kwObj.review_samples||[]).filter(function(s){return !exSet[String(s.review_id)];});
+          kwObj._manualExcluded=Object.keys(exSet).length;
+        }
+      }
+      // 카운트는 all_review_ids 기준으로 일관화
+      if(kwObj.all_review_ids) kwObj.count=kwObj.all_review_ids.length;
+    });
+  });
+}
+
+// 전체 재분류 캐시 + Taxonomy 수동 분류를 STATE.keywords 에 통합 반영
+function applyClassificationAdjustments(){
+  try{ applyFullReclassCache(); }catch(e){ console.warn('전체 재분류 캐시 적용 실패', e); }
+  try{ applyTaxonomyToKeywords(); }catch(e){ console.warn('Taxonomy 반영 실패', e); }
+}
+
+// 분류 변경 후 대시보드 숫자 실시간 갱신 — 키워드만 새로 받아 조정 재적용 (reviews.json 재사용)
+async function refreshDashboardFromClassification(){
+  var brand=STATE.brand, month=STATE.month;
+  try{
+    var k=await fetchJSON('data/'+encodeURIComponent(brand)+'/'+month+'/keywords.json');
+    if(k) STATE.keywords=k;
+  }catch(e){ /* 실패 시 기존 STATE 유지 */ }
+  applyClassificationAdjustments();
+  render();
 }
 
 async function runFullReclassifyAll(){
@@ -6653,6 +6725,8 @@ function txAssignToTopic(taxonomyId, topicId, reviewIds){
     cls.exclude=cls.exclude.filter(function(id){return id!==topicId;});
   });
   txSave();
+  // 대시보드 키워드/차트/카드 실시간 반영
+  if(typeof refreshDashboardFromClassification==='function') refreshDashboardFromClassification();
 }
 
 // 수동 분류 제외 (현재 Topic에서 제외)
@@ -6671,6 +6745,8 @@ function txExcludeFromTopic(taxonomyId, topicId, reviewIds){
     cls.include=cls.include.filter(function(id){return id!==topicId;});
   });
   txSave();
+  // 대시보드 키워드/차트/카드 실시간 반영
+  if(typeof refreshDashboardFromClassification==='function') refreshDashboardFromClassification();
 }
 
 function txComputeStats(taxonomy){
