@@ -822,6 +822,21 @@
     .sc-c-sku2 { color:#16a34a; }
     .sc-bg-sku1 { background:#5b5ef4; }
     .sc-bg-sku2 { background:#16a34a; }
+    /* AI 비교 브리프 */
+    .sc-brief-card { background:linear-gradient(135deg, rgba(91,94,244,.06), rgba(22,163,74,.05)); border:1px solid var(--border); border-radius:14px; padding:18px 20px; margin-bottom:20px; }
+    .sc-brief-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; flex-wrap:wrap; }
+    .sc-brief-title { font-size:14px; font-weight:800; color:var(--text); display:flex; align-items:center; gap:6px; }
+    .sc-brief-actions { display:flex; gap:6px; }
+    .sc-brief-btn { padding:6px 14px; background:var(--accent); color:#fff; border:none; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; }
+    .sc-brief-btn.ghost { background:var(--bg); color:var(--text-secondary); border:1px solid var(--border); padding:6px 11px; }
+    .sc-brief-btn:disabled { opacity:.6; cursor:default; }
+    .sc-brief-body { font-size:12.5px; line-height:1.7; color:var(--text); }
+    .sc-brief-placeholder { color:var(--text-secondary); font-size:12px; }
+    .sc-brief-meta { font-size:10.5px; color:var(--text-secondary); margin-top:10px; padding-top:8px; border-top:1px dashed var(--border); }
+    /* 클릭 가능 KPI 행 */
+    .sc-kpi-row.clickable { cursor:pointer; border-radius:7px; margin:0 -6px; padding-left:6px; padding-right:6px; transition:background .15s; }
+    .sc-kpi-row.clickable:hover { background:var(--surface-hover); }
+    .sc-clickhint { font-size:10.5px; color:var(--text-secondary); font-weight:600; }
     @media (max-width:900px){
       .sc-kpi-grid { grid-template-columns:repeat(2,1fr); }
       .sc-charts-row { grid-template-columns:1fr; }
@@ -916,7 +931,7 @@
     <div class="sc-header">
       <div>
         <div class="sc-title">🆚 SKU 1 vs 1 분석</div>
-        <div class="sc-subtitle">두 SKU를 정밀하게 비교 분석합니다. 리뷰 수, 별점, 긍부정 비율, 키워드 TOP 30 등</div>
+        <div class="sc-subtitle">두 SKU를 정밀하게 비교 분석합니다. 리뷰 수, 별점, 긍부정 비율, 키워드 TOP 30 등 · 📌 KPI 행·차트 막대 클릭 시 리뷰 인사이트 확인</div>
       </div>
     </div>
     <!-- 상품 선택 바 -->
@@ -929,6 +944,20 @@
       <div class="sc-selector">
         <label class="sc-label-with-color"><span class="sc-color-dot sc-bg-sku2"></span>SKU 2</label>
         <select id="sc-sku2-select" onchange="scOnSelectChange()"></select>
+      </div>
+    </div>
+
+    <!-- AI 비교 브리프 -->
+    <div class="sc-brief-card" id="sc-brief-card">
+      <div class="sc-brief-head">
+        <div class="sc-brief-title">✦ AI 비교 브리프</div>
+        <div class="sc-brief-actions">
+          <button class="sc-brief-btn" id="sc-brief-btn" onclick="scGenerateBrief(false)">브리프 생성</button>
+          <button class="sc-brief-btn ghost" id="sc-brief-refresh" onclick="scGenerateBrief(true)" title="다시 생성" style="display:none;">↻ 다시 생성</button>
+        </div>
+      </div>
+      <div class="sc-brief-body" id="sc-brief-body">
+        <div class="sc-brief-placeholder">두 SKU의 리뷰 수·별점·긍부정·키워드를 AI가 비교 분석해 핵심 결론과 개선 포인트를 정리합니다. <strong>브리프 생성</strong>을 눌러주세요.</div>
       </div>
     </div>
 
@@ -5180,6 +5209,8 @@ function scRender(){
   $('sc-pill-neg-1').textContent='🔵 '+(fmtS(p1.name)||p1.name);
   $('sc-pill-neg-2').textContent='🟢 '+(fmtS(p2.name)||p2.name);
 
+  // AI 비교 브리프 (캐시 복원 또는 생성 버튼)
+  scRenderBrief();
   // KPI 카드
   scRenderKPIs(p1, p2);
   // 차트들
@@ -5193,35 +5224,40 @@ function scRender(){
 }
 
 function scRenderKPIs(p1, p2){
+  var dot1='<span class="sc-color-dot sc-bg-sku1" style="width:8px;height:8px;display:inline-block;border-radius:50%;"></span>';
+  var dot2='<span class="sc-color-dot sc-bg-sku2" style="width:8px;height:8px;display:inline-block;border-radius:50%;"></span>';
+  // onclick: SC_STATE.sku1/sku2 전역 참조로 따옴표 충돌 회피
+  function clk(sku, lbl, sent){
+    return 'class="sc-kpi-row clickable" onclick="scOpenProductInsight(SC_STATE.'+sku+',\''+lbl+'\',\''+(sent||'')+'\')" title="클릭 → 리뷰 인사이트"';
+  }
   // 리뷰 수
   $('sc-kpi-reviews').innerHTML=
-    '<div class="sc-kpi-row"><span class="sc-kpi-name"><span class="sc-color-dot sc-bg-sku1" style="width:8px;height:8px;display:inline-block;border-radius:50%;"></span>'+escapeHtml(fmtS(p1.name))+'</span><span class="sc-kpi-val sc-c-sku1">'+fmt(p1.review_count)+'</span></div>'+
-    '<div class="sc-kpi-row"><span class="sc-kpi-name"><span class="sc-color-dot sc-bg-sku2" style="width:8px;height:8px;display:inline-block;border-radius:50%;"></span>'+escapeHtml(fmtS(p2.name))+'</span><span class="sc-kpi-val sc-c-sku2">'+fmt(p2.review_count)+'</span></div>';
+    '<div '+clk('sku1','리뷰 수','')+'><span class="sc-kpi-name">'+dot1+escapeHtml(fmtS(p1.name))+'</span><span class="sc-kpi-val sc-c-sku1">'+fmt(p1.review_count)+'</span></div>'+
+    '<div '+clk('sku2','리뷰 수','')+'><span class="sc-kpi-name">'+dot2+escapeHtml(fmtS(p2.name))+'</span><span class="sc-kpi-val sc-c-sku2">'+fmt(p2.review_count)+'</span></div>';
 
   // 별점
   $('sc-kpi-rating').innerHTML=
-    '<div class="sc-kpi-row"><span class="sc-kpi-name"><span class="sc-color-dot sc-bg-sku1" style="width:8px;height:8px;display:inline-block;border-radius:50%;"></span>'+escapeHtml(fmtS(p1.name))+'</span><span class="sc-kpi-val" style="color:#f59e0b;">★'+p1.avg_rating.toFixed(2)+'</span></div>'+
-    '<div class="sc-kpi-row"><span class="sc-kpi-name"><span class="sc-color-dot sc-bg-sku2" style="width:8px;height:8px;display:inline-block;border-radius:50%;"></span>'+escapeHtml(fmtS(p2.name))+'</span><span class="sc-kpi-val" style="color:#f59e0b;">★'+p2.avg_rating.toFixed(2)+'</span></div>';
+    '<div '+clk('sku1','평균 별점','')+'><span class="sc-kpi-name">'+dot1+escapeHtml(fmtS(p1.name))+'</span><span class="sc-kpi-val" style="color:#f59e0b;">★'+p1.avg_rating.toFixed(2)+'</span></div>'+
+    '<div '+clk('sku2','평균 별점','')+'><span class="sc-kpi-name">'+dot2+escapeHtml(fmtS(p2.name))+'</span><span class="sc-kpi-val" style="color:#f59e0b;">★'+p2.avg_rating.toFixed(2)+'</span></div>';
 
   // MoM 리뷰 변화
   function fmtMoM(cur, prev){
     if(prev==null) return '<span class="sc-delta" style="background:var(--surface);color:var(--text-secondary);">전월 없음</span>';
     var d=cur-prev;
     var pct=prev>0?(d/prev*100).toFixed(1):0;
-    var cls=d>=0?'up':'dn';
     var ic=d>=0?'▲':'▼';
     var bg=d>=0?'rgba(22,163,74,.1)':'rgba(220,38,38,.1)';
     var color=d>=0?'#16a34a':'#dc2626';
     return '<span class="sc-delta" style="background:'+bg+';color:'+color+';">'+ic+' '+(d>=0?'+':'')+fmt(d)+' ('+pct+'%)</span>';
   }
   $('sc-kpi-mom-reviews').innerHTML=
-    '<div class="sc-kpi-row"><span class="sc-kpi-name"><span class="sc-color-dot sc-bg-sku1" style="width:8px;height:8px;display:inline-block;border-radius:50%;"></span>'+escapeHtml(fmtS(p1.name))+'</span>'+fmtMoM(p1.review_count, p1.prev_review_count)+'</div>'+
-    '<div class="sc-kpi-row"><span class="sc-kpi-name"><span class="sc-color-dot sc-bg-sku2" style="width:8px;height:8px;display:inline-block;border-radius:50%;"></span>'+escapeHtml(fmtS(p2.name))+'</span>'+fmtMoM(p2.review_count, p2.prev_review_count)+'</div>';
+    '<div '+clk('sku1','리뷰 변화(MoM)','')+'><span class="sc-kpi-name">'+dot1+escapeHtml(fmtS(p1.name))+'</span>'+fmtMoM(p1.review_count, p1.prev_review_count)+'</div>'+
+    '<div '+clk('sku2','리뷰 변화(MoM)','')+'><span class="sc-kpi-name">'+dot2+escapeHtml(fmtS(p2.name))+'</span>'+fmtMoM(p2.review_count, p2.prev_review_count)+'</div>';
 
-  // 긍/부정 비율
+  // 긍/부정 비율 — 행 클릭 시 부정 리뷰 인사이트
   $('sc-kpi-sentiment').innerHTML=
-    '<div class="sc-kpi-row"><span class="sc-kpi-name"><span class="sc-color-dot sc-bg-sku1" style="width:8px;height:8px;display:inline-block;border-radius:50%;"></span>'+escapeHtml(fmtS(p1.name))+'</span><span style="font-size:11.5px;"><strong style="color:#16a34a;">'+p1.positive_rate.toFixed(1)+'%</strong> / <strong style="color:#dc2626;">'+p1.negative_rate.toFixed(2)+'%</strong></span></div>'+
-    '<div class="sc-kpi-row"><span class="sc-kpi-name"><span class="sc-color-dot sc-bg-sku2" style="width:8px;height:8px;display:inline-block;border-radius:50%;"></span>'+escapeHtml(fmtS(p2.name))+'</span><span style="font-size:11.5px;"><strong style="color:#16a34a;">'+p2.positive_rate.toFixed(1)+'%</strong> / <strong style="color:#dc2626;">'+p2.negative_rate.toFixed(2)+'%</strong></span></div>';
+    '<div '+clk('sku1','부정 리뷰','negative')+'><span class="sc-kpi-name">'+dot1+escapeHtml(fmtS(p1.name))+'</span><span style="font-size:11.5px;"><strong style="color:#16a34a;">'+p1.positive_rate.toFixed(1)+'%</strong> / <strong style="color:#dc2626;">'+p1.negative_rate.toFixed(2)+'%</strong></span></div>'+
+    '<div '+clk('sku2','부정 리뷰','negative')+'><span class="sc-kpi-name">'+dot2+escapeHtml(fmtS(p2.name))+'</span><span style="font-size:11.5px;"><strong style="color:#16a34a;">'+p2.positive_rate.toFixed(1)+'%</strong> / <strong style="color:#dc2626;">'+p2.negative_rate.toFixed(2)+'%</strong></span></div>';
 }
 
 function scDestroyChart(id){
@@ -5248,6 +5284,10 @@ function scRenderReviewChangeChart(p1, p2){
       {label:fmtS(p2.name),data:data2,borderColor:SC_COLOR_2,backgroundColor:SC_COLOR_2_LIGHT,borderWidth:3,tension:0.3,pointRadius:6,pointBackgroundColor:SC_COLOR_2,fill:false}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
+      onClick:function(evt,els){if(els.length){
+        var prodName=els[0].datasetIndex===0?p1.name:p2.name;
+        scOpenProductInsight(prodName, '리뷰 변화', '');
+      }},
       plugins:{legend:{position:'bottom',labels:{font:{size:11}}},
         tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+(c.parsed.y==null?'데이터 없음':fmt(c.parsed.y)+'건');}}}},
       scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10}}},x:{grid:{display:false},ticks:{font:{size:11}}}}}
@@ -5268,6 +5308,10 @@ function scRenderRatingChangeChart(p1, p2){
       {label:fmtS(p2.name),data:data2,borderColor:SC_COLOR_2,backgroundColor:SC_COLOR_2_LIGHT,borderWidth:3,tension:0.3,pointRadius:6,pointBackgroundColor:SC_COLOR_2,fill:false}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
+      onClick:function(evt,els){if(els.length){
+        var prodName=els[0].datasetIndex===0?p1.name:p2.name;
+        scOpenProductInsight(prodName, '별점 변화', '');
+      }},
       plugins:{legend:{position:'bottom',labels:{font:{size:11}}},
         tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+(c.parsed.y==null?'데이터 없음':'★'+c.parsed.y.toFixed(2));}}}},
       scales:{y:{min:1,max:5,grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10}}},x:{grid:{display:false},ticks:{font:{size:11}}}}}
@@ -5290,6 +5334,11 @@ function scRenderRatingDistChart(p1, p2){
       {label:fmtS(p2.name),data:data2,backgroundColor:SC_COLOR_2,borderRadius:4,maxBarThickness:32}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
+      onClick:function(evt,els){if(els.length){
+        var el=els[0];
+        var prodName=el.datasetIndex===0?p1.name:p2.name;
+        scOpenProductInsightByRating(prodName, el.index+1);
+      }},
       plugins:{legend:{position:'bottom',labels:{font:{size:11}}},tooltip:{enabled:true}},
       scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10}}},x:{grid:{display:false},ticks:{font:{size:12}}}}}
   });
@@ -5311,6 +5360,13 @@ function scRenderSentimentChart(p1, p2){
       ]
     },
     options:{responsive:true,maintainAspectRatio:false,
+      onClick:function(evt,els){if(els.length){
+        var el=els[0];
+        var prodName=el.datasetIndex===0?p1.name:p2.name;
+        var sent=el.index===0?'positive':el.index===2?'negative':'neutral';
+        var lab=el.index===0?'긍정 리뷰':el.index===2?'부정 리뷰':'중립 리뷰';
+        scOpenProductInsight(prodName, lab, sent);
+      }},
       plugins:{legend:{position:'bottom',labels:{font:{size:11}}},tooltip:{enabled:true}},
       scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10}}},x:{grid:{display:false},ticks:{font:{size:12}}}}}
   });
@@ -5344,19 +5400,327 @@ function scRenderKeywordChart(canvasId, p1, p2, category){
     },
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
       onClick:function(evt,els){if(els.length){
-        var idx=els[0].index;
+        var el=els[0];
+        var idx=el.index;
+        var dsi=el.datasetIndex; // 0=sku1, 1=sku2
         var word=labels[idx];
-        // 키워드 클릭 시 작은 팝업으로 의미 보여주기
-        showCIPGeneric('"'+word+'" 키워드 — SKU 비교',[
-          {label:fmtS(p1.name),val:data1[idx]+'건',color:'#5b5ef4'},
-          {label:fmtS(p2.name),val:data2[idx]+'건',color:'#16a34a'},
-          {label:'차이',val:(data1[idx]>data2[idx]?'+'+(data1[idx]-data2[idx]):data2[idx]-data1[idx]+' 더많음('+(data1[idx]>data2[idx]?fmtS(p1.name):fmtS(p2.name))+')'),color:'var(--text)'}
-        ], ctx, evt);
+        // 클릭한 막대의 SKU 기준으로, 카운트가 0이면 다른 SKU로 폴백
+        var prodName = dsi===0 ? p1.name : p2.name;
+        var cnt = dsi===0 ? data1[idx] : data2[idx];
+        if(cnt===0){
+          var other = dsi===0 ? p2.name : p1.name;
+          var otherCnt = dsi===0 ? data2[idx] : data1[idx];
+          if(otherCnt>0){ prodName=other; cnt=otherCnt; }
+        }
+        scOpenKeywordInsight(prodName, word, category, cnt);
       }},
       plugins:{legend:{position:'bottom',labels:{font:{size:11}}},tooltip:{enabled:true}},
       scales:{x:{beginAtZero:true,grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10}}},
         y:{ticks:{font:{size:10},autoSkip:false},grid:{display:false}}}}
   });
+}
+
+// ═══════════════════════════════════════════════
+//  SKU 비교 — AI 비교 브리프
+// ═══════════════════════════════════════════════
+function scBriefCacheKey(){
+  return 'sc_brief::'+(STATE.brand||'')+'::'+(STATE.month||'')+'::'+SC_STATE.sku1+'::'+SC_STATE.sku2;
+}
+
+function scRenderBrief(){
+  var body=$('sc-brief-body'); var btn=$('sc-brief-btn'); var rf=$('sc-brief-refresh');
+  if(!body) return;
+  var cached=null;
+  try{ cached=localStorage.getItem(scBriefCacheKey()); }catch(e){}
+  if(cached){
+    body.innerHTML=mdToHtml(cached)+'<div class="sc-brief-meta">💾 저장된 브리프 · ↻ 다시 생성으로 갱신</div>';
+    if(btn) btn.style.display='none';
+    if(rf) rf.style.display='inline-block';
+  } else {
+    body.innerHTML='<div class="sc-brief-placeholder">두 SKU의 리뷰 수·별점·긍부정·키워드를 AI가 비교 분석해 핵심 결론과 개선 포인트를 정리합니다. <strong>브리프 생성</strong>을 눌러주세요.</div>';
+    if(btn){ btn.style.display='inline-block'; btn.disabled=false; btn.textContent='브리프 생성'; }
+    if(rf) rf.style.display='none';
+  }
+}
+
+async function scGenerateBrief(force){
+  var body=$('sc-brief-body'); var btn=$('sc-brief-btn'); var rf=$('sc-brief-refresh');
+  var prods=STATE.products||REAL_DATA.products;
+  var p1=prods.find(function(p){return p.name===SC_STATE.sku1;});
+  var p2=prods.find(function(p){return p.name===SC_STATE.sku2;});
+  if(!p1||!p2) return;
+  var online=$('ollama-dot').className.indexOf('online')>=0;
+  if(!online){
+    body.innerHTML='<div style="color:var(--negative);font-size:12px;">⚠️ Ollama가 오프라인입니다. 좌측 사이드바에서 <strong>AI 서버 URL</strong>을 확인한 뒤 다시 시도하세요.</div>';
+    if(btn){ btn.disabled=false; btn.textContent='브리프 생성'; btn.style.display='inline-block'; }
+    return;
+  }
+  if(btn){ btn.disabled=true; btn.textContent='분석 중...'; btn.style.display='inline-block'; }
+  if(rf) rf.style.display='none';
+  body.innerHTML='AI가 두 SKU를 비교 분석 중입니다... <span class="aic-cursor">▍</span>';
+
+  var posK1=scGetSKUKeywords(p1.name,'positive',6).map(function(k){return k.word+'('+k.count+')';}).join(', ');
+  var negK1=scGetSKUKeywords(p1.name,'negative',6).map(function(k){return k.word+'('+k.count+')';}).join(', ');
+  var posK2=scGetSKUKeywords(p2.name,'positive',6).map(function(k){return k.word+'('+k.count+')';}).join(', ');
+  var negK2=scGetSKUKeywords(p2.name,'negative',6).map(function(k){return k.word+'('+k.count+')';}).join(', ');
+
+  var prompt='[SKU 1 vs 1 비교 분석 — '+STATE.brand+' '+STATE.month+']\n\n'+
+    '■ SKU A: '+fmtS(p1.name)+'\n'+
+    '- 리뷰수: '+p1.review_count+'건'+(p1.prev_review_count!=null?' (전월 '+p1.prev_review_count+'건)':'')+'\n'+
+    '- 평균별점: ★'+p1.avg_rating.toFixed(2)+(p1.prev_avg_rating!=null?' (전월 ★'+p1.prev_avg_rating.toFixed(2)+')':'')+'\n'+
+    '- 긍정률 '+p1.positive_rate.toFixed(1)+'% / 부정률 '+p1.negative_rate.toFixed(2)+'%\n'+
+    '- 긍정 키워드: '+(posK1||'없음')+'\n'+
+    '- 부정 키워드: '+(negK1||'없음')+'\n\n'+
+    '■ SKU B: '+fmtS(p2.name)+'\n'+
+    '- 리뷰수: '+p2.review_count+'건'+(p2.prev_review_count!=null?' (전월 '+p2.prev_review_count+'건)':'')+'\n'+
+    '- 평균별점: ★'+p2.avg_rating.toFixed(2)+(p2.prev_avg_rating!=null?' (전월 ★'+p2.prev_avg_rating.toFixed(2)+')':'')+'\n'+
+    '- 긍정률 '+p2.positive_rate.toFixed(1)+'% / 부정률 '+p2.negative_rate.toFixed(2)+'%\n'+
+    '- 긍정 키워드: '+(posK2||'없음')+'\n'+
+    '- 부정 키워드: '+(negK2||'없음')+'\n\n'+
+    '위 두 SKU를 비교하여 한국어로 분석하세요. 다음을 포함:\n'+
+    '1. **종합 결론** — 어느 SKU가 더 우수한지 한 줄로\n'+
+    '2. **주요 차이점** — 별점·긍부정·키워드 관점\n'+
+    '3. **각 SKU 개선 포인트** — 부정 키워드 기반 액션\n'+
+    '**굵게**와 - 리스트로 가독성 있게 5-8줄로 정리하세요.';
+
+  await ollamaStream(prompt,
+    function(_t, full){ body.innerHTML=mdToHtml(full)+'<span class="aic-cursor">▍</span>'; },
+    function(full){
+      body.innerHTML=mdToHtml(full)+'<div class="sc-brief-meta">💾 저장됨 · ↻ 다시 생성으로 갱신</div>';
+      try{ localStorage.setItem(scBriefCacheKey(), full); }catch(e){}
+      if(btn) btn.style.display='none';
+      if(rf) rf.style.display='inline-block';
+    },
+    function(err){
+      body.innerHTML='<div style="color:var(--negative);font-size:12px;">❌ 오류: '+escapeHtml(err.message)+'<br>Ollama 실행 상태를 확인하세요.</div>';
+      if(btn){ btn.disabled=false; btn.textContent='브리프 생성'; }
+    }
+  );
+}
+
+// ═══════════════════════════════════════════════
+//  SKU 비교 — 리뷰 인사이트 (각 항목 클릭)
+// ═══════════════════════════════════════════════
+// 상품의 저장된 리뷰 수집 (sentiment: 'positive'|'negative'|'neutral'|'' , rating: 1~5 또는 null)
+function scGetProductReviews(productName, sentiment, rating){
+  var prods=STATE.products||REAL_DATA.products;
+  var p=prods.find(function(x){return x.name===productName;});
+  if(!p) return [];
+  var rv=[];
+  (p.top_reviews||[]).concat(p.bottom_reviews||[]).forEach(function(r){ rv.push({name:productName, r:r}); });
+  var seen={};
+  rv=rv.filter(function(it){ var k=it.r.review_id; if(seen[k]) return false; seen[k]=true; return true; });
+  if(sentiment==='positive') rv=rv.filter(function(it){return it.r.rating>=4;});
+  else if(sentiment==='negative') rv=rv.filter(function(it){return it.r.rating<=2;});
+  else if(sentiment==='neutral') rv=rv.filter(function(it){return it.r.rating===3;});
+  if(rating) rv=rv.filter(function(it){return it.r.rating===rating;});
+  // 부정 우선 정렬(부정 컨텍스트) 아니면 별점 높은 순
+  if(sentiment==='negative') rv.sort(function(a,b){return a.r.rating-b.r.rating;});
+  else rv.sort(function(a,b){return b.r.rating-a.r.rating;});
+  return rv;
+}
+
+// 특정 SKU + 키워드의 정밀 리뷰 (review_samples 우선, 없으면 본문 검색 폴백)
+function scGetKeywordReviews(productName, word, category){
+  var kw=STATE.keywords||REAL_DATA.keywords||{};
+  var bi=kw.by_intent||{};
+  var pools=[];
+  if(category==='positive') pools=bi.praise||[];
+  else if(category==='negative') pools=(bi.complaint||[]).concat(bi.improvement||[]);
+  else pools=(bi.praise||[]).concat(bi.complaint||[]).concat(bi.improvement||[]);
+  var rv=[];
+  pools.forEach(function(k){
+    if(!k||k.word!==word) return;
+    (k.review_samples||[]).forEach(function(s){
+      if(s.product!==productName) return;
+      rv.push({name:s.product, r:{review_id:s.review_id, rating:s.rating, date:s.date, text:s.text}});
+    });
+  });
+  var seen={};
+  rv=rv.filter(function(it){ var key=it.r.review_id; if(seen[key]) return false; seen[key]=true; return true; });
+  // 폴백: 해당 상품 리뷰 본문에서 키워드 첫 토큰 검색
+  if(rv.length===0){
+    var tok=word.split(/[\s\/]+/)[0].toLowerCase();
+    var prods=STATE.products||REAL_DATA.products;
+    var p=prods.find(function(x){return x.name===productName;});
+    if(p && tok.length>=2){
+      (p.top_reviews||[]).concat(p.bottom_reviews||[]).forEach(function(r){
+        if((r.text||'').toLowerCase().indexOf(tok)>=0) rv.push({name:productName, r:r});
+      });
+      var seen2={};
+      rv=rv.filter(function(it){ var key=it.r.review_id; if(seen2[key]) return false; seen2[key]=true; return true; });
+    }
+  }
+  return rv;
+}
+
+function scSkuColor(productName){
+  return productName===SC_STATE.sku1 ? '#5b5ef4' : (productName===SC_STATE.sku2 ? '#16a34a' : 'var(--accent)');
+}
+
+function scOpenProductInsight(productName, metricLabel, sentiment){
+  var reviews=scGetProductReviews(productName, sentiment, null);
+  var color=scSkuColor(productName);
+  reviews.forEach(function(it){ it.skuColor=color; });
+  var sentLabel = sentiment==='positive'?'긍정 리뷰(★4↑)': sentiment==='negative'?'부정 리뷰(★2↓)': sentiment==='neutral'?'중립 리뷰(★3)':'대표/하위 리뷰';
+  scOpenInsight({
+    title:'<span style="color:'+color+';">'+escapeHtml(fmtS(productName))+'</span> — '+escapeHtml(metricLabel),
+    subtitle:sentLabel+' · 저장 '+reviews.length+'건 · 대표 5 / 요약 15 / 전체로 확인',
+    reviews:reviews, highlight:[],
+    aiLabel:fmtS(productName)+' '+metricLabel
+  });
+}
+
+function scOpenProductInsightByRating(productName, rating){
+  var reviews=scGetProductReviews(productName, null, rating);
+  var color=scSkuColor(productName);
+  reviews.forEach(function(it){ it.skuColor=color; });
+  scOpenInsight({
+    title:'<span style="color:'+color+';">'+escapeHtml(fmtS(productName))+'</span> — ★'+rating+' 리뷰',
+    subtitle:'★'+rating+' 별점 리뷰 · 저장 '+reviews.length+'건',
+    reviews:reviews, highlight:[],
+    aiLabel:fmtS(productName)+' ★'+rating+' 리뷰'
+  });
+}
+
+function scOpenKeywordInsight(productName, word, category, count){
+  var reviews=scGetKeywordReviews(productName, word, category);
+  var color=scSkuColor(productName);
+  reviews.forEach(function(it){ it.skuColor=color; });
+  var catLabel = category==='positive'?'긍정':category==='negative'?'부정':'전체';
+  var typeColor = category==='positive'?'#16a34a':category==='negative'?'#dc2626':'var(--accent)';
+  scOpenInsight({
+    title:'"<span style="color:'+typeColor+';">'+escapeHtml(word)+'</span>" — <span style="color:'+color+';">'+escapeHtml(fmtS(productName))+'</span>',
+    subtitle:catLabel+' 키워드 · '+escapeHtml(fmtS(productName))+'에서 '+(count||reviews.length)+'건 매칭 · 저장 '+reviews.length+'건',
+    reviews:reviews,
+    highlight:[word.split(/[\s\/]+/)[0], word],
+    aiLabel:'"'+word+'" '+catLabel+' 키워드 ('+fmtS(productName)+')'
+  });
+}
+
+// ── 인사이트 모달 (요약/전체 토글 + AI 분석) ──
+var SC_INS_MODE='15';
+
+function scOpenInsight(cfg){
+  var modal=$('sc-insight-modal');
+  if(!modal){
+    modal=document.createElement('div');
+    modal.id='sc-insight-modal';
+    modal.style.cssText='display:none;position:fixed;inset:0;z-index:790;background:rgba(0,0,0,.55);align-items:flex-start;justify-content:center;padding-top:60px;';
+    modal.onclick=function(e){ if(e.target===modal) closeScInsight(); };
+    modal.innerHTML='<div style="background:var(--card);border-radius:14px;width:100%;max-width:760px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.22);">'+
+      '<div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">'+
+        '<div style="flex:1;min-width:0;">'+
+          '<div id="sci-title" style="font-size:15px;font-weight:800;color:var(--text);">리뷰 인사이트</div>'+
+          '<div id="sci-subtitle" style="font-size:11.5px;color:var(--text-secondary);margin-top:4px;"></div>'+
+        '</div>'+
+        '<div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">'+
+          '<button onclick="scInsightAskAI()" id="sci-ai-btn" style="padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;">✦ AI 분석</button>'+
+          '<button onclick="closeScInsight()" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--text-secondary);padding:0;line-height:1;">×</button>'+
+        '</div>'+
+      '</div>'+
+      '<div style="padding:10px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--bg);">'+
+        '<span style="font-size:11px;color:var(--text-secondary);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">표시 모드</span>'+
+        '<div style="display:inline-flex;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:3px;">'+
+          '<button class="sci-mode-btn" data-mode="5" onclick="scInsightSetMode(\'5\')" style="padding:4px 12px;background:transparent;border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:600;color:var(--text-secondary);font-family:inherit;">📌 대표 5건</button>'+
+          '<button class="sci-mode-btn active" data-mode="15" onclick="scInsightSetMode(\'15\')" style="padding:4px 12px;background:var(--accent);border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:600;color:#fff;font-family:inherit;">📝 요약 15건</button>'+
+          '<button class="sci-mode-btn" data-mode="all" onclick="scInsightSetMode(\'all\')" style="padding:4px 12px;background:transparent;border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:600;color:var(--text-secondary);font-family:inherit;">📚 전체 보기</button>'+
+        '</div>'+
+        '<span id="sci-mode-info" style="font-size:11px;color:var(--text-secondary);margin-left:auto;"></span>'+
+      '</div>'+
+      '<div id="sci-ai-result" style="display:none;padding:14px 22px;border-bottom:1px solid var(--border);background:rgba(91,94,244,.04);font-size:12.5px;line-height:1.7;color:var(--text);"></div>'+
+      '<div id="sci-list" style="flex:1;overflow-y:auto;padding:14px 22px;"></div>'+
+      '<div id="sci-footer" style="padding:8px 22px 14px;font-size:11px;color:var(--text-secondary);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;"></div>'+
+    '</div>';
+    document.body.appendChild(modal);
+  }
+  modal.style.display='flex';
+  $('sci-title').innerHTML=cfg.title;
+  $('sci-subtitle').innerHTML=cfg.subtitle||'';
+  modal._ctx=cfg;
+  $('sci-ai-result').style.display='none';
+  SC_INS_MODE='15';
+  document.querySelectorAll('.sci-mode-btn').forEach(function(b){
+    var a=b.getAttribute('data-mode')==='15';
+    b.classList.toggle('active',a);
+    b.style.background=a?'var(--accent)':'transparent';
+    b.style.color=a?'#fff':'var(--text-secondary)';
+  });
+  scInsightRenderList();
+}
+
+function scInsightSetMode(m){
+  SC_INS_MODE=m;
+  document.querySelectorAll('.sci-mode-btn').forEach(function(b){
+    var a=b.getAttribute('data-mode')===m;
+    b.classList.toggle('active',a);
+    b.style.background=a?'var(--accent)':'transparent';
+    b.style.color=a?'#fff':'var(--text-secondary)';
+  });
+  scInsightRenderList();
+}
+
+function scInsightRenderList(){
+  var modal=$('sc-insight-modal'); if(!modal||!modal._ctx) return;
+  var ctx=modal._ctx;
+  var all=ctx.reviews||[];
+  var listEl=$('sci-list');
+  if(all.length===0){
+    listEl.innerHTML='<div style="text-align:center;padding:30px;color:var(--text-secondary);font-size:12.5px;">표시할 리뷰 본문이 저장되어 있지 않습니다.<br><br><span style="font-size:11px;">이 SKU의 대표/하위 리뷰에 해당 항목이 포함되지 않았을 수 있습니다.<br>process_data.py의 저장 리뷰 수를 늘리면 더 많이 표시됩니다.</span></div>';
+    $('sci-mode-info').textContent='';
+    $('sci-footer').innerHTML='<span>0건</span><span style="font-size:10.5px;">⌨ ESC: 닫기</span>';
+    return;
+  }
+  var limit = SC_INS_MODE==='5'?5 : SC_INS_MODE==='15'?15 : all.length;
+  var shown=all.slice(0,limit);
+  var modeLabel = SC_INS_MODE==='5'?'대표 5건' : SC_INS_MODE==='15'?'요약 15건' : '전체 보기';
+  $('sci-mode-info').textContent='저장 '+all.length+'건';
+  $('sci-footer').innerHTML='<span><strong>'+modeLabel+'</strong>: '+shown.length+'건 표시 / 저장 '+all.length+'건</span><span style="font-size:10.5px;">⌨ ESC: 닫기 · 키워드는 노란 형광펜</span>';
+  var hl=ctx.highlight||[];
+  listEl.innerHTML=shown.map(function(item){
+    var r=item.r;
+    var stars=''; for(var i=1;i<=5;i++) stars+=i<=r.rating?'★':'☆';
+    var tag=r.rating>=4?'<span style="background:rgba(22,163,74,.12);color:#16a34a;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">긍정 ★'+r.rating+'</span>':r.rating<=2?'<span style="background:rgba(220,38,38,.10);color:#dc2626;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">부정 ★'+r.rating+'</span>':'<span style="background:var(--surface-hover);color:var(--text-secondary);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">중립 ★'+r.rating+'</span>';
+    var highlighted=escapeHtml(r.text||'');
+    hl.forEach(function(tk){
+      if(!tk||tk.length<2) return;
+      var safe=tk.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      try{ var re=new RegExp('('+safe+'[^\\s,.!?]*)','gi'); highlighted=highlighted.replace(re,'<mark style="background:#fef08a;padding:0 2px;">$1</mark>'); }catch(e){}
+    });
+    var dot=item.skuColor?'<span style="width:8px;height:8px;border-radius:50%;display:inline-block;background:'+item.skuColor+';"></span> ':'';
+    return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;">'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">'+
+        '<span style="font-size:11.5px;font-weight:700;color:var(--accent);">'+dot+escapeHtml(fmtS(item.name))+'</span>'+
+        '<span style="font-size:12px;color:#f59e0b;letter-spacing:-1px;">'+stars+'</span>'+
+        '<span style="font-size:10.5px;color:var(--text-secondary);">'+(r.date||'')+'</span>'+tag+
+      '</div>'+
+      '<div style="font-size:12.5px;color:var(--text);line-height:1.65;">'+highlighted+'</div>'+
+    '</div>';
+  }).join('');
+  ctx.shownReviews=shown;
+}
+
+function closeScInsight(){ var m=$('sc-insight-modal'); if(m) m.style.display='none'; }
+
+async function scInsightAskAI(){
+  var modal=$('sc-insight-modal'); if(!modal||!modal._ctx) return;
+  var ctx=modal._ctx;
+  var resultEl=$('sci-ai-result'); var btn=$('sci-ai-btn');
+  var online=$('ollama-dot').className.indexOf('online')>=0;
+  if(!online){ resultEl.style.display='block'; resultEl.innerHTML='⚠️ Ollama가 오프라인입니다. AI 서버 URL을 확인해주세요.'; return; }
+  if(!ctx.reviews||ctx.reviews.length===0){ resultEl.style.display='block'; resultEl.innerHTML='분석할 리뷰 본문이 없습니다.'; return; }
+  btn.disabled=true; btn.textContent='✦ 분석 중...';
+  resultEl.style.display='block';
+  resultEl.innerHTML='리뷰 분석 중... <span class="aic-cursor">▍</span>';
+  var src=ctx.shownReviews||ctx.reviews.slice(0,15);
+  var reviewTexts=src.map(function(it){ return '★'+it.r.rating+': '+it.r.text; }).join('\n');
+  var prompt='['+ctx.aiLabel+' / '+src.length+'건 분석]\n\n[리뷰 본문]\n'+reviewTexts+'\n\n'+
+    '위 리뷰들의 핵심 패턴/원인/사용자 의견을 한국어로 3-5줄로 요약하세요. **굵게**와 - 리스트로 가독성을 높여주세요.';
+  await ollamaStream(prompt,
+    function(_t, full){ resultEl.innerHTML=mdToHtml(full)+'<span class="aic-cursor">▍</span>'; },
+    function(full){ resultEl.innerHTML=mdToHtml(full); btn.disabled=false; btn.textContent='✦ AI 분석'; },
+    function(err){ resultEl.innerHTML='❌ 오류: '+escapeHtml(err.message); btn.disabled=false; btn.textContent='✦ AI 분석'; }
+  );
 }
 
 // ───────────────────────────────────────────────
