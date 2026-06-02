@@ -3741,7 +3741,7 @@ function openKeywordReviewsModal(keyword, productFilter, type, searchTerm){
       '</div>'+
       // AI 재분류 컨트롤 — 키워드와 무관한 오매칭 리뷰 제거
       '<div style="padding:9px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:rgba(91,94,244,.03);">'+
-        '<span style="font-size:11px;color:var(--text-secondary);font-weight:700;">🤖 AI 재분류</span>'+
+        '<span style="font-size:11px;color:var(--text-secondary);font-weight:700;" title="해당 월 전체 리뷰에서 이 키워드에 맞는 리뷰를 재분류·재할당하고 건수를 조정합니다">🤖 AI 재분류 (전체 리뷰)</span>'+
         '<div style="display:inline-flex;gap:3px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:3px;">'+
           '<button class="krm-rc-btn active" data-rc="batch" onclick="krmSetReclassMode(\'batch\')" title="리뷰 여러 건을 묶어 한 번에 판별 — 빠름" style="padding:4px 10px;background:var(--accent);border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;color:#fff;font-family:inherit;">배치(빠름)</button>'+
           '<button class="krm-rc-btn" data-rc="item" onclick="krmSetReclassMode(\'item\')" title="리뷰 1건씩 정밀 판별 — 정확하지만 느림" style="padding:4px 10px;background:transparent;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;color:var(--text-secondary);font-family:inherit;">정밀(느림)</button>'+
@@ -4097,13 +4097,27 @@ function krmApplyReclassCache(){
   var cached=null;
   try{ cached=JSON.parse(localStorage.getItem(krmReclassCacheKey(ctx))||'null'); }catch(e){}
   if(!cached || !cached.kept) return;
+  // 전체 재분류 캐시: kept ID를 reviews.json에서 재구성 (재할당된 신규 리뷰도 표시)
+  if(cached.full && STATE.reviewsById){
+    var seen={}; var rebuilt=[];
+    cached.kept.forEach(function(id){
+      var rv=STATE.reviewsById[String(id)]; if(!rv) return;
+      if(ctx.productFilter && rv.product!==ctx.productFilter) return;
+      if(seen[id]) return; seen[id]=true;
+      rebuilt.push({name:rv.product||'(상품 미상)', r:{review_id:String(id), rating:rv.rating, date:rv.date, text:rv.text}});
+    });
+    ctx.reviews=rebuilt; ctx.totalCount=rebuilt.length;
+    if(statusEl) statusEl.innerHTML='✓ 전체 재분류 적용됨 (A 귀속 '+rebuilt.length+'건 · 신규 +'+(cached.added||0)+' · 제외 -'+(cached.removed||0)+')';
+    if(resetEl) resetEl.style.display='inline-block';
+    return;
+  }
+  // 구버전(필터) 캐시
   var keepSet={}; cached.kept.forEach(function(id){ keepSet[String(id)]=true; });
   var orig=ctx._originalReviews||ctx.reviews;
   var filtered=orig.filter(function(it){ return keepSet[String(it.r.review_id)]; });
-  // 캐시가 현재 후보와 맞을 때만 적용
   if(filtered.length>0 || cached.removed>0){
     ctx.reviews=filtered;
-    if(statusEl) statusEl.innerHTML='✓ AI 재분류 적용됨 ('+cached.removed+'건 제외, '+filtered.length+'건 유지)';
+    if(statusEl) statusEl.innerHTML='✓ AI 재분류 적용됨 ('+(cached.removed||0)+'건 제외, '+filtered.length+'건 유지)';
     if(resetEl) resetEl.style.display='inline-block';
   }
 }
@@ -4126,62 +4140,69 @@ async function krmReclassify(){
   var online=$('ollama-dot').className.indexOf('online')>=0;
   if(!online){ if(statusEl) statusEl.innerHTML='<span style="color:var(--negative);">⚠️ Ollama 오프라인 — AI 서버 URL 확인</span>'; return; }
 
-  // 항상 원본 후보 기준으로 재분류
-  var orig=(ctx._originalReviews||ctx.reviews).slice();
-  if(orig.length===0){ if(statusEl) statusEl.textContent='판별할 리뷰가 없습니다.'; return; }
+  // 전체 리뷰에서 후보 수집 (현재 매칭 ∪ 키워드 토큰 lexical net) → 재할당
+  var built=krmBuildFullCandidates(ctx);
+  var cands=built.cands; var origIds=built.origIds;
+  var CAP=600; var capped=false;
+  if(cands.length>CAP){ cands=cands.slice(0,CAP); capped=true; }
+  if(cands.length===0){ if(statusEl) statusEl.textContent='판별할 리뷰가 없습니다.'; return; }
 
   var typeLabel = ctx.type==='긍정'?'긍정적으로 칭찬하는':ctx.type==='부정'?'부정적으로 불만을 제기하는':'개선을 요청하는';
   var kw=ctx.keyword;
+  var scopeNote = STATE.reviewsById ? '전체 후보' : '현재 매칭';
   runBtn.disabled=true; runBtn.textContent='판별 중...';
   if(resetEl) resetEl.style.display='none';
 
-  var kept=[]; var removed=0; var processed=0; var total=orig.length;
+  var kept=[]; var processed=0; var total=cands.length;
 
   try{
     if(KRM_RECLASS_MODE==='batch'){
       // 배치: 8건씩 묶어 한 번에 판별
       var BATCH=8;
-      for(var s=0;s<orig.length;s+=BATCH){
-        var chunk=orig.slice(s, s+BATCH);
+      for(var s=0;s<cands.length;s+=BATCH){
+        var chunk=cands.slice(s, s+BATCH);
         var listText=chunk.map(function(it,i){ return '['+i+'] '+(it.r.text||'').replace(/\s+/g,' ').slice(0,220); }).join('\n');
-        var prompt='당신은 한국어 리뷰 분류 검증 전문가입니다.\n'+
+        var prompt='당신은 한국어 리뷰 분류 전문가입니다.\n'+
           '키워드: "'+kw+'" (이 키워드는 제품에 대해 '+typeLabel+' 주제입니다)\n\n'+
           '아래 리뷰들 중에서, 그 리뷰가 실제로 "'+kw+'" 주제를 ('+ctx.type+' 맥락으로) 다루고 있는 리뷰의 번호만 고르세요.\n'+
-          '단어가 우연히 포함됐을 뿐 의미상 무관하거나, 반대 맥락(예: 부정 키워드인데 칭찬)인 리뷰는 제외하세요.\n\n'+
+          '현재 다른 분류에 있든 없든 상관없이, 의미상 이 키워드에 해당하면 포함하세요.\n'+
+          '단어가 우연히 포함됐을 뿐 의미상 무관하거나, 반대 맥락인 리뷰는 제외하세요.\n\n'+
           '리뷰:\n'+listText+'\n\n'+
           '맞는 번호만 JSON으로: {"matched":[0,2,...]}  (없으면 {"matched":[]})';
         var resp=await ollamaGenerateOnce(prompt);
         var matched=krmParseMatched(resp, chunk.length);
-        chunk.forEach(function(it,i){
-          if(matched.indexOf(i)>=0) kept.push(it); else removed++;
-        });
+        chunk.forEach(function(it,i){ if(matched.indexOf(i)>=0) kept.push(it); });
         processed+=chunk.length;
-        if(statusEl) statusEl.textContent='판별 중... '+processed+'/'+total+' (유지 '+kept.length+' · 제외 '+removed+')';
+        if(statusEl) statusEl.textContent=scopeNote+' 검토 '+processed+'/'+total+' (A 귀속 '+kept.length+')';
       }
     } else {
       // 정밀: 1건씩 yes/no
-      for(var k=0;k<orig.length;k++){
-        var it=orig[k];
+      for(var k=0;k<cands.length;k++){
+        var it=cands[k];
         var p1='키워드: "'+kw+'" ('+ctx.type+' 맥락).\n'+
           '다음 리뷰가 실제로 "'+kw+'" 주제를 '+ctx.type+' 맥락으로 다루나요? 단어만 우연히 포함된 경우는 아니오.\n'+
           '리뷰: '+(it.r.text||'').replace(/\s+/g,' ').slice(0,300)+'\n\n'+
           '오직 "예" 또는 "아니오"로만 답하세요.';
         var r1=await ollamaGenerateOnce(p1);
         var yes=/예|네|맞|yes|true|해당/i.test(r1) && !/아니|no|false|무관|해당\s*없/i.test(r1);
-        if(yes) kept.push(it); else removed++;
+        if(yes) kept.push(it);
         processed++;
-        if(statusEl) statusEl.textContent='정밀 판별 중... '+processed+'/'+total+' (유지 '+kept.length+' · 제외 '+removed+')';
+        if(statusEl) statusEl.textContent=scopeNote+' 정밀 검토 '+processed+'/'+total+' (A 귀속 '+kept.length+')';
       }
     }
 
-    ctx.reviews=kept;
-    // 캐시 저장
+    var keptIds={}; kept.forEach(function(it){ keptIds[String(it.r.review_id)]=true; });
+    var added=kept.filter(function(it){return it._isNew;}).length;
+    var removed=Object.keys(origIds).filter(function(id){return !keptIds[id];}).length;
+    // 새 A 집합 적용 + 카운트 조정
+    ctx.reviews=kept; ctx.totalCount=kept.length;
     try{
       localStorage.setItem(krmReclassCacheKey(ctx), JSON.stringify({
-        kept:kept.map(function(it){return it.r.review_id;}), removed:removed, mode:KRM_RECLASS_MODE, ts:Date.now()
+        kept:Object.keys(keptIds), full:true, added:added, removed:removed, mode:KRM_RECLASS_MODE, ts:Date.now()
       }));
     }catch(e){}
-    if(statusEl) statusEl.innerHTML='✓ 완료 — '+removed+'건 제외 / '+kept.length+'건 유지 ('+(KRM_RECLASS_MODE==='batch'?'배치':'정밀')+')';
+    var capNote=capped?' · ⚠️ 후보 '+CAP+'건 상한':'';
+    if(statusEl) statusEl.innerHTML='✓ 전체 재분류 완료 — A 귀속 <strong>'+kept.length+'건</strong> (신규 +'+added+' · 제외 -'+removed+')'+capNote;
     if(resetEl) resetEl.style.display='inline-block';
     krmRenderList();
   }catch(err){
@@ -4189,6 +4210,37 @@ async function krmReclassify(){
   }finally{
     runBtn.disabled=false; runBtn.textContent='재분류 실행';
   }
+}
+
+// 전체 리뷰에서 재분류 후보 수집: 현재 A 매칭 ∪ 키워드 토큰 lexical net
+function krmBuildFullCandidates(ctx){
+  var origIds={}; (ctx._originalReviews||[]).forEach(function(it){ origIds[String(it.r.review_id)]=true; });
+  var cands=[]; var seen={};
+  // 1) 현재 매칭 전체 포함 (false positive 검증 대상)
+  (ctx._originalReviews||[]).forEach(function(it){
+    var id=String(it.r.review_id);
+    if(!seen[id]){ seen[id]=true; cands.push(it); }
+  });
+  // 2) 전체 리뷰에서 키워드 토큰 포함 리뷰 추가 (미매핑·타키워드 → 재할당 후보)
+  if(STATE.reviewsById){
+    var toks=(ctx.keyword||'').split(/[\s\/·,()→.\-]+/).filter(function(t){return t.length>=2;}).map(function(t){return t.toLowerCase();});
+    if(toks.length){
+      Object.keys(STATE.reviewsById).forEach(function(id){
+        if(seen[id]) return;
+        var rv=STATE.reviewsById[id];
+        if(ctx.productFilter && rv.product!==ctx.productFilter) return;
+        var txt=(rv.text||'').toLowerCase();
+        for(var i=0;i<toks.length;i++){
+          if(txt.indexOf(toks[i])>=0){
+            seen[id]=true;
+            cands.push({name:rv.product||'(상품 미상)', r:{review_id:id, rating:rv.rating, date:rv.date, text:rv.text}, _isNew:!origIds[id]});
+            return;
+          }
+        }
+      });
+    }
+  }
+  return {cands:cands, origIds:origIds};
 }
 
 // LLM 응답에서 matched 인덱스 배열 파싱 (관대하게)

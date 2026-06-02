@@ -450,7 +450,9 @@ python scripts/process_data.py \
   --ollama-model exaone3.5:7.8b
 
 # 키워드↔리뷰 오매칭 AI 재분류 (정규식 false positive 제거)
-#   --reclassify        : keywords.json의 review_samples를 Ollama로 재검증
+#   --reclassify        : keywords.json의 review_samples를 Ollama로 재검증(샘플 정제)
+#   --reclassify-full   : 전체 리뷰에서 멤버십 재도출 = 재할당 + count/all_review_ids/
+#                         review_samples/by_product 재계산 (정확↑·매우 느림, --reclassify보다 우선)
 #   --reclassify-mode   : batch(빠름, 8건 묶음) | item(정밀, 1건씩)  기본 batch
 #   --skip-ai 와 무관하게 동작 (재분류만 단독 실행 가능)
 python scripts/process_data.py \
@@ -458,7 +460,11 @@ python scripts/process_data.py \
   --month 2026-04 \
   --input data/raw/슬룸/2026-04/reviews.csv \
   --prev-input data/raw/슬룸/2026-03/reviews.csv \
-  --skip-ai --reclassify --reclassify-mode batch
+  --skip-ai --reclassify-full --reclassify-mode batch
+
+# 출력 파일에 reviews.json 추가됨 (해당 월 전체 리뷰 인덱스)
+#   대시보드 인사이트 '전체 보기' + 키워드 모달 'AI 재분류(전체 리뷰)'가 이 파일을 사용
+#   {"count":N,"reviews":{review_id:{rating,date,product,text}}}  (익명화 본문, PII 미포함)
 
 # 익명화
 python scripts/anonymize_csv.py \

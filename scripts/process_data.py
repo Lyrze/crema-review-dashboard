@@ -1176,6 +1176,120 @@ def reclassify_keyword_samples(
     )
 
 
+def reclassify_keyword_full(
+    keywords_data: dict,
+    df: pd.DataFrame,
+    model: str,
+    base_url: str,
+    mode: str = "batch",
+    cand_cap: int = 400,
+) -> None:
+    """전체 리뷰에서 각 키워드 멤버십을 재도출 (재할당 + 카운트 재계산, in-place).
+
+    어휘 매칭 결과(현재 all_review_ids)에 갇히지 않고, 전체 월 리뷰에서
+    키워드 토큰을 포함하는 후보를 모은 뒤 AI로 귀속 여부를 판별한다.
+    → 미매핑/타키워드 리뷰를 끌어오고(재할당), false positive는 제외하며,
+      count·all_review_ids·review_samples·by_product 를 다시 계산한다.
+
+    비용이 크므로(키워드×후보) cand_cap 으로 키워드별 후보 상한을 둔다.
+    """
+    try:
+        from ollama_analysis import OllamaAnalyzer  # type: ignore[import]
+    except ImportError:
+        logger.warning("ollama_analysis 모듈 없음 → 전체 재분류 건너뜀")
+        return
+    analyzer = OllamaAnalyzer(model=model, base_url=base_url)
+    if not analyzer.health_check():
+        logger.warning("Ollama 응답 없음 → 전체 재분류 건너뜀")
+        return
+
+    # id → 리뷰 메타
+    reviews: dict = {}
+    for row in df.itertuples(index=False):
+        rid = str(getattr(row, "review_id", ""))
+        if not rid:
+            continue
+        date_str = ""
+        rv_date = getattr(row, "review_date", None)
+        if rv_date is not None and pd.notna(rv_date):
+            try:
+                date_str = pd.Timestamp(rv_date).strftime("%Y-%m-%d")
+            except Exception:
+                date_str = ""
+        reviews[rid] = {
+            "text": str(getattr(row, "body", "")),
+            "product": str(getattr(row, "product_name", "")),
+            "rating": int(getattr(row, "rating")) if pd.notna(getattr(row, "rating", None)) else 0,
+            "date": date_str,
+        }
+
+    bi = keywords_data.get("by_intent", {})
+    polarity_map = {"praise": "긍정", "complaint": "부정", "improvement": "개선"}
+    for key, polarity in polarity_map.items():
+        for item in bi.get(key, []):
+            word = str(item.get("word", ""))
+            if not word:
+                continue
+            toks = [t.lower() for t in re.split(r"[\s/·,()→.\-]+", word) if len(t) >= 2]
+            cur = set(str(x) for x in item.get("all_review_ids", []))
+            cand = set(cur)
+            if toks:
+                for rid, rv in reviews.items():
+                    tl = rv["text"].lower()
+                    if any(t in tl for t in toks):
+                        cand.add(rid)
+            cand_ids = [r for r in cand if r in reviews]
+            if len(cand_ids) > cand_cap:
+                # 현재 멤버 우선 유지 + 신규 후보 일부
+                cur_in = [r for r in cand_ids if r in cur]
+                new_in = [r for r in cand_ids if r not in cur]
+                cand_ids = cur_in + new_in[: max(0, cand_cap - len(cur_in))]
+            samples = [{"review_id": r, "text": reviews[r]["text"]} for r in cand_ids]
+            before = len(cur)
+            try:
+                kept = analyzer.verify_keyword_reviews(word, polarity, samples, mode)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("전체 재분류 실패('%s'), 유지: %s", word, exc)
+                continue
+            kept_ids = [str(s.get("review_id")) for s in kept if s.get("review_id")]
+            # 재구성
+            item["all_review_ids"] = kept_ids
+            item["count"] = len(kept_ids)
+            item["ai_reclassified"] = True
+            # review_samples 재구성 (상품당 최대 8, 총 50)
+            new_samples: List[dict] = []
+            per_prod: dict = {}
+            for rid in kept_ids:
+                if len(new_samples) >= 50:
+                    break
+                rv = reviews.get(rid)
+                if not rv:
+                    continue
+                pn = rv["product"]
+                if per_prod.get(pn, 0) >= 8:
+                    continue
+                per_prod[pn] = per_prod.get(pn, 0) + 1
+                new_samples.append({
+                    "review_id": rid, "rating": rv["rating"], "date": rv["date"],
+                    "text": rv["text"][:300], "product": pn,
+                })
+            item["review_samples"] = new_samples
+            # by_product 재계산
+            bp: dict = {}
+            for rid in kept_ids:
+                rv = reviews.get(rid)
+                if rv and rv["product"]:
+                    bp[rv["product"]] = bp.get(rv["product"], 0) + 1
+            item["by_product"] = [{"product": p, "count": c} for p, c in sorted(bp.items(), key=lambda x: -x[1])]
+            added = len([r for r in kept_ids if r not in cur])
+            removed = len([r for r in cur if r not in set(kept_ids)])
+            logger.info(
+                "  전체재분류 [%s] '%s': %d→%d (신규 +%d · 제외 -%d)",
+                polarity, word, before, len(kept_ids), added, removed,
+            )
+    logger.info("전체 재분류 완료 (mode=%s, cand_cap=%d)", mode, cand_cap)
+
+
 # ────────────────────────────────────────────
 # 전체 리뷰 인덱스 (reviews.json)
 # ────────────────────────────────────────────
@@ -1398,8 +1512,17 @@ def run_pipeline(args: argparse.Namespace) -> None:
     logger.info("키워드 추출 중...")
     keywords_data = extract_keywords_basic(df, top_n=args.top_n_keywords)
 
-    # ── 6-b. AI 재분류 (--reclassify) — 오매칭 리뷰 샘플 제거
-    if getattr(args, "reclassify", False):
+    # ── 6-b. AI 재분류
+    if getattr(args, "reclassify_full", False):
+        # 전체 리뷰에서 재도출 (재할당 + 카운트 재계산) — 정확하지만 느림
+        logger.info("AI 전체 재분류 시작 (mode=%s)...", args.reclassify_mode)
+        reclassify_keyword_full(
+            keywords_data, df,
+            model=args.ollama_model, base_url=args.ollama_url,
+            mode=args.reclassify_mode,
+        )
+    elif getattr(args, "reclassify", False):
+        # 저장된 샘플 검증 (오매칭 제거만) — 빠름
         logger.info("AI 재분류 시작 (mode=%s)...", args.reclassify_mode)
         reclassify_keyword_samples(
             keywords_data,
@@ -1546,6 +1669,13 @@ def parse_args() -> argparse.Namespace:
         default="batch",
         dest="reclassify_mode",
         help="재분류 강도: batch(여러 건 묶음, 빠름) | item(1건씩, 정밀). 기본 batch",
+    )
+    p.add_argument(
+        "--reclassify-full",
+        action="store_true",
+        default=False,
+        dest="reclassify_full",
+        help="전체 리뷰에서 키워드 멤버십을 재도출(재할당+카운트 재계산). 정확하지만 매우 느림. --reclassify 보다 우선",
     )
     return p.parse_args()
 
