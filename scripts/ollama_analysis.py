@@ -684,9 +684,9 @@ class OllamaAnalyzer:
                     kept.append(sm)
                     continue
                 low = raw.strip().lower()
-                is_yes = any(t in low for t in ("예", "네", "맞", "yes", "true", "해당")) and not any(
-                    t in low for t in ("아니", "no", "false", "무관")
-                )
+                # 부정 표현 우선 판정 ("해당 없음/없다"가 "해당"으로 오인되지 않도록)
+                is_no = any(t in low for t in ("아니", "no", "false", "무관", "없")) or "해당없" in low.replace(" ", "")
+                is_yes = (not is_no) and any(t in low for t in ("예", "네", "맞", "yes", "true", "해당"))
                 if is_yes:
                     kept.append(sm)
             return kept

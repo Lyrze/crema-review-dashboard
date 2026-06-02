@@ -1567,14 +1567,28 @@ def run_pipeline(args: argparse.Namespace) -> None:
                 neg_keywords=ai_keywords.get("complaint", [])[:10],
             )
 
-            if ai_keywords:
+            # by_intent 덮어쓰기 가드: 패턴 기반 항목은 review_samples·all_review_ids·
+            # by_product 를 갖고 있어 대시보드 '전체 보기'·재분류에 필수.
+            # AI 키워드(맨 단어만)로 덮어쓰면 이 정보가 소실되므로,
+            # 재분류를 했거나 기존 항목이 이미 풍부하면 덮어쓰지 않는다.
+            did_reclassify = getattr(args, "reclassify", False) or getattr(args, "reclassify_full", False)
+            existing_rich = any(
+                it.get("all_review_ids") or it.get("review_samples")
+                for grp in ("praise", "complaint", "improvement")
+                for it in keywords_data["by_intent"].get(grp, [])
+            )
+            if ai_keywords and not did_reclassify and not existing_rich:
                 keywords_data["by_intent"]["praise"] = ai_keywords.get("praise", [])
                 keywords_data["by_intent"]["complaint"] = ai_keywords.get("complaint", [])
                 keywords_data["by_intent"]["improvement"] = ai_keywords.get("improvement", [])
+            elif ai_keywords:
+                # AI 키워드는 ai_analysis 에만 보존 (by_intent 는 패턴/재분류 결과 유지)
+                logger.info("by_intent 덮어쓰기 생략 (review_samples/all_review_ids 보존) — AI 키워드는 ai_analysis 에 기록")
 
             ai_analysis = {
                 "smart_brief": smart_brief,
                 "product_briefs": product_briefs,
+                "ai_keywords": ai_keywords,
                 "sentiment_summary": {
                     "positive": kpis.get("positive_count", 0),
                     "neutral": kpis.get("neutral_count", 0),
