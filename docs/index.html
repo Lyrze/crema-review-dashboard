@@ -500,6 +500,9 @@
     .im-insight-list li { list-style:none; padding-left:14px; position:relative; margin-bottom:4px; }
     .im-insight-list li::before { content:'·'; position:absolute; left:5px; font-weight:700; color:var(--text-secondary); }
     .im-insight-list li .im-cnt { display:inline-flex; min-width:22px; height:18px; padding:0 6px; align-items:center; justify-content:center; background:var(--surface); border-radius:9px; font-size:10px; font-weight:700; color:var(--text-secondary); margin-left:4px; vertical-align:middle; }
+    .im-insight-list li.im-kw-li { cursor:pointer; border-radius:6px; transition:background .12s,color .12s; }
+    .im-insight-list li.im-kw-li:hover { background:var(--surface-hover); color:var(--text); }
+    .im-insight-list li.im-kw-li:hover .im-cnt { background:var(--accent); color:#fff; }
     .im-card-footer { display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:14px; border-top:1px solid var(--border); }
     .im-card-ts { font-size:10.5px; color:var(--text-secondary); }
     .im-card-vote { display:flex; gap:4px; }
@@ -3217,6 +3220,13 @@ function imGroupKeywordsIntoBlocks(keywords, type, p){
   });
 }
 
+// 인사이트 카드 키워드 클릭 → 현재 상품 스코프로 관련 리뷰 모달
+function imOpenKwReviews(word, cls){
+  var typeKr = cls==='praise'?'긍정':cls==='complaint'?'부정':'개선';
+  var pname = (typeof IM_CURRENT_PRODUCT!=='undefined' && IM_CURRENT_PRODUCT) ? IM_CURRENT_PRODUCT.name : null;
+  openKeywordReviewsModal(word, pname, typeKr);
+}
+
 function imBuildCard(opts){
   var card=document.createElement('div');
   card.className='im-card';
@@ -3224,7 +3234,12 @@ function imBuildCard(opts){
   var ts=new Date().toLocaleString('ko-KR',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
   var blocksHtml=(opts.blocks||[]).map(function(b, i){
     var listHtml=b.items.map(function(it){
-      return '<li>'+(it.text||'')+(it.count?'<span class="im-cnt">'+it.count+'</span>':'')+'</li>';
+      var w=(it.text||'');
+      var hasCount=(it.count!==''&&it.count!=null);
+      if(!hasCount){ return '<li>'+w+'</li>'; }
+      // 카운트 있는 실제 키워드 → 클릭 가능 (현재 상품 스코프로 관련 리뷰 표시)
+      var wEsc=w.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      return '<li class="im-kw-li" onclick="imOpenKwReviews(\''+wEsc+'\',\''+opts.cls+'\')" title="클릭 → 관련 리뷰 보기">'+w+'<span class="im-cnt">'+it.count+'</span></li>';
     }).join('');
     return '<div class="im-insight-block">'+
       '<div class="im-insight-num '+opts.cls+'">'+(i+1)+'</div>'+
@@ -3691,7 +3706,7 @@ function openKeywordReviewsModal(keyword, productFilter, type, searchTerm){
     // 첫 호출 시 모달 동적 생성
     modal=document.createElement('div');
     modal.id='keyword-reviews-modal';
-    modal.style.cssText='display:none;position:fixed;inset:0;z-index:780;background:rgba(0,0,0,.55);align-items:flex-start;justify-content:center;padding-top:60px;';
+    modal.style.cssText='display:none;position:fixed;inset:0;z-index:850;background:rgba(0,0,0,.55);align-items:flex-start;justify-content:center;padding-top:60px;';
     modal.onclick=function(e){ if(e.target===modal) closeKeywordReviewsModal(); };
     modal.innerHTML='<div style="background:var(--card);border-radius:14px;width:100%;max-width:760px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.22);">'+
       '<div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">'+
