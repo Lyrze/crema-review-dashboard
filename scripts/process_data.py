@@ -1108,6 +1108,72 @@ def extract_keywords_basic(df: pd.DataFrame, top_n: int = 30) -> dict:
 
 
 # ────────────────────────────────────────────
+# AI 재분류 — 키워드 리뷰 샘플 오매칭 제거
+# ────────────────────────────────────────────
+
+def reclassify_keyword_samples(
+    keywords_data: dict,
+    model: str,
+    base_url: str,
+    mode: str = "batch",
+) -> None:
+    """by_intent 각 키워드의 review_samples를 LLM으로 재검증해 오매칭 제거 (in-place).
+
+    어휘(정규식) 매칭은 "강도가 적당하다"(긍정)를 "강도 불량"(부정) 키워드에
+    잘못 붙이는 등 false positive가 잦다. Ollama로 각 샘플이 실제 그 키워드
+    주제를 (해당 극성으로) 다루는지 판별해 통과한 것만 남긴다.
+
+    --skip-ai 와 무관하게 동작하도록 자체 analyzer를 초기화한다.
+    """
+    try:
+        from ollama_analysis import OllamaAnalyzer  # type: ignore[import]
+    except ImportError:
+        logger.warning("ollama_analysis 모듈 없음 → 재분류 건너뜀")
+        return
+
+    analyzer = OllamaAnalyzer(model=model, base_url=base_url)
+    if not analyzer.health_check():
+        logger.warning("Ollama 응답 없음 → 재분류 건너뜀 (ollama serve 확인)")
+        return
+
+    bi = keywords_data.get("by_intent", {})
+    polarity_map = {"praise": "긍정", "complaint": "부정", "improvement": "개선"}
+    total_removed = 0
+    total_kept = 0
+    for key, polarity in polarity_map.items():
+        items = bi.get(key, [])
+        for item in items:
+            samples = item.get("review_samples", [])
+            if not samples:
+                continue
+            before = len(samples)
+            try:
+                kept = analyzer.verify_keyword_reviews(
+                    word=str(item.get("word", "")),
+                    polarity=polarity,
+                    samples=samples,
+                    mode=mode,
+                )
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("재분류 실패('%s'), 원본 유지: %s", item.get("word", ""), exc)
+                continue
+            item["review_samples"] = kept
+            item["ai_reclassified"] = True
+            removed = before - len(kept)
+            total_removed += removed
+            total_kept += len(kept)
+            if removed:
+                logger.info(
+                    "  재분류 [%s] '%s': %d→%d (-%d)",
+                    polarity, item.get("word", ""), before, len(kept), removed,
+                )
+    logger.info(
+        "AI 재분류 완료: %d건 유지 / %d건 오매칭 제거 (mode=%s)",
+        total_kept, total_removed, mode,
+    )
+
+
+# ────────────────────────────────────────────
 # JSON 저장
 # ────────────────────────────────────────────
 
@@ -1293,6 +1359,16 @@ def run_pipeline(args: argparse.Namespace) -> None:
     logger.info("키워드 추출 중...")
     keywords_data = extract_keywords_basic(df, top_n=args.top_n_keywords)
 
+    # ── 6-b. AI 재분류 (--reclassify) — 오매칭 리뷰 샘플 제거
+    if getattr(args, "reclassify", False):
+        logger.info("AI 재분류 시작 (mode=%s)...", args.reclassify_mode)
+        reclassify_keyword_samples(
+            keywords_data,
+            model=args.ollama_model,
+            base_url=args.ollama_url,
+            mode=args.reclassify_mode,
+        )
+
     # ── 7. AI 분석 JSON (AI 실행된 경우)
     ai_analysis: Optional[dict] = None
     if not skip_ai and analyzer is not None:
@@ -1414,6 +1490,19 @@ def parse_args() -> argparse.Namespace:
         default=30,
         dest="top_n_keywords",
         help="키워드 추출 상위 N개 (기본: 30)",
+    )
+    p.add_argument(
+        "--reclassify",
+        action="store_true",
+        default=False,
+        help="Ollama로 키워드↔리뷰 매칭을 재검증해 오매칭 샘플 제거 (--skip-ai 와 무관하게 동작)",
+    )
+    p.add_argument(
+        "--reclassify-mode",
+        choices=["batch", "item"],
+        default="batch",
+        dest="reclassify_mode",
+        help="재분류 강도: batch(여러 건 묶음, 빠름) | item(1건씩, 정밀). 기본 batch",
     )
     return p.parse_args()
 

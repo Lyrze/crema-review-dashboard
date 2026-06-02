@@ -628,6 +628,105 @@ class OllamaAnalyzer:
             logger.error("상품 브리프 생성 실패 (%s): %s", product_name, exc)
             return {"brief": "생성 실패.", "key_insights": []}
 
+    # ── 키워드 리뷰 재분류(검증) ──
+
+    def verify_keyword_reviews(
+        self,
+        word: str,
+        polarity: str,
+        samples: List[dict],
+        mode: str = "batch",
+    ) -> List[dict]:
+        """키워드에 매칭된 리뷰 샘플 중 실제로 그 키워드 주제를 다루는 것만 남긴다.
+
+        어휘(정규식) 매칭의 false positive(단어가 우연히 포함됐을 뿐 의미상 무관,
+        혹은 반대 맥락)를 LLM으로 걸러낸다.
+
+        Args:
+            word: 키워드 (예: "강도 불량")
+            polarity: '긍정' | '부정' | '개선'
+            samples: [{"text": ..., ...}, ...] review_samples 형식
+            mode: 'batch'(여러 건 묶음, 빠름) | 'item'(1건씩, 정밀)
+
+        Returns:
+            검증을 통과한 samples 부분집합 (원본 dict 그대로 유지)
+        """
+        if not samples:
+            return []
+
+        type_desc = {
+            "긍정": "제품에 대해 긍정적으로 칭찬하는",
+            "부정": "제품에 대해 부정적으로 불만을 제기하는",
+            "개선": "제품에 대해 개선을 요청하는",
+        }.get(polarity, "관련된")
+
+        if mode == "item":
+            kept: List[dict] = []
+            for sm in samples:
+                text = str(sm.get("text", "")).replace("\n", " ")[:300]
+                if not text.strip():
+                    continue
+                prompt = (
+                    f'키워드: "{word}" ({polarity} 맥락).\n'
+                    f'다음 리뷰가 실제로 "{word}" 주제를 {polarity} 맥락으로 다루나요? '
+                    f"단어만 우연히 포함된 경우는 아니오.\n"
+                    f"리뷰: {text}\n\n"
+                    '오직 "예" 또는 "아니오"로만 답하세요.'
+                )
+                try:
+                    raw = self.client.generate(
+                        model=self.model, prompt=prompt,
+                        system="당신은 한국어 리뷰 분류 검증 전문가입니다.",
+                        temperature=0.0,
+                    )
+                except RuntimeError as exc:
+                    logger.warning("재분류(item) 실패, 보존: %s", exc)
+                    kept.append(sm)
+                    continue
+                low = raw.strip().lower()
+                is_yes = any(t in low for t in ("예", "네", "맞", "yes", "true", "해당")) and not any(
+                    t in low for t in ("아니", "no", "false", "무관")
+                )
+                if is_yes:
+                    kept.append(sm)
+            return kept
+
+        # batch 모드 (기본): 8건씩 묶어 판별
+        kept = []
+        BATCH = 8
+        for i in range(0, len(samples), BATCH):
+            chunk = samples[i: i + BATCH]
+            list_text = "\n".join(
+                f"[{j}] {str(sm.get('text','')).replace(chr(10),' ')[:220]}"
+                for j, sm in enumerate(chunk)
+            )
+            prompt = (
+                f"당신은 한국어 리뷰 분류 검증 전문가입니다.\n"
+                f'키워드: "{word}" (이 키워드는 {type_desc} 주제입니다)\n\n'
+                f'아래 리뷰들 중에서, 그 리뷰가 실제로 "{word}" 주제를 ({polarity} 맥락으로) '
+                f"다루고 있는 리뷰의 번호만 고르세요.\n"
+                f"단어가 우연히 포함됐을 뿐 의미상 무관하거나, 반대 맥락인 리뷰는 제외하세요.\n\n"
+                f"리뷰:\n{list_text}\n\n"
+                '맞는 번호만 JSON으로: {"matched":[0,2]}  (없으면 {"matched":[]})'
+            )
+            try:
+                raw = self.client.generate(
+                    model=self.model, prompt=prompt,
+                    system="당신은 한국어 리뷰 분류 검증 전문가입니다. JSON으로만 응답하세요.",
+                    temperature=0.0,
+                )
+                parsed = extract_json_from_response(raw)
+                matched = []
+                if isinstance(parsed, dict) and isinstance(parsed.get("matched"), list):
+                    matched = [x for x in parsed["matched"] if isinstance(x, int) and 0 <= x < len(chunk)]
+                for j, sm in enumerate(chunk):
+                    if j in matched:
+                        kept.append(sm)
+            except RuntimeError as exc:
+                logger.warning("재분류(batch) 실패, 청크 보존: %s", exc)
+                kept.extend(chunk)
+        return kept
+
     # ── Smart Brief ──
 
     def generate_smart_brief(

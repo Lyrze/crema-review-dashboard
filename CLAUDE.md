@@ -449,6 +449,17 @@ python scripts/process_data.py \
   --input data/raw/슬룸/2026-05/reviews.csv \
   --ollama-model exaone3.5:7.8b
 
+# 키워드↔리뷰 오매칭 AI 재분류 (정규식 false positive 제거)
+#   --reclassify        : keywords.json의 review_samples를 Ollama로 재검증
+#   --reclassify-mode   : batch(빠름, 8건 묶음) | item(정밀, 1건씩)  기본 batch
+#   --skip-ai 와 무관하게 동작 (재분류만 단독 실행 가능)
+python scripts/process_data.py \
+  --brand 슬룸 \
+  --month 2026-04 \
+  --input data/raw/슬룸/2026-04/reviews.csv \
+  --prev-input data/raw/슬룸/2026-03/reviews.csv \
+  --skip-ai --reclassify --reclassify-mode batch
+
 # 익명화
 python scripts/anonymize_csv.py \
   --input data/raw/슬룸/2026-05/reviews.csv \
