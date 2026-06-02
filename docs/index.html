@@ -837,6 +837,10 @@
     .sc-kpi-row.clickable { cursor:pointer; border-radius:7px; margin:0 -6px; padding-left:6px; padding-right:6px; transition:background .15s; }
     .sc-kpi-row.clickable:hover { background:var(--surface-hover); }
     .sc-clickhint { font-size:10.5px; color:var(--text-secondary); font-weight:600; }
+    /* 키워드 차트 지표 토글 (언급률 / 건수) */
+    .sc-kwmetric { display:inline-flex; gap:2px; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:2px; }
+    .sc-kwmetric-btn { padding:3px 10px; border:none; background:transparent; border-radius:6px; font-size:10.5px; font-weight:700; color:var(--text-secondary); cursor:pointer; font-family:inherit; transition:background .12s,color .12s; }
+    .sc-kwmetric-btn.active { background:var(--accent); color:#fff; }
     @media (max-width:900px){
       .sc-kpi-grid { grid-template-columns:repeat(2,1fr); }
       .sc-charts-row { grid-template-columns:1fr; }
@@ -1012,10 +1016,16 @@
     <!-- 5: 전체 키워드 TOP 30 (긍+부정 통합) -->
     <div class="sc-chart-card" style="margin-bottom:14px;">
       <div class="sc-chart-head">
-        <div><div class="sc-chart-title">5️⃣ 전체 키워드 TOP 30 (긍 + 부정)</div><div class="sc-chart-sub">두 SKU의 통합 키워드 분포 비교 (그 SKU에서 매칭된 카운트)</div></div>
-        <div style="display:flex;gap:6px;">
-          <span class="sc-chart-pill sku1" id="sc-pill-all-1">SKU 1</span>
-          <span class="sc-chart-pill sku2" id="sc-pill-all-2">SKU 2</span>
+        <div><div class="sc-chart-title">5️⃣ 전체 키워드 TOP 30 (긍 + 부정)</div><div class="sc-chart-sub">◀ 왼쪽 SKU1 / SKU2 오른쪽 ▶ · 모수 차이 보정을 위해 <strong>언급률(리뷰 100건당)</strong> 기준 권장</div></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
+          <div class="sc-kwmetric">
+            <button class="sc-kwmetric-btn active" data-metric="rate" onclick="scSetKwMetric('rate')" title="리뷰 100건당 언급 — 모수 차이 보정">언급률</button>
+            <button class="sc-kwmetric-btn" data-metric="count" onclick="scSetKwMetric('count')" title="원시 매칭 건수">건수</button>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <span class="sc-chart-pill sku1" id="sc-pill-all-1">SKU 1</span>
+            <span class="sc-chart-pill sku2" id="sc-pill-all-2">SKU 2</span>
+          </div>
         </div>
       </div>
       <div class="sc-chart-wrap tall"><canvas id="sc-chart-kw-all"></canvas></div>
@@ -1025,20 +1035,32 @@
     <div class="sc-charts-row">
       <div class="sc-chart-card">
         <div class="sc-chart-head">
-          <div><div class="sc-chart-title">6️⃣ 긍정 키워드 TOP 30</div><div class="sc-chart-sub">두 SKU의 긍정 키워드 카운트</div></div>
-          <div style="display:flex;gap:6px;">
-            <span class="sc-chart-pill sku1" id="sc-pill-pos-1">SKU 1</span>
-            <span class="sc-chart-pill sku2" id="sc-pill-pos-2">SKU 2</span>
+          <div><div class="sc-chart-title">6️⃣ 긍정 키워드 TOP 30</div><div class="sc-chart-sub">◀ SKU1 / SKU2 ▶ · 언급률(100건당) 기준 비교</div></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
+            <div class="sc-kwmetric">
+              <button class="sc-kwmetric-btn active" data-metric="rate" onclick="scSetKwMetric('rate')">언급률</button>
+              <button class="sc-kwmetric-btn" data-metric="count" onclick="scSetKwMetric('count')">건수</button>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <span class="sc-chart-pill sku1" id="sc-pill-pos-1">SKU 1</span>
+              <span class="sc-chart-pill sku2" id="sc-pill-pos-2">SKU 2</span>
+            </div>
           </div>
         </div>
         <div class="sc-chart-wrap tall"><canvas id="sc-chart-kw-pos"></canvas></div>
       </div>
       <div class="sc-chart-card">
         <div class="sc-chart-head">
-          <div><div class="sc-chart-title">7️⃣ 부정 키워드 TOP 30</div><div class="sc-chart-sub">두 SKU의 부정 + 개선 키워드 카운트</div></div>
-          <div style="display:flex;gap:6px;">
-            <span class="sc-chart-pill sku1" id="sc-pill-neg-1">SKU 1</span>
-            <span class="sc-chart-pill sku2" id="sc-pill-neg-2">SKU 2</span>
+          <div><div class="sc-chart-title">7️⃣ 부정 키워드 TOP 30</div><div class="sc-chart-sub">◀ SKU1 / SKU2 ▶ · 언급률(100건당) 기준 비교</div></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
+            <div class="sc-kwmetric">
+              <button class="sc-kwmetric-btn active" data-metric="rate" onclick="scSetKwMetric('rate')">언급률</button>
+              <button class="sc-kwmetric-btn" data-metric="count" onclick="scSetKwMetric('count')">건수</button>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <span class="sc-chart-pill sku1" id="sc-pill-neg-1">SKU 1</span>
+              <span class="sc-chart-pill sku2" id="sc-pill-neg-2">SKU 2</span>
+            </div>
           </div>
         </div>
         <div class="sc-chart-wrap tall"><canvas id="sc-chart-kw-neg"></canvas></div>
@@ -5056,7 +5078,8 @@ function toggleCardMenu(btn){
 // ───────────────────────────────────────────────
 //  SKU 1 vs 1 정밀 비교 분석
 // ───────────────────────────────────────────────
-var SC_STATE = { sku1:null, sku2:null, charts:{} };
+var SC_STATE = { sku1:null, sku2:null, charts:{}, kwMetric:'rate' };
+try{ var _km=localStorage.getItem('sc_kw_metric'); if(_km==='rate'||_km==='count') SC_STATE.kwMetric=_km; }catch(e){}
 var SC_COLOR_1 = 'rgba(91, 94, 244, 0.85)';
 var SC_COLOR_2 = 'rgba(22, 163, 74, 0.85)';
 var SC_COLOR_1_LIGHT = 'rgba(91, 94, 244, 0.5)';
@@ -5221,6 +5244,28 @@ function scRender(){
   scRenderKeywordChart('sc-chart-kw-all', p1, p2, 'all');
   scRenderKeywordChart('sc-chart-kw-pos', p1, p2, 'positive');
   scRenderKeywordChart('sc-chart-kw-neg', p1, p2, 'negative');
+  // 지표 토글 버튼 상태 동기화 (localStorage 복원값 반영)
+  document.querySelectorAll('.sc-kwmetric-btn').forEach(function(b){
+    b.classList.toggle('active', b.getAttribute('data-metric')===(SC_STATE.kwMetric||'rate'));
+  });
+}
+
+// 키워드 차트 지표 전환 (언급률 ↔ 건수) — 3개 차트 동시 갱신
+function scSetKwMetric(m){
+  if(m!=='rate' && m!=='count') return;
+  SC_STATE.kwMetric=m;
+  try{ localStorage.setItem('sc_kw_metric', m); }catch(e){}
+  document.querySelectorAll('.sc-kwmetric-btn').forEach(function(b){
+    b.classList.toggle('active', b.getAttribute('data-metric')===m);
+  });
+  var prods=STATE.products||REAL_DATA.products;
+  var p1=prods.find(function(p){return p.name===SC_STATE.sku1;});
+  var p2=prods.find(function(p){return p.name===SC_STATE.sku2;});
+  if(p1&&p2){
+    scRenderKeywordChart('sc-chart-kw-all', p1, p2, 'all');
+    scRenderKeywordChart('sc-chart-kw-pos', p1, p2, 'positive');
+    scRenderKeywordChart('sc-chart-kw-neg', p1, p2, 'negative');
+  }
 }
 
 function scRenderKPIs(p1, p2){
@@ -5386,37 +5431,88 @@ function scRenderKeywordChart(canvasId, p1, p2, category){
     c.fillText('두 SKU에서 매칭된 '+(category==='positive'?'긍정':category==='negative'?'부정':'')+' 키워드가 없습니다', ctx.width/2, 50);
     return;
   }
+  var metric=SC_STATE.kwMetric||'rate';
+  var rc1=p1.review_count||1, rc2=p2.review_count||1;
   var labels=compareData.map(function(k){return k.word;});
-  var data1=compareData.map(function(k){return k.sku1;});
-  var data2=compareData.map(function(k){return k.sku2;});
+  var rawC1=compareData.map(function(k){return k.sku1;});   // 원시 매칭 건수 (클릭/툴팁용)
+  var rawC2=compareData.map(function(k){return k.sku2;});
+  // 표시값: rate면 리뷰 100건당 언급, count면 원시 건수
+  function disp(c, rc){ return metric==='rate' ? +(c/rc*100).toFixed(2) : c; }
+  var v1=rawC1.map(function(c){return disp(c,rc1);});
+  var v2=rawC2.map(function(c){return disp(c,rc2);});
+  // 버터플라이(다이버징): SKU1 = 왼쪽(음수), SKU2 = 오른쪽(양수)
+  var left=v1.map(function(v){return -v;});
+
+  // 막대 끝 값 라벨 플러그인 — 작은 막대도 수치가 항상 보이도록
+  var labelPlugin={
+    id:'scBarLabels-'+canvasId,
+    afterDatasetsDraw:function(chart){
+      var cx=chart.ctx;
+      chart.data.datasets.forEach(function(ds, di){
+        var meta=chart.getDatasetMeta(di);
+        if(meta.hidden) return;
+        meta.data.forEach(function(bar, i){
+          var raw=ds.data[i];
+          if(raw==null || raw===0) return;
+          var absv=Math.abs(raw);
+          var txt = metric==='rate' ? (absv<10?absv.toFixed(1):Math.round(absv).toString()) : String(absv);
+          cx.save();
+          cx.font='700 9.5px Inter, system-ui, sans-serif';
+          cx.fillStyle=ds._labelColor||'#888';
+          cx.textBaseline='middle';
+          var isLeft = raw<0;
+          cx.textAlign = isLeft ? 'right' : 'left';
+          cx.fillText(txt, bar.x + (isLeft?-4:4), bar.y);
+          cx.restore();
+        });
+      });
+    }
+  };
+
   SC_STATE.charts[canvasId]=new Chart(ctx,{
     type:'bar',
     data:{
       labels:labels,
       datasets:[
-        {label:fmtS(p1.name),data:data1,backgroundColor:SC_COLOR_1,borderRadius:4,maxBarThickness:14},
-        {label:fmtS(p2.name),data:data2,backgroundColor:SC_COLOR_2,borderRadius:4,maxBarThickness:14}
+        {label:fmtS(p1.name)+' ◀',data:left,backgroundColor:SC_COLOR_1,borderRadius:3,maxBarThickness:13,_labelColor:'#5b5ef4'},
+        {label:'▶ '+fmtS(p2.name),data:v2,backgroundColor:SC_COLOR_2,borderRadius:3,maxBarThickness:13,_labelColor:'#16a34a'}
       ]
     },
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      layout:{padding:{left:30,right:30}},
       onClick:function(evt,els){if(els.length){
         var el=els[0];
         var idx=el.index;
         var dsi=el.datasetIndex; // 0=sku1, 1=sku2
         var word=labels[idx];
-        // 클릭한 막대의 SKU 기준으로, 카운트가 0이면 다른 SKU로 폴백
+        // 클릭한 막대의 SKU 기준 (원시 건수 사용), 0이면 다른 SKU 폴백
         var prodName = dsi===0 ? p1.name : p2.name;
-        var cnt = dsi===0 ? data1[idx] : data2[idx];
+        var cnt = dsi===0 ? rawC1[idx] : rawC2[idx];
         if(cnt===0){
-          var other = dsi===0 ? p2.name : p1.name;
-          var otherCnt = dsi===0 ? data2[idx] : data1[idx];
-          if(otherCnt>0){ prodName=other; cnt=otherCnt; }
+          var otherCnt = dsi===0 ? rawC2[idx] : rawC1[idx];
+          if(otherCnt>0){ prodName = dsi===0 ? p2.name : p1.name; cnt=otherCnt; }
         }
         scOpenKeywordInsight(prodName, word, category, cnt);
       }},
-      plugins:{legend:{position:'bottom',labels:{font:{size:11}}},tooltip:{enabled:true}},
-      scales:{x:{beginAtZero:true,grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10}}},
-        y:{ticks:{font:{size:10},autoSkip:false},grid:{display:false}}}}
+      plugins:{legend:{position:'bottom',labels:{font:{size:11}}},
+        tooltip:{callbacks:{
+          title:function(items){return '"'+items[0].label+'"';},
+          label:function(c){
+            var di=c.datasetIndex, i=c.dataIndex;
+            var raw=di===0?rawC1[i]:rawC2[i];
+            var rc=di===0?rc1:rc2;
+            var name=di===0?fmtS(p1.name):fmtS(p2.name);
+            var rate=(raw/rc*100).toFixed(2);
+            return name+': '+fmt(raw)+'건 (리뷰 100건당 '+rate+'회)';
+          }
+        }}},
+      scales:{
+        x:{stacked:true,beginAtZero:true,grid:{color:'rgba(0,0,0,.04)'},
+           title:{display:true,text:(metric==='rate'?'◀ 리뷰 100건당 언급 ▶':'◀ 매칭 건수 ▶'),font:{size:10,weight:'700'},color:'#888'},
+           ticks:{font:{size:9},callback:function(v){return Math.abs(v);}}},
+        y:{stacked:true,ticks:{font:{size:10},autoSkip:false},grid:{display:false}}
+      }},
+    plugins:[labelPlugin]
   });
 }
 
