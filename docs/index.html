@@ -1120,12 +1120,48 @@
       <button class="filter-chip" id="chip-refresh" onclick="manualReload()" title="데이터 새로고침">🔄</button>
       <button class="filter-chip" id="chip-share" onclick="shareCurrentURL()" title="현재 상태 URL 복사">🔗 공유</button>
       <button class="filter-chip" id="chip-aichat" onclick="toggleAIChatPanel()" title="AI 채팅 패널 열기" style="background:rgba(91,94,244,.08);border-color:var(--accent);color:var(--accent);">✦ Hey Sloom</button>
+      <button class="filter-chip" id="chip-reclass-all" onclick="openFullReclassPanel()" title="전체 키워드를 전체 리뷰 기준으로 AI 재분류 (오래 걸림, Ollama 필요)" style="background:rgba(245,158,11,.10);border-color:#f59e0b;color:#b45309;">🤖 전체 재분류</button>
       <button class="filter-chip" id="chip-compare" onclick="toggleCompareMode()" title="두 달 비교 모드">📊 비교 모드</button>
       <button class="filter-chip" id="chip-override" onclick="toggleDateOverridePop(event)" title="기간 재정의">📅 <span id="chip-override-val">Override date filter</span></button>
     </div>
   </div>
   <!-- 칩 드롭다운 (재사용) -->
   <div class="chip-pop" id="chip-pop" style="position:absolute;"></div>
+
+  <!-- 전체 키워드 일괄 재분류 패널 -->
+  <div id="full-reclass-modal" style="display:none;position:fixed;inset:0;z-index:880;background:rgba(0,0,0,.55);align-items:flex-start;justify-content:center;padding-top:70px;" onclick="if(event.target===this)closeFullReclassPanel();">
+    <div style="background:var(--card);border-radius:14px;width:100%;max-width:560px;box-shadow:0 12px 40px rgba(0,0,0,.22);overflow:hidden;">
+      <div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+        <div>
+          <div style="font-size:15px;font-weight:800;color:var(--text);">🤖 전체 키워드 AI 재분류</div>
+          <div style="font-size:11.5px;color:var(--text-secondary);margin-top:4px;">해당 월 전체 리뷰를 기준으로 모든 키워드의 소속 리뷰를 다시 판별하고 건수를 갱신합니다.</div>
+        </div>
+        <button onclick="closeFullReclassPanel()" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--text-secondary);padding:0;line-height:1;">×</button>
+      </div>
+      <div style="padding:16px 22px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+          <span style="font-size:11.5px;font-weight:700;color:var(--text-secondary);">강도</span>
+          <div style="display:inline-flex;gap:3px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:3px;">
+            <button class="frc-mode-btn active" data-rc="batch" onclick="frcSetMode('batch')" style="padding:5px 12px;background:var(--accent);border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:700;color:#fff;font-family:inherit;">배치 (빠름)</button>
+            <button class="frc-mode-btn" data-rc="item" onclick="frcSetMode('item')" style="padding:5px 12px;background:transparent;border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:700;color:var(--text-secondary);font-family:inherit;">정밀 (느림)</button>
+          </div>
+        </div>
+        <div id="frc-warn" style="font-size:11.5px;color:var(--text-secondary);background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:10px 13px;line-height:1.6;margin-bottom:14px;">
+          ⚠️ 키워드 수 × 후보 리뷰만큼 AI가 판별하므로 <strong>수 분~수십 분</strong> 걸릴 수 있습니다. Ollama(또는 AI 서버 URL)가 켜져 있어야 하며, 결과는 이 브라우저에 저장됩니다. 모두에게 반영하려면 파이프라인 <code>--reclassify-full</code>로 재생성이 필요합니다.
+        </div>
+        <div id="frc-progress" style="display:none;margin-bottom:14px;">
+          <div style="height:8px;background:var(--surface);border-radius:5px;overflow:hidden;"><div id="frc-bar" style="height:100%;width:0%;background:var(--accent);transition:width .2s;"></div></div>
+          <div id="frc-progress-text" style="font-size:11.5px;color:var(--text-secondary);margin-top:8px;"></div>
+        </div>
+        <div id="frc-result" style="display:none;font-size:12px;color:var(--text);background:rgba(22,163,74,.06);border:1px solid var(--border);border-radius:9px;padding:11px 13px;margin-bottom:14px;line-height:1.6;"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button id="frc-reset" onclick="frcResetAll()" style="display:none;padding:8px 14px;background:var(--bg);color:var(--text-secondary);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">원본 복원</button>
+          <button id="frc-cancel" onclick="frcCancel()" style="display:none;padding:8px 14px;background:var(--bg);color:var(--negative);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">중단</button>
+          <button id="frc-run" onclick="runFullReclassifyAll()" style="padding:8px 18px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;">재분류 시작</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- 비교 모드 배너 -->
   <div id="compare-banner" style="display:none;margin-bottom:20px;">
@@ -2193,6 +2229,8 @@ async function loadData(brand,month){
   // 전체 리뷰 인덱스 (review_id → {rating,date,product,text})
   STATE.reviewsById = (res[3].status==='fulfilled' && res[3].value && res[3].value.reviews) ? res[3].value.reviews : null;
   STATE.brand=brand; STATE.month=month;
+  // 전체 재분류 캐시 적용 (이 브라우저에서 일괄 재분류한 적 있으면 키워드 데이터 갱신)
+  try{ applyFullReclassCache(); }catch(e){ console.warn('전체 재분류 캐시 적용 실패', e); }
   var banner=document.getElementById('data-load-banner');
   if(banner) banner.style.display=anyFailed?'block':'none';
   if(anyFailed) console.warn('일부 JSON 로드 실패 — 기본 데이터로 표시 중');
@@ -4254,6 +4292,205 @@ function krmParseMatched(resp, n){
   var arr=resp.match(/\[([0-9,\s]*)\]/);
   if(arr){ return arr[1].split(',').map(function(x){return parseInt(x.trim(),10);}).filter(function(x){return !isNaN(x)&&x>=0&&x<n;}); }
   return [];
+}
+
+// ═══════════════════════════════════════════════
+//  전체 키워드 일괄 재분류 (대시보드판 --reclassify-full)
+// ═══════════════════════════════════════════════
+var FRC_STATE={mode:'batch', running:false, cancel:false};
+
+function openFullReclassPanel(){
+  var m=$('full-reclass-modal'); if(!m) return;
+  m.style.display='flex';
+  $('frc-progress').style.display='none';
+  $('frc-result').style.display='none';
+  $('frc-cancel').style.display='none';
+  $('frc-run').style.display='inline-block';
+  // 캐시 존재 시 복원 버튼 노출
+  var hasCache=false; try{ hasCache=!!localStorage.getItem(fullReclassCacheKey()); }catch(e){}
+  $('frc-reset').style.display=hasCache?'inline-block':'none';
+}
+function closeFullReclassPanel(){ var m=$('full-reclass-modal'); if(m) m.style.display='none'; }
+function frcSetMode(mode){
+  if(mode!=='batch'&&mode!=='item') return;
+  FRC_STATE.mode=mode;
+  document.querySelectorAll('.frc-mode-btn').forEach(function(b){
+    var a=b.getAttribute('data-rc')===mode;
+    b.classList.toggle('active',a);
+    b.style.background=a?'var(--accent)':'transparent';
+    b.style.color=a?'#fff':'var(--text-secondary)';
+  });
+}
+function frcCancel(){ FRC_STATE.cancel=true; }
+
+// 키워드 객체의 ids로 count/all_review_ids/review_samples/by_product 재구성
+function rebuildKeywordFromIds(kwObj, ids){
+  kwObj.all_review_ids=ids.slice();
+  kwObj.count=ids.length;
+  kwObj.ai_reclassified=true;
+  if(!STATE.reviewsById) return;
+  var samples=[]; var perProd={}; var bp={};
+  ids.forEach(function(id){
+    var rv=STATE.reviewsById[String(id)]; if(!rv) return;
+    if(rv.product) bp[rv.product]=(bp[rv.product]||0)+1;
+    if(samples.length<50 && (perProd[rv.product]||0)<8){
+      perProd[rv.product]=(perProd[rv.product]||0)+1;
+      samples.push({review_id:String(id), rating:rv.rating, date:rv.date, text:(rv.text||'').slice(0,300), product:rv.product});
+    }
+  });
+  kwObj.review_samples=samples;
+  kwObj.by_product=Object.keys(bp).map(function(p){return {product:p,count:bp[p]};}).sort(function(a,b){return b.count-a.count;});
+}
+
+// 키워드 후보 수집 (현재 all_review_ids ∪ 전체 리뷰 토큰 net)
+function buildKeywordCandidatesFull(kwObj){
+  var curIds={}; (kwObj.all_review_ids||[]).forEach(function(id){curIds[String(id)]=true;});
+  var cands=[]; var seen={};
+  (kwObj.all_review_ids||[]).forEach(function(id){
+    var rv=STATE.reviewsById&&STATE.reviewsById[String(id)];
+    if(!rv||seen[id]) return; seen[id]=true;
+    cands.push({name:rv.product,r:{review_id:String(id),rating:rv.rating,date:rv.date,text:rv.text},_isNew:false});
+  });
+  if(STATE.reviewsById){
+    var toks=(kwObj.word||'').split(/[\s\/·,()→.\-]+/).filter(function(t){return t.length>=2;}).map(function(t){return t.toLowerCase();});
+    if(toks.length) Object.keys(STATE.reviewsById).forEach(function(id){
+      if(seen[id]) return; var rv=STATE.reviewsById[id]; var txt=(rv.text||'').toLowerCase();
+      for(var i=0;i<toks.length;i++) if(txt.indexOf(toks[i])>=0){ seen[id]=true; cands.push({name:rv.product,r:{review_id:id,rating:rv.rating,date:rv.date,text:rv.text},_isNew:!curIds[id]}); return; }
+    });
+  }
+  return cands;
+}
+
+// 후보를 AI로 판별해 귀속 항목만 반환 (배치/정밀)
+async function aiVerifyKeywordCandidates(word, typeKr, cands, mode, onProgress){
+  var typeDesc=typeKr==='긍정'?'긍정적으로 칭찬하는':typeKr==='부정'?'부정적으로 불만을 제기하는':'개선을 요청하는';
+  var kept=[];
+  if(mode==='item'){
+    for(var k=0;k<cands.length;k++){
+      if(FRC_STATE.cancel) break;
+      var it=cands[k];
+      var p='키워드: "'+word+'" ('+typeKr+' 맥락).\n다음 리뷰가 실제로 "'+word+'" 주제를 '+typeKr+' 맥락으로 다루나요? 단어만 우연히 포함된 경우는 아니오.\n리뷰: '+(it.r.text||'').replace(/\s+/g,' ').slice(0,300)+'\n\n오직 "예" 또는 "아니오"로만 답하세요.';
+      var r=await ollamaGenerateOnce(p);
+      var yes=/예|네|맞|yes|true|해당/i.test(r) && !/아니|no|false|무관|해당\s*없/i.test(r);
+      if(yes) kept.push(it);
+      if(onProgress) onProgress(k+1, cands.length);
+    }
+  } else {
+    var BATCH=8;
+    for(var s=0;s<cands.length;s+=BATCH){
+      if(FRC_STATE.cancel) break;
+      var chunk=cands.slice(s,s+BATCH);
+      var listText=chunk.map(function(it,i){return '['+i+'] '+(it.r.text||'').replace(/\s+/g,' ').slice(0,220);}).join('\n');
+      var prompt='당신은 한국어 리뷰 분류 전문가입니다.\n키워드: "'+word+'" (이 키워드는 제품에 대해 '+typeDesc+' 주제입니다)\n\n아래 리뷰들 중에서, 그 리뷰가 실제로 "'+word+'" 주제를 ('+typeKr+' 맥락으로) 다루고 있는 리뷰의 번호만 고르세요.\n현재 다른 분류에 있든 없든 상관없이, 의미상 이 키워드에 해당하면 포함하세요.\n단어가 우연히 포함됐을 뿐 의미상 무관하거나 반대 맥락인 리뷰는 제외하세요.\n\n리뷰:\n'+listText+'\n\n맞는 번호만 JSON으로: {"matched":[0,2,...]} (없으면 {"matched":[]})';
+      var resp=await ollamaGenerateOnce(prompt);
+      var matched=krmParseMatched(resp, chunk.length);
+      chunk.forEach(function(it,i){ if(matched.indexOf(i)>=0) kept.push(it); });
+      if(onProgress) onProgress(Math.min(s+BATCH,cands.length), cands.length);
+    }
+  }
+  return kept;
+}
+
+function fullReclassCacheKey(){ return 'fullReclass::'+(STATE.brand||'')+'::'+(STATE.month||''); }
+
+// loadData 후 호출 — 캐시된 전체 재분류 결과를 keywords에 적용
+function applyFullReclassCache(){
+  if(!STATE.keywords || !STATE.reviewsById) return;
+  var cached=null;
+  try{ cached=JSON.parse(localStorage.getItem(fullReclassCacheKey())||'null'); }catch(e){}
+  if(!cached || !cached.byType) return;
+  var bi=STATE.keywords.by_intent||{};
+  ['praise','complaint','improvement'].forEach(function(type){
+    var map=cached.byType[type]||{};
+    (bi[type]||[]).forEach(function(kwObj){
+      if(map[kwObj.word]) rebuildKeywordFromIds(kwObj, map[kwObj.word]);
+    });
+  });
+}
+
+async function runFullReclassifyAll(){
+  if(FRC_STATE.running) return;
+  var online=$('ollama-dot').className.indexOf('online')>=0;
+  if(!online){ alert('Ollama가 오프라인입니다. 좌측 AI 서버 URL을 확인한 뒤 다시 시도하세요.'); return; }
+  if(!STATE.reviewsById){ alert('전체 리뷰 데이터(reviews.json)가 없어 실행할 수 없습니다. 데이터를 최신으로 재생성하세요.'); return; }
+  var bi=(STATE.keywords||{}).by_intent||{};
+  var jobs=[];
+  ['praise','complaint','improvement'].forEach(function(type){
+    var kr=type==='praise'?'긍정':type==='complaint'?'부정':'개선';
+    (bi[type]||[]).forEach(function(kwObj){ if(kwObj && kwObj.word) jobs.push({type:type, kr:kr, kwObj:kwObj}); });
+  });
+  if(jobs.length===0){ alert('재분류할 키워드가 없습니다.'); return; }
+
+  FRC_STATE.running=true; FRC_STATE.cancel=false;
+  $('frc-run').style.display='none';
+  $('frc-cancel').style.display='inline-block';
+  $('frc-reset').style.display='none';
+  $('frc-progress').style.display='block';
+  $('frc-result').style.display='none';
+  var CAP=400;
+  var byType={praise:{},complaint:{},improvement:{}};
+  var totalAdded=0, totalRemoved=0, doneKw=0;
+
+  try{
+    for(var j=0;j<jobs.length;j++){
+      if(FRC_STATE.cancel) break;
+      var job=jobs[j];
+      var kwObj=job.kwObj;
+      var curIds=(kwObj.all_review_ids||[]).map(String);
+      var curSet={}; curIds.forEach(function(id){curSet[id]=true;});
+      var cands=buildKeywordCandidatesFull(kwObj);
+      if(cands.length>CAP){
+        var curC=cands.filter(function(c){return !c._isNew;});
+        var newC=cands.filter(function(c){return c._isNew;});
+        cands=curC.concat(newC.slice(0, Math.max(0, CAP-curC.length)));
+      }
+      var jIdx=j;
+      (function(jobLabel, candTotal){
+        $('frc-progress-text').textContent='('+(jIdx+1)+'/'+jobs.length+') "'+jobLabel+'" 후보 '+candTotal+'건 판별 중...';
+      })(kwObj.word, cands.length);
+      var kept=await aiVerifyKeywordCandidates(kwObj.word, job.kr, cands, FRC_STATE.mode, function(p,t){
+        var pct=Math.round(((j + (t?p/t:1)) / jobs.length)*100);
+        $('frc-bar').style.width=pct+'%';
+        $('frc-progress-text').textContent='('+(j+1)+'/'+jobs.length+') "'+kwObj.word+'" '+p+'/'+t+'건 판별...';
+      });
+      if(FRC_STATE.cancel) break;
+      var keptIds=[]; var ks={};
+      kept.forEach(function(it){ var id=String(it.r.review_id); if(!ks[id]){ks[id]=true; keptIds.push(id);} });
+      byType[job.type][kwObj.word]=keptIds;
+      totalAdded += keptIds.filter(function(id){return !curSet[id];}).length;
+      totalRemoved += curIds.filter(function(id){return !ks[id];}).length;
+      rebuildKeywordFromIds(kwObj, keptIds);
+      doneKw++;
+      $('frc-bar').style.width=Math.round(((j+1)/jobs.length)*100)+'%';
+    }
+
+    // 캐시 저장 (취소돼도 처리된 것까지)
+    try{ localStorage.setItem(fullReclassCacheKey(), JSON.stringify({byType:byType, ts:Date.now(), mode:FRC_STATE.mode})); }catch(e){}
+    // 차트/표 갱신
+    render();
+    var msg=(FRC_STATE.cancel?'⏹ 중단됨 — ':'✓ 완료 — ')+doneKw+'/'+jobs.length+'개 키워드 재분류 (신규 +'+totalAdded+' · 제외 -'+totalRemoved+'). 차트 건수가 갱신되었습니다.';
+    $('frc-result').style.display='block';
+    $('frc-result').innerHTML=msg+'<br><span style="font-size:11px;color:var(--text-secondary);">이 브라우저에 저장됨 · 모두에게 반영하려면 파이프라인 --reclassify-full 재생성 필요</span>';
+    $('frc-reset').style.display='inline-block';
+  }catch(err){
+    $('frc-result').style.display='block';
+    $('frc-result').innerHTML='<span style="color:var(--negative);">❌ 오류: '+escapeHtml(err.message)+'</span>';
+  }finally{
+    FRC_STATE.running=false;
+    $('frc-cancel').style.display='none';
+    $('frc-run').style.display='inline-block';
+    $('frc-run').textContent='다시 실행';
+    $('frc-progress-text').textContent += ' (종료)';
+  }
+}
+
+function frcResetAll(){
+  try{ localStorage.removeItem(fullReclassCacheKey()); }catch(e){}
+  $('frc-result').style.display='none';
+  $('frc-reset').style.display='none';
+  // keywords.json 원본 재로드 → 차트 복원
+  reload().then(function(){ alert('원본 분류로 복원되었습니다. (저장된 전체 재분류 결과 삭제됨)'); });
+  closeFullReclassPanel();
 }
 
 // ── CSV 다운로드 ──
