@@ -5531,6 +5531,8 @@ function renderPVOCKanban(){
   // ── 즐겨찾기(⭐) Taxonomy를 카반 카드로 자동 추가 ──
   if(typeof TAXONOMIES!=='undefined' && TAXONOMIES.length>0){
     var allReviews=txGetAllReviews();
+    // 상품 필터 활성 시 해당 상품 리뷰만으로 Topic 매칭 카운트 계산
+    if(STATE.productFocus) allReviews=allReviews.filter(function(r){return r.product===STATE.productFocus;});
     var favTaxonomies=TAXONOMIES.filter(function(t){return t.favorite && !t.system && (t.topics||[]).length>0;});
     favTaxonomies.forEach(function(tax){
       // 각 Topic별 매칭 카운트
@@ -5553,13 +5555,15 @@ function renderPVOCKanban(){
 
   PVOC_CARDS=[];
   container.innerHTML=cards.map(function(c, idx){
-    // 데이터가 4개 미만이면 fallback으로 보충
     var items=(c.data||[]).slice();
-    if(items.length<4 && c.fallback){
-      var have={}; items.forEach(function(it){have[(it.word||it)]=1;});
-      c.fallback.forEach(function(fb){ if(items.length<6 && !have[fb.word]) items.push(fb); });
+    // 상품 필터가 없을 때만 fallback(예시) 데이터로 보충 — 필터 시엔 실제 데이터만 표시
+    if(!STATE.productFocus){
+      if(items.length<4 && c.fallback){
+        var have={}; items.forEach(function(it){have[(it.word||it)]=1;});
+        c.fallback.forEach(function(fb){ if(items.length<6 && !have[fb.word]) items.push(fb); });
+      }
+      if(items.length===0) items=c.fallback||[];
     }
-    if(items.length===0) items=c.fallback||[];
     items=items.slice(0,7);
     // 카드 정보 저장 (액션에서 참조)
     PVOC_CARDS[idx]={
@@ -5585,11 +5589,18 @@ function renderPVOCKanban(){
       var tooltip=realType
         ? '클릭하여 "'+safeWord.replace(/"/g,'&quot;')+'" 키워드 관련 리뷰 보기 (매칭 '+cnt+'건)'
         : '"'+searchTerm.replace(/"/g,'&quot;')+'" 키워드로 본문 검색';
-      return '<div class="pvoc-k-item clickable" onclick="openKeywordReviewsModal(\''+safeWord+'\',null,\''+resolvedType+'\',\''+safeSearch+'\')" style="cursor:pointer;" title="'+tooltip+'">'+
+      var pfArg=STATE.productFocus?'\''+STATE.productFocus.replace(/'/g,"\\'")+'\'':'null';
+      return '<div class="pvoc-k-item clickable" onclick="openKeywordReviewsModal(\''+safeWord+'\','+pfArg+',\''+resolvedType+'\',\''+safeSearch+'\')" style="cursor:pointer;" title="'+tooltip+'">'+
         '<span class="pvoc-k-num">'+(i+1)+'</span>'+
         '<div class="pvoc-k-text">'+w+(cnt!==''?'<span class="pvoc-k-cnt">'+cnt+'</span>':'')+'</div>'+
         '</div>';
     }).join('');
+    // 상품 필터 시 매칭 키워드가 없으면 안내 (예시 데이터로 채우지 않음)
+    if(!bulletsHtml){
+      bulletsHtml = STATE.productFocus
+        ? '<div style="padding:14px 4px;color:var(--text-secondary);font-size:11.5px;line-height:1.5;">"'+escapeHtml(fmtS(STATE.productFocus)||STATE.productFocus)+'" 상품에서 이 항목에 해당하는 키워드가 없습니다.</div>'
+        : '<div style="padding:14px 4px;color:var(--text-secondary);font-size:11.5px;">데이터 없음</div>';
+    }
     return '<div class="pvoc-k-card" data-pvoc-idx="'+idx+'">'+
       '<div class="pvoc-k-head">'+
         '<div class="pvoc-k-cat '+c.cat+'">'+c.catLbl+'</div>'+
@@ -5598,7 +5609,7 @@ function renderPVOCKanban(){
           '<button class="card-icon-btn" title="더 보기" onclick="pvocCardMenu(this, '+idx+')">⋯</button>'+
         '</div>'+
       '</div>'+
-      '<div class="pvoc-k-title">'+c.title+'</div>'+
+      '<div class="pvoc-k-title">'+c.title+(STATE.productFocus?' <span style="font-size:10px;font-weight:600;color:var(--accent);">· '+escapeHtml(fmtS(STATE.productFocus)||STATE.productFocus)+'</span>':'')+'</div>'+
       '<div class="pvoc-k-divider"></div>'+
       bulletsHtml+
       '<div class="pvoc-k-footer">'+
