@@ -667,17 +667,45 @@
     /* AI 응답 스트리밍 커서 */
     .aic-cursor { display:inline-block; width:6px; height:14px; background:var(--accent); margin-left:2px; vertical-align:middle; animation:cursor-blink 0.85s steps(1) infinite; border-radius:1px; }
     @keyframes cursor-blink { 50% { opacity:0; } }
-    /* ── 인쇄(PDF) 스타일 ── */
+    /* ── 인쇄(PDF) 스타일 — 시인성 최적화 ── */
     @media print {
-      aside, .menu-btn, .product-focus-bar, .fab-btn, .fab-menu,
-      .ai-panel, .filter-bar, .ai-analyze-btn, .export-wrap,
-      .card-ctrl-bar, .card-resize-handle, .drag-handle,
-      #ai-popup, .section-actions { display:none !important; }
-      body { background:#fff !important; }
-      main { margin:0 !important; padding:12px !important; }
-      .section { break-inside:avoid; page-break-inside:avoid; box-shadow:none !important; border:1px solid #e5e7eb; }
-      .card, .chart-card { break-inside:avoid; box-shadow:none !important; border:1px solid #f0f0f0; }
+      @page { size: A4; margin: 11mm; }
+      /* 화면 전용 UI 전부 숨김 */
+      aside, #sidebar, .menu-btn, .product-focus-bar, .fab-btn, .fab-menu,
+      .ai-panel, #ai-chat-panel, #ai-popup, .filter-bar, .sync-filter-bar,
+      .chip-pop, #chip-pop, .export-wrap, .export-menu,
+      .ai-analyze-btn, .ai-card-btn, .card-icon-btn, .card-width-btn,
+      .card-ctrl-bar, .card-resize-handle, .drag-handle, .section-actions,
+      #compare-banner, #data-load-banner, .tx-io-note,
+      #insight-modal, #keyword-reviews-modal, #sc-insight-modal, #kpi-insight-modal,
+      #tx-rule-modal, #review-search-modal, #full-reclass-modal,
+      .pvoc-k-vote, .im-card-vote, .toast,
+      .krm-mode-btn, .im-rev-filter, .im-rev-count { display:none !important; }
+
+      /* 색상·배경 보존 (차트·배지·도넛 색이 인쇄에 나오도록) */
+      html, body { background:#fff !important; color:#111 !important;
+        -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+      * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+
+      main, #main, #main-content { margin:0 !important; padding:0 !important; width:100% !important; max-width:100% !important; }
+      .page-header { margin:0 0 10px !important; }
+
+      /* 섹션·카드: 페이지 넘김 방지 + 흰 배경 + 옅은 테두리 */
+      .section { break-inside:avoid; page-break-inside:avoid; box-shadow:none !important;
+        border:1px solid #e5e7eb !important; background:#fff !important; margin:0 0 12px !important; padding:14px !important; }
+      .card, .chart-card, .pvoc-k-card, .im-card {
+        break-inside:avoid; page-break-inside:avoid; box-shadow:none !important;
+        border:1px solid #eaeaea !important; background:#fff !important; }
+      .section-title, .card-title, .pvoc-k-title, .im-card-question { color:#111 !important; }
+      .section-subtitle, .card-sub { color:#555 !important; }
+
+      /* 그리드 정돈 */
       .kpi-grid { grid-template-columns:repeat(2,1fr) !important; }
+      .grid-2 { grid-template-columns:1fr 1fr !important; }
+      .pvoc-kanban { grid-template-columns:repeat(2,1fr) !important; }
+
+      canvas { max-width:100% !important; }
+      a[href]:after { content:"" !important; }   /* 링크 URL 미표시 */
     }
     /* ───────────────── Taxonomy ───────────────── */
     #taxonomy-page { display:none; padding:0; }
