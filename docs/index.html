@@ -4231,10 +4231,13 @@ function krmSetReclassMode(m){
 }
 
 // 비스트리밍 Ollama 호출 (JSON 판별용) — 짧은 결정형 응답
+// 모든 AI 응답을 한국어로 강제 (exaone 등 다국어 모델의 한자 드리프트 방지)
+var AI_KO_SYSTEM='반드시 한국어로만 답변하세요. 중국어(한자), 일본어, 영어 문장을 절대 사용하지 마세요. 제품명·브랜드명 같은 고유명사 외에는 한자를 쓰지 말고 자연스러운 한국어 문장으로만 작성하세요.';
+
 async function ollamaGenerateOnce(prompt){
   var r=await fetch(getOllamaUrl()+'/api/generate',{
     method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:STATE.ollamaModel||'exaone3.5:7.8b', prompt:prompt, stream:false, options:{temperature:0.0, num_predict:512}})
+    body:JSON.stringify({model:STATE.ollamaModel||'exaone3.5:7.8b', prompt:prompt, stream:false, system:AI_KO_SYSTEM, options:{temperature:0.0, num_predict:512}})
   });
   if(!r.ok) throw new Error('HTTP '+r.status);
   var j=await r.json();
@@ -5432,7 +5435,8 @@ async function ollamaStream(prompt, onToken, onDone, onError, opts){
   try{
     var payload={model:STATE.ollamaModel||'exaone3.5:7.8b', prompt:prompt, stream:true,
       options:{temperature: (opts.temperature!=null?opts.temperature:0.3), num_predict: opts.num_predict||1024}};
-    if(opts.system) payload.system=opts.system;
+    // 한국어 강제(한자 드리프트 방지)를 항상 포함, 호출자 system이 있으면 결합
+    payload.system=(opts.system?opts.system+'\n':'')+AI_KO_SYSTEM;
     var r=await fetch(getOllamaUrl()+'/api/generate',{
       method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify(payload)
