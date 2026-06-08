@@ -1241,7 +1241,10 @@
         <div class="section-title"><span class="drag-handle" title="드래그해서 이동">⠿</span><span class="sec-num">2</span>리뷰 지표 통합</div>
         <div class="section-subtitle">전월 대비 핵심 지표 비교</div>
       </div>
-      <button class="ai-analyze-btn" id="btn-ai-kpi" onclick="aiAnalyzeSection('kpi')">✦ AI 분석</button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="ai-analyze-btn" onclick="openKpiReviewInsight()" style="background:var(--card);color:var(--text);border:1px solid var(--border);">📄 리뷰 인사이트</button>
+        <button class="ai-analyze-btn" id="btn-ai-kpi" onclick="aiAnalyzeSection('kpi')">✦ AI 분석</button>
+      </div>
     </div>
     <!-- Syncly 스타일: 4개 차트 카드 -->
     <div class="kpi-grid">
@@ -1452,7 +1455,7 @@
       </div>
     </div>
     <div class="card">
-      <div class="card-header"><div><div class="card-title">부정 리뷰 원문 샘플</div><div class="card-sub">별점 1–2점 또는 부정 감성 분류 리뷰</div></div></div>
+      <div class="card-header"><div><div class="card-title">🆕 전월 대비 신규 키워드</div><div class="card-sub" id="newkw-sub">전월에 없던(또는 급증한) 키워드 — 클릭 시 관련 리뷰</div></div></div>
       <div id="negative-reviews-list"></div>
     </div>
   </section>
@@ -2149,11 +2152,14 @@ async function aiAnalyzeSection(key){
   } else if(key==='kpi-keywords'){
     var kw=STATE.keywords||REAL_DATA.keywords;
     var bi=(kw&&kw.by_intent)||{};
-    var praise=(bi.praise||[]).slice(0,6).map(function(x){return x.word+'('+x.count+')';}).join(', ');
-    var complaint=(bi.complaint||[]).slice(0,6).map(function(x){return x.word+'('+x.count+')';}).join(', ');
+    // 상품 필터 시 그 상품 키워드로
+    var pPraise=prod?filterKeywordsByProductName(bi.praise||[],prod.name):(bi.praise||[]);
+    var pComp=prod?filterKeywordsByProductName(bi.complaint||[],prod.name):(bi.complaint||[]);
+    var praise=pPraise.slice(0,8).map(function(x){return x.word+'('+x.count+')';}).join(', ')||'없음';
+    var complaint=pComp.slice(0,8).map(function(x){return x.word+'('+x.count+')';}).join(', ')||'없음';
     prompt=subject+' '+STATE.month+' 감성 키워드:\n'+
       '긍정 키워드: '+praise+'\n부정 키워드: '+complaint+'\n\n'+
-      '키워드 패턴의 인사이트와 마케팅·제품 개선 액션 포인트를 3~5줄로 한국어로 분석하세요.';
+      '위 키워드 데이터에 근거해 ① 고객이 가장 만족하는 점 ② 핵심 불만 ③ 마케팅·제품 개선 액션 1~2개를 한국어로 분석하세요.';
   } else if(key==='kpi-timeline'){
     var tl=(STATE.summary||REAL_DATA.summary).timeline||[];
     if(tl.length){
@@ -2175,6 +2181,9 @@ async function aiAnalyzeSection(key){
 
   if(!prompt){ btn.disabled=false; btn.textContent=origText; return; }
   if(popBody) popBody.innerHTML='데이터 분석 중... <span class="aic-cursor">▍</span>';
+  var sysPrompt='당신은 헬스케어/마사지기 브랜드 "'+(STATE.brand||'슬룸')+'"의 고객 리뷰 데이터 분석가입니다. '+
+    '반드시 제공된 수치·키워드 데이터에만 근거해 한국어로 답하세요. 데이터에 없는 사실을 지어내지 마세요. '+
+    '추상적 일반론 대신 구체적 수치와 키워드를 인용하고, **굵게**와 - 리스트로 3~5줄 이내로 간결하게 정리하세요.';
   await ollamaStream(prompt,
     function(_t, full){ if(popBody) popBody.innerHTML=mdToHtml(full)+'<span class="aic-cursor">▍</span>'; },
     function(full){
@@ -2185,7 +2194,8 @@ async function aiAnalyzeSection(key){
     function(err){
       if(popBody) popBody.innerHTML='[오류] '+escapeHtml(err.message)+'<br>Ollama가 실행 중인지 확인하세요.';
       btn.disabled=false; btn.textContent=origText;
-    }
+    },
+    {system:sysPrompt, temperature:0.2}
   );
 }
 
@@ -2334,12 +2344,12 @@ function renderKPI(){
   renderSentimentCloud();
 }
 
-// 상품 필터 적용 — by_product 기준으로 키워드 카운트를 그 상품 값으로 재계산 (전역 공용)
-function filterKeywordsByProduct(words){
-  if(!STATE.productFocus) return words||[];
+// by_product 기준으로 키워드 카운트를 특정 상품 값으로 재계산 (productName 지정)
+function filterKeywordsByProductName(words, productName){
+  if(!productName) return words||[];
   var filtered=[];
   (words||[]).forEach(function(k){
-    var bp=(k.by_product||[]).find(function(p){return p.product===STATE.productFocus;});
+    var bp=(k.by_product||[]).find(function(p){return p.product===productName;});
     if(bp && bp.count>0){
       filtered.push({
         word: k.word,
@@ -2354,6 +2364,10 @@ function filterKeywordsByProduct(words){
   });
   filtered.sort(function(a,b){return b.count-a.count;});
   return filtered;
+}
+// 상단 상품 필터(STATE.productFocus) 기준 — 전역 공용
+function filterKeywordsByProduct(words){
+  return STATE.productFocus ? filterKeywordsByProductName(words, STATE.productFocus) : (words||[]);
 }
 
 function renderSentimentCloud(){
@@ -2375,12 +2389,12 @@ function renderSentimentCloud(){
       var sz=Math.round(11+(((k.count||1)/maxC)*14));
       var span=document.createElement('span');
       span.style.cssText='font-size:'+sz+'px;font-weight:'+(sz>20?700:600)+';color:'+colors[i%colors.length]+';cursor:pointer;padding:1px 3px;opacity:0.9;line-height:1.5;transition:opacity .12s;';
-      span.textContent=(k.word||k); span.title=(k.count||'')+'건 — 클릭하여 상세 보기';
+      span.textContent=(k.word||k); span.title=(k.count||'')+'건 — 클릭하여 관련 리뷰 보기';
       span.onmouseenter=function(){this.style.opacity='1';this.style.textDecoration='underline';};
       span.onmouseleave=function(){this.style.opacity='0.9';this.style.textDecoration='none';};
-      // 클릭 → 키워드 인사이트 팝업
+      // 클릭 → 관련 리뷰 모달 (다른 키워드와 동일하게 일관)
       (function(kwObj){
-        span.onclick=function(e){ showCIPKeyword(kwObj.word, kwObj.count, type, span, e); };
+        span.onclick=function(e){ if(e){e.stopPropagation();} openKeywordReviewsModal(kwObj.word, STATE.productFocus||null, type); };
       })(k);
       el.appendChild(span);
     });
@@ -2532,6 +2546,8 @@ function renderChangeTables(){
         '<td class="r"><strong>'+fmt(p.review_count)+'</strong></td>'+
         '<td class="r" style="padding-right:12px"><span class="pct-badge new-item">new</span></td>';
     }
+    trRv.style.cursor='pointer'; trRv.title='클릭 → 리뷰 인사이트(View Insight)';
+    (function(nm){ trRv.addEventListener('click',function(){ openInsightModal(nm); }); })(p.name);
     rvB.appendChild(trRv);
     var trRt=document.createElement('tr');
     if(hasPrevRt){
@@ -2549,7 +2565,30 @@ function renderChangeTables(){
         '<td class="r"><strong>'+p.avg_rating.toFixed(2)+'</strong></td>'+
         '<td class="r" style="padding-right:12px"><span class="pct-badge new-item">new</span></td>';
     }
+    trRt.style.cursor='pointer'; trRt.title='클릭 → 리뷰 인사이트(View Insight)';
+    (function(nm){ trRt.addEventListener('click',function(){ openInsightModal(nm); }); })(p.name);
     rtB.appendChild(trRt);
+  });
+}
+
+// 섹션② 리뷰 지표 — 리뷰 인사이트 (상품 필터 시 그 상품, 아니면 브랜드 전체)
+function openKpiReviewInsight(){
+  if(STATE.productFocus){ openInsightModal(STATE.productFocus); return; }
+  var prods=STATE.products||REAL_DATA.products;
+  var rv=[]; var seen={};
+  prods.forEach(function(p){
+    (p.top_reviews||[]).concat(p.bottom_reviews||[]).forEach(function(r){
+      var id=String(r.review_id); if(seen[id]) return; seen[id]=true;
+      rv.push({name:p.name, r:{review_id:id, rating:r.rating, date:r.date, text:r.text}});
+    });
+  });
+  rv.sort(function(a,b){ return b.r.rating-a.r.rating; });
+  var k=(STATE.summary||REAL_DATA.summary).kpis;
+  scOpenInsight({
+    title:'📄 '+(STATE.brand||'슬룸')+' '+STATE.month+' 리뷰 인사이트',
+    subtitle:'총 '+fmt(k.total_reviews)+'건 · ★'+(k.avg_rating||0).toFixed(2)+' · 긍정 '+(k.positive_rate||0).toFixed(1)+'% / 부정 '+(k.negative_rate||0).toFixed(2)+'% · 대표/하위 '+rv.length+'건',
+    reviews:rv, highlight:[],
+    aiLabel:(STATE.brand||'슬룸')+' '+STATE.month+' 전체 리뷰'
   });
 }
 
@@ -2658,47 +2697,90 @@ function renderVOC(){
   renderKwBar('praise-chart',filterKeywordsByProduct(bi.praise||[]),'rgba(22,163,74,0.7)',function(word,cnt,el,evt){showCIPKeyword(word,cnt,'긍정',el,evt);});
   renderKwBar('complaint-chart',filterKeywordsByProduct(bi.complaint||[]),'rgba(220,38,38,0.7)',function(word,cnt,el,evt){showCIPKeyword(word,cnt,'부정',el,evt);});
   renderKwBar('improve-chart',filterKeywordsByProduct(bi.improvement||[]),'rgba(245,158,11,0.7)',function(word,cnt,el,evt){showCIPKeyword(word,cnt,'개선',el,evt);});
-  var neg=STATE.products||REAL_DATA.products;
-  if(STATE.productFocus) neg=neg.filter(function(p){return p.name===STATE.productFocus;});
-  var cont=$('negative-reviews-list'); if(!cont) return; cont.innerHTML='';
-  // 부정 리뷰 샘플: bottom_reviews 우선 사용, 없으면 top_reviews 별점 ≤3 fallback
-  var reviewSamples=[];
-  neg.filter(function(p){return p.review_count>=3;})
-    .sort(function(a,b){return b.negative_rate-a.negative_rate;}).slice(0,12)
-    .forEach(function(p){
-      if(p.bottom_reviews&&p.bottom_reviews.length){
-        p.bottom_reviews.slice(0,2).forEach(function(r){
-          if(!reviewSamples.some(function(s){return s.text===r.text;}))
-            reviewSamples.push({name:p.name,rating:r.rating,text:r.text,date:r.date,negRate:p.negative_rate});
-        });
-      }
+  // ── 🆕 전월 대비 신규/급증 키워드 ──
+  renderNewKeywords();
+}
+
+// 전월 키워드와 비교해 새로 등장(또는 급증)한 키워드를 표시 (클릭 → 관련 리뷰)
+function renderNewKeywords(){
+  var cont=$('negative-reviews-list'); if(!cont) return;
+  var subEl=$('newkw-sub');
+  // 전월 결정
+  var prevMonth=getPrevMonth(STATE.month);
+  if(!prevMonth){
+    cont.innerHTML='<div style="padding:16px;color:var(--text-secondary);font-size:12px;">비교할 전월 데이터가 없습니다.</div>';
+    if(subEl) subEl.textContent='전월 데이터 없음';
+    return;
+  }
+  cont.innerHTML='<div style="padding:16px;color:var(--text-secondary);font-size:12px;">전월('+prevMonth+') 대비 분석 중…</div>';
+  var brand=STATE.brand||'슬룸';
+  var base='data/'+encodeURIComponent(brand)+'/'+prevMonth;
+  fetchJSON(base+'/keywords.json').then(function(prevKw){
+    var curBi=((STATE.keywords||{}).by_intent)||{};
+    var prevBi=(prevKw&&prevKw.by_intent)||{};
+    // 전월 word→count 맵 (전 카테고리 통합)
+    var prevMap={};
+    ['praise','complaint','improvement'].forEach(function(t){
+      (prevBi[t]||[]).forEach(function(k){ prevMap[k.word]=(prevMap[k.word]||0)+(k.count||0); });
     });
-  // fallback: 데이터 부족 시 top_reviews에서 별점 ≤3
-  if(reviewSamples.length<3){
-    neg.filter(function(p){return p.review_count>=5;})
-      .forEach(function(p){
-        if(reviewSamples.length>=6) return;
-        (p.top_reviews||[]).filter(function(r){return r.rating<=3;}).slice(0,1).forEach(function(r){
-          if(!reviewSamples.some(function(s){return s.text===r.text;}))
-            reviewSamples.push({name:p.name,rating:r.rating,text:r.text,date:r.date,negRate:p.negative_rate});
-        });
+    // 현재 키워드 (상품 필터 반영) — 신규(전월 0) 또는 급증(전월 대비 +50%↑ & +5건↑)
+    var rows=[];
+    [['complaint','부정'],['improvement','개선'],['praise','긍정']].forEach(function(pair){
+      var t=pair[0], type=pair[1];
+      filterKeywordsByProduct(curBi[t]||[]).forEach(function(k){
+        var cur=k.count||0, prev=prevMap[k.word]||0;
+        var isNew = prev===0 && cur>=2;
+        var isSurge = prev>0 && cur>=prev*1.5 && (cur-prev)>=5;
+        if(isNew||isSurge){
+          rows.push({word:k.word, type:type, cur:cur, prev:prev, isNew:isNew, delta:cur-prev});
+        }
       });
-  }
-  reviewSamples.slice(0,6).forEach(function(r){
-    var starsHtml=''; for(var i=1;i<=5;i++) starsHtml+=i<=r.rating?'★':'☆';
-    var div=document.createElement('div'); div.className='review-card';
-    div.title='클릭하면 전체 리뷰 보기';
-    div.innerHTML='<div class="review-meta"><span class="review-prod">'+fmtS(r.name)+'</span>'+
-      '<span class="review-stars">'+starsHtml+'</span>'+
-      '<span style="font-size:10px;color:var(--text-secondary);margin-left:4px;">'+r.date+'</span>'+
-      '<span class="pct-badge dn" style="margin-left:auto;font-size:10px;">부정률 '+r.negRate.toFixed(1)+'%</span></div>'+
-      '<div class="review-text">'+(r.text||'리뷰 원문 없음')+'</div>';
-    (function(rv){ div.addEventListener('click',function(){ openReviewModal(rv.name,rv.rating,rv.date,rv.text,rv.negRate); }); })(r);
-    cont.appendChild(div);
+    });
+    // 신규 우선 + 증가량 큰 순
+    rows.sort(function(a,b){ if(a.isNew!==b.isNew) return a.isNew?-1:1; return b.delta-a.delta; });
+    rows=rows.slice(0,12);
+    if(subEl) subEl.textContent='전월('+prevMonth+') 대비 신규 '+rows.filter(function(r){return r.isNew;}).length+'건 · 급증 '+rows.filter(function(r){return !r.isNew;}).length+'건'+(STATE.productFocus?' · 🛒 '+(fmtS(STATE.productFocus)||STATE.productFocus):'');
+    if(rows.length===0){
+      cont.innerHTML='<div style="padding:16px;color:var(--text-secondary);font-size:12px;">전월 대비 새롭게 눈에 띄는 키워드가 없습니다.</div>';
+      return;
+    }
+    var typeColor={'긍정':'#16a34a','부정':'#dc2626','개선':'#d97706'};
+    cont.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:8px;">'+rows.map(function(r){
+      var badge=r.isNew?'<span style="background:#dc2626;color:#fff;font-size:9px;font-weight:800;padding:1px 6px;border-radius:8px;margin-left:6px;">NEW</span>'
+                       :'<span style="background:rgba(217,119,6,.15);color:#b45309;font-size:9px;font-weight:800;padding:1px 6px;border-radius:8px;margin-left:6px;">▲'+r.delta+'</span>';
+      var meta=r.isNew?('전월 0 → '+r.cur+'건'):('전월 '+r.prev+' → '+r.cur+'건');
+      var safeWord=r.word.replace(/'/g,"\\'");
+      return '<div class="nkw-chip" onclick="openKeywordReviewsModal(\''+safeWord+'\','+(STATE.productFocus?'\''+STATE.productFocus.replace(/'/g,"\\'")+'\'':'null')+',\''+r.type+'\')" '+
+        'style="cursor:pointer;border:1px solid var(--border);border-left:3px solid '+typeColor[r.type]+';border-radius:9px;padding:8px 11px;background:var(--surface);min-width:160px;transition:background .12s;" '+
+        'onmouseover="this.style.background=\'var(--surface-hover)\'" onmouseout="this.style.background=\'var(--surface)\'" '+
+        'title="클릭 → '+escapeHtml(r.word)+' 관련 리뷰">'+
+        '<div style="font-size:12.5px;font-weight:700;color:var(--text);">'+escapeHtml(r.word)+badge+'</div>'+
+        '<div style="font-size:10.5px;color:var(--text-secondary);margin-top:3px;">'+r.type+' · '+meta+'</div>'+
+      '</div>';
+    }).join('')+'</div>';
+  }).catch(function(){
+    cont.innerHTML='<div style="padding:16px;color:var(--text-secondary);font-size:12px;">전월 키워드 데이터를 불러오지 못했습니다.</div>';
+    if(subEl) subEl.textContent='전월 데이터 로드 실패';
   });
-  if(!reviewSamples.length){
-    cont.innerHTML='<div style="padding:16px;color:var(--text-secondary);font-size:12px;">부정 리뷰 샘플이 없습니다.</div>';
+}
+
+// 'YYYY-MM' 한 달 전 (index에 존재하는 경우만)
+function getPrevMonth(month){
+  if(!month) return null;
+  var months=[];
+  if(STATE.index&&STATE.index.brands){
+    var b=Object.values(STATE.index.brands).find(function(x){return x.display_name===STATE.brand;});
+    if(b&&b.months) months=[].concat(b.months).sort();
   }
+  // index 우선: 현재 월 바로 앞
+  var idx=months.indexOf(month);
+  if(idx>0) return months[idx-1];
+  // 폴백: 산술적 한 달 전
+  var parts=month.split('-'); if(parts.length!==2) return null;
+  var y=parseInt(parts[0],10), m=parseInt(parts[1],10);
+  m-=1; if(m<1){m=12;y-=1;}
+  var cand=y+'-'+(m<10?'0'+m:m);
+  return months.length===0?cand:(months.indexOf(cand)>=0?cand:null);
 }
 
 function kwCloud(cid,kws,cls){
@@ -3187,7 +3269,10 @@ function imRenderInsightCards(p){
   cards.innerHTML='';
   var kw=STATE.keywords||REAL_DATA.keywords||{};
   var bi=kw.by_intent||{};
-  var praise=bi.praise||[], complaint=bi.complaint||[], improvement=bi.improvement||[];
+  // 이 상품의 by_product 기준으로 키워드 카운트 재계산 → 상품마다 다른 인사이트
+  var praise=filterKeywordsByProductName(bi.praise||[], p.name);
+  var complaint=filterKeywordsByProductName(bi.complaint||[], p.name);
+  var improvement=filterKeywordsByProductName(bi.improvement||[], p.name);
 
   // 카드 1: 긍정 인사이트
   cards.appendChild(imBuildCard({
@@ -3286,6 +3371,26 @@ function imOpenKwReviews(word, cls){
   var typeKr = cls==='praise'?'긍정':cls==='complaint'?'부정':'개선';
   var pname = (typeof IM_CURRENT_PRODUCT!=='undefined' && IM_CURRENT_PRODUCT) ? IM_CURRENT_PRODUCT.name : null;
   openKeywordReviewsModal(word, pname, typeKr);
+}
+
+// Taxonomy 인사이트 카드 — Topic 클릭 시 해당 분류 리뷰를 모달로 표시 (이동 X)
+function imOpenTopicReviews(taxId, topicId){
+  var tax=(typeof TAXONOMIES!=='undefined'?TAXONOMIES:[]).find(function(t){return t.id===taxId;});
+  if(!tax) return;
+  var tp=(tax.topics||[]).find(function(x){return x.id===topicId;});
+  if(!tp) return;
+  var p=(typeof IM_CURRENT_PRODUCT!=='undefined')?IM_CURRENT_PRODUCT:null;
+  var all=txGetAllReviews();
+  if(p) all=all.filter(function(r){return r.product===p.name;});
+  var matched=txMatchTopic(tp, all, tax);
+  var reviews=matched.map(function(r){ return {name:r.product||(p?p.name:''), r:{review_id:r.review_id, rating:r.rating, date:r.date, text:r.text}}; });
+  scOpenInsight({
+    title:'📂 "'+escapeHtml(tp.name)+'"'+(p?' — <span style="color:var(--accent);">'+escapeHtml(fmtS(p.name)||p.name)+'</span>':''),
+    subtitle:'Taxonomy "'+escapeHtml(tax.name)+'" 분류 · '+reviews.length+'건',
+    reviews:reviews,
+    highlight:(tp.keywords||[]).slice(0,8),
+    aiLabel:'"'+tp.name+'" 분류 리뷰'+(p?' ('+(fmtS(p.name)||p.name)+')':'')
+  });
 }
 
 function imBuildCard(opts){
@@ -3474,7 +3579,8 @@ function imBuildTaxonomyCard(p){
       var pct=(tm.count/prodReviews.length*100).toFixed(0);
       var safeTaxId=tax.id.replace(/'/g,"\\'");
       var safeTopicId=tm.topic.id.replace(/'/g,"\\'");
-      return '<li style="cursor:pointer;" onclick="closeInsightModal();showTaxonomyPage();setTimeout(function(){txOpenTaxonomy(\''+safeTaxId+'\');setTimeout(function(){txSelectTopic(\''+safeTopicId+'\');},100);},100);" title="클릭하여 Taxonomy로 이동">'+
+      // 클릭 → 다른 인사이트 카드처럼 해당 분류 리뷰를 모달로 표시
+      return '<li class="im-kw-li" style="cursor:pointer;" onclick="imOpenTopicReviews(\''+safeTaxId+'\',\''+safeTopicId+'\')" title="클릭하여 이 분류의 리뷰 보기">'+
         '<span style="font-weight:600;color:var(--text);">'+escapeHtml(tm.topic.name)+'</span>'+
         ' <span class="im-cnt">'+tm.count+'건 '+pct+'%</span>'+
       '</li>';
@@ -3496,7 +3602,7 @@ function imBuildTaxonomyCard(p){
       '<span class="im-card-label">TAXONOMY</span>'+
     '</div>'+
     '<div class="im-card-question">이 상품은 어떤 분류 카테고리에 해당하나요?</div>'+
-    '<div class="im-card-summary">Taxonomy의 Topic별로 이 상품의 리뷰가 매칭된 분포를 보여줍니다. 클릭하면 해당 Taxonomy로 이동합니다.</div>'+
+    '<div class="im-card-summary">Taxonomy의 Topic별로 이 상품의 리뷰가 매칭된 분포입니다. 항목을 클릭하면 해당 분류의 리뷰를 확인할 수 있습니다.</div>'+
     blocksHtml+
     '<div class="im-card-footer">'+
       '<span class="im-card-ts">Updated on '+ts+'</span>'+
@@ -5321,11 +5427,15 @@ function aicBuildContext(){
 // onToken(text): 토큰 단위 콜백
 // onDone(fullText): 완료 콜백
 // onError(err): 에러 콜백
-async function ollamaStream(prompt, onToken, onDone, onError){
+async function ollamaStream(prompt, onToken, onDone, onError, opts){
+  opts=opts||{};
   try{
+    var payload={model:STATE.ollamaModel||'exaone3.5:7.8b', prompt:prompt, stream:true,
+      options:{temperature: (opts.temperature!=null?opts.temperature:0.3), num_predict: opts.num_predict||1024}};
+    if(opts.system) payload.system=opts.system;
     var r=await fetch(getOllamaUrl()+'/api/generate',{
       method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:STATE.ollamaModel||'exaone3.5:7.8b', prompt:prompt, stream:true})
+      body:JSON.stringify(payload)
     });
     if(!r.ok){ onError(new Error('HTTP '+r.status)); return; }
     var reader=r.body.getReader();
@@ -5500,31 +5610,37 @@ function renderPVOCKanban(){
     return null;
   }
 
-  // 카드 정의: type 명시 (긍정/부정/개선) — 클릭 시 리뷰 모달 호출용
+  // 구매 여정(Purchase Journey) 관점 카드 — 섹션⑥(제품 키워드 TOP)과 중복되지 않도록
+  // 긍/부정/개선 키워드를 통합 풀에서 '구매 경험' 테마별로 필터링
+  var allKw=(praise||[]).concat(complaint||[]).concat(improvement||[]);
+  function pj(re){
+    return allKw.filter(function(k){return re.test(k.word||'');})
+      .sort(function(a,b){return (b.count||0)-(a.count||0);}).slice(0,7);
+  }
   var cards=[
-    {cat:'pre', catLbl:'구매 전 경험', type:'긍정', title:'주요 구매 동기 & 광고 반응',
-     data: praise.filter(function(k){var w=k.word||'';return /협찬|추천|광고|영상|선물|효도|구독|할인/.test(w);}).slice(0,6),
-     fallback: [{word:'유튜버 협찬 영상 시청 후 구매 다수',count:34},{word:'목·허리 통증 해결 목적의 구매',count:28},{word:'부모님 효도 선물 니즈',count:22},{word:'기존 제품 고장 → 재구매 패턴',count:19}]
+    {cat:'pre', catLbl:'구매 전 경험', type:'긍정', title:'구매 동기 · 광고 반응',
+     data: pj(/협찬|추천|광고|영상|유튜|선물|효도|통증|재구매|구독|할인|이벤트|계기|후기/),
+     fallback: [{word:'유튜버 협찬 영상 시청 후 구매',count:34},{word:'통증 해결 목적 구매',count:28},{word:'효도 선물 니즈',count:22}]
     },
-    {cat:'pre', catLbl:'구매 전 경험', type:'긍정', title:'상세페이지 & 상담 반응',
-     data: praise.filter(function(k){var w=k.word||'';return /상세|구조|설명|에어백|기능|구성|어댑터/.test(w);}).slice(0,6),
-     fallback: [{word:'에어백 구조 이해 후 신뢰 형성',count:18},{word:'구성품 확인 필요 — 누락 문의 발생',count:7},{word:'어댑터·케이블 별매 상세 명시 필요',count:5},{word:'기능 상세 설명이 구매 전환 기여',count:14}]
+    {cat:'pre', catLbl:'구매 전 경험', type:'긍정', title:'정보 탐색 · 상세/상담',
+     data: pj(/상세|구조|설명|에어백|기능|구성|어댑터|스펙|상담|문의|사이즈/),
+     fallback: [{word:'에어백 구조 이해 후 신뢰',count:18},{word:'구성품 확인 문의',count:7},{word:'상세 설명이 구매 전환 기여',count:14}]
     },
-    {cat:'post', catLbl:'구매 후 경험', type:'긍정', title:'배송 / CS / 반품',
-     data: praise.filter(function(k){var w=k.word||'';return /배송|cs|as|반품|환불|교환|연결/i.test(w);}).slice(0,6),
-     fallback: [{word:'빠른 배송 만족도 높음 — 당일 출고',count:72},{word:'AS 대응 우수 — 신제품 교환 칭찬',count:18},{word:'반품 30일 제한 → 불만 핵심 포인트',count:8},{word:'CS 채널 연결 용이성 개선 필요',count:5}]
+    {cat:'post', catLbl:'구매 후 경험', type:'긍정', title:'배송 · 개봉 경험',
+     data: pj(/배송|당일|출고|포장|개봉|빠른|도착|택배/),
+     fallback: [{word:'빠른 배송 — 당일 출고',count:72},{word:'포장 상태 만족',count:9}]
     },
-    {cat:'exp', catLbl:'사용 경험', type:'긍정', title:'긍정 키워드 Top',
-     data: praise.slice(0,7),
-     fallback: [{word:'온열 기능 만족',count:362},{word:'에어백 마사지 좋음',count:356},{word:'효과 체감 우수',count:329}]
+    {cat:'post', catLbl:'구매 후 경험', type:'부정', title:'기대 대비 실사용 반응',
+     data: pj(/기대|실망|광고|영상|다르|생각보다|과장|예상|막상|체감/),
+     fallback: [{word:'광고 대비 체감 차이',count:11},{word:'기대보다 약한 강도',count:8}]
     },
-    {cat:'issue', catLbl:'개선 영역', type:'부정', title:'주요 불만 & 페인 포인트',
-     data: complaint.slice(0,7),
-     fallback: [{word:'소음 / 시끄러움',count:13},{word:'반품 불가 정책',count:9},{word:'진동 두룸',count:6}]
+    {cat:'post', catLbl:'구매 후 경험', type:'부정', title:'CS · AS · 반품 대응',
+     data: pj(/cs|as|수리|교환|환불|반품|대응|연결|상담|불가|정책|친절/i),
+     fallback: [{word:'반품 30일 제한 불만',count:8},{word:'CS 연결 용이성 개선 필요',count:5}]
     },
-    {cat:'issue', catLbl:'개선 영역', type:'개선', title:'사용자 요청 사항',
-     data: improvement.slice(0,7),
-     fallback: [{word:'강도 강화 요청',count:81},{word:'경량화',count:15},{word:'소음 개선',count:9}]
+    {cat:'post', catLbl:'구매 후 경험', type:'긍정', title:'재구매 · 추천 의향',
+     data: pj(/재구매|추천|선물|효도|또|다시|주변|지인|만족/),
+     fallback: [{word:'재구매 의향 높음',count:19},{word:'주변 추천 의향',count:14}]
     }
   ];
 
@@ -6304,7 +6420,7 @@ function scOpenInsight(cfg){
   if(!modal){
     modal=document.createElement('div');
     modal.id='sc-insight-modal';
-    modal.style.cssText='display:none;position:fixed;inset:0;z-index:790;background:rgba(0,0,0,.55);align-items:flex-start;justify-content:center;padding-top:60px;';
+    modal.style.cssText='display:none;position:fixed;inset:0;z-index:860;background:rgba(0,0,0,.55);align-items:flex-start;justify-content:center;padding-top:60px;';
     modal.onclick=function(e){ if(e.target===modal) closeScInsight(); };
     modal.innerHTML='<div style="background:var(--card);border-radius:14px;width:100%;max-width:760px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.22);">'+
       '<div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">'+
