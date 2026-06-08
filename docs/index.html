@@ -1942,19 +1942,48 @@ function closeAIPopup(){
   AI_POPUP_KEY=null;
 }
 
+// 대시보드 전체 데이터를 텍스트 컨텍스트로 — 추가 질문/AI가 실제 수치에 근거해 답하도록
+function buildDashboardContext(){
+  var lines=[];
+  var brand=STATE.brand||'슬룸', month=STATE.month;
+  var k=(STATE.summary||REAL_DATA.summary).kpis||{};
+  lines.push('['+brand+' '+month+' 전체 지표]');
+  lines.push('총 리뷰 '+fmt(k.total_reviews||0)+'건, 평균 별점 ★'+(k.avg_rating||0)+', 긍정 '+(k.positive_rate||0).toFixed(1)+'% / 부정 '+(k.negative_rate||0).toFixed(2)+'%');
+  if(k.mom_review_change!=null) lines.push('전월 대비 전체 리뷰 '+(k.mom_review_change>=0?'+':'')+k.mom_review_change+'건 ('+(k.mom_review_change_pct||0)+'%)');
+  var prods=(STATE.products||REAL_DATA.products).slice();
+  var withPrev=prods.filter(function(p){return p.prev_review_count!=null;});
+  if(withPrev.length){
+    var byChange=withPrev.map(function(p){return {name:p.name, cur:p.review_count, prev:p.prev_review_count, d:p.review_count-p.prev_review_count, rt:p.avg_rating, prt:p.prev_avg_rating};}).sort(function(a,b){return a.d-b.d;});
+    lines.push('\n[상품별 전월 대비 리뷰 수 변화 — 감소 큰 순]');
+    byChange.slice(0,20).forEach(function(p){ lines.push('- '+(fmtS(p.name)||p.name)+': 전월 '+p.prev+' → 현재 '+p.cur+'건 ('+(p.d>=0?'+':'')+p.d+'건), 별점 '+(p.prt!=null?'★'+p.prt.toFixed(2)+'→':'')+'★'+p.rt.toFixed(2)); });
+  } else {
+    lines.push('\n[상품별 리뷰 수 (현재, 전월 데이터 없음)]');
+    prods.slice().sort(function(a,b){return b.review_count-a.review_count;}).slice(0,20).forEach(function(p){ lines.push('- '+(fmtS(p.name)||p.name)+': '+p.review_count+'건, ★'+p.avg_rating.toFixed(2)+', 부정 '+(p.negative_rate||0).toFixed(1)+'%'); });
+  }
+  var bi=((STATE.keywords||{}).by_intent)||{};
+  if((bi.praise||[]).length) lines.push('\n[긍정 키워드] '+bi.praise.slice(0,10).map(function(x){return x.word+'('+x.count+')';}).join(', '));
+  if((bi.complaint||[]).length) lines.push('[부정 키워드] '+bi.complaint.slice(0,10).map(function(x){return x.word+'('+x.count+')';}).join(', '));
+  if((bi.improvement||[]).length) lines.push('[개선 요청] '+bi.improvement.slice(0,10).map(function(x){return x.word+'('+x.count+')';}).join(', '));
+  if(STATE.productFocus) lines.push('\n[현재 상품 필터] '+STATE.productFocus+' (이 상품 기준으로 답하세요)');
+  return lines.join('\n');
+}
+
 async function aiPopupSend(){
   var inputEl=$('ai-popup-input'), ansEl=$('ai-popup-answer');
   if(!inputEl||!ansEl) return;
   var q=inputEl.value.trim(); if(!q){ alert('질문을 입력해주세요.'); return; }
   if($('ollama-dot').className.indexOf('online')<0){ alert('Ollama 오프라인'); return; }
   var prev=($('ai-popup-body')||{}).textContent||'';
-  ansEl.textContent='답변 생성 중...'; ansEl.style.display='block';
-  var prompt='[기존 분석]\n'+prev.slice(0,600)+'\n\n[추가 질문]\n'+q+'\n\n한국어로 간결하게 답변하세요.';
-  try{
-    var r=await fetch(getOllamaUrl()+'/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:STATE.ollamaModel,prompt:prompt,stream:false}),signal:AbortSignal.timeout(60000)});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    var d=await r.json(); ansEl.textContent=d.response||'응답 없음';
-  }catch(e){ ansEl.textContent='[오류] '+e.message; }
+  ansEl.style.display='block'; ansEl.innerHTML='답변 생성 중... <span class="aic-cursor">▍</span>';
+  var ctx=buildDashboardContext();
+  var prompt='[대시보드 데이터]\n'+ctx+'\n\n[직전 분석]\n'+prev.slice(0,500)+'\n\n[질문] '+q+'\n\n'+
+    '위 [대시보드 데이터]에 근거해 한국어로 답하세요. 데이터에 있는 구체적 상품명·수치를 인용하고, 데이터로 알 수 없는 것만 "데이터로 확인 불가"라고 답하세요. 추측성 일반론은 금지.';
+  await ollamaStream(prompt,
+    function(_t,full){ ansEl.innerHTML=mdToHtml(full)+'<span class="aic-cursor">▍</span>'; },
+    function(full){ ansEl.innerHTML=mdToHtml(full); },
+    function(err){ ansEl.textContent='[오류] '+err.message; },
+    {system:'당신은 '+(STATE.brand||'슬룸')+' 리뷰 데이터 분석가입니다. 제공된 데이터 표에만 근거해 정확히 답하세요.', temperature:0.15}
+  );
 }
 
 // ── 카드 너비 토글 ──
