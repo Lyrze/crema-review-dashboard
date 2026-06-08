@@ -3382,18 +3382,31 @@ function imRenderTopKwChart(p){
   if(!canvas) return;
   var kw=STATE.keywords||REAL_DATA.keywords||{};
   var bi=kw.by_intent||{};
-  var praise=(bi.praise||[]).slice(0,5).map(function(k){return {word:k.word,count:k.count,type:'pos'};});
-  var complaint=(bi.complaint||[]).slice(0,5).map(function(k){return {word:k.word,count:k.count,type:'neg'};});
-  var improve=(bi.improvement||[]).slice(0,5).map(function(k){return {word:k.word,count:k.count,type:'imp'};});
+  // 이 상품의 by_product 기준 키워드 (상품마다 다른 TOP 키워드)
+  var fPraise=filterKeywordsByProductName(bi.praise||[], p.name);
+  var fComp=filterKeywordsByProductName(bi.complaint||[], p.name);
+  var fImp=filterKeywordsByProductName(bi.improvement||[], p.name);
+  var praise=fPraise.slice(0,10).map(function(k){return {word:k.word,count:k.count,type:'pos'};});
+  var complaint=fComp.slice(0,10).map(function(k){return {word:k.word,count:k.count,type:'neg'};});
+  var improve=fImp.slice(0,10).map(function(k){return {word:k.word,count:k.count,type:'imp'};});
   var all=praise.concat(complaint).concat(improve).sort(function(a,b){return b.count-a.count;}).slice(0,15);
   var labels=all.map(function(k){return k.word;});
   var data=all.map(function(k){return k.count;});
   var colors=all.map(function(k){return k.type==='pos'?'rgba(22,163,74,.75)':k.type==='neg'?'rgba(220,38,38,.75)':'rgba(245,158,11,.75)';});
   if(canvas.chart) canvas.chart.destroy();
+  if(all.length===0){
+    var cx=canvas.getContext('2d'); cx.clearRect(0,0,canvas.width,canvas.height);
+    cx.fillStyle=getComputedStyle(document.body).color; cx.font='12px sans-serif'; cx.textAlign='center';
+    cx.fillText('이 상품에 매칭된 키워드가 없습니다', canvas.width/2, 40);
+    return;
+  }
+  var pname=p.name;
   canvas.chart=new Chart(canvas.getContext('2d'),{
     type:'bar',
     data:{labels:labels,datasets:[{data:data,backgroundColor:colors,borderRadius:4,maxBarThickness:16}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.parsed.x+'건';}}}},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      onClick:function(evt,els){ if(els.length){ var it=all[els[0].index]; var ty=it.type==='pos'?'긍정':it.type==='neg'?'부정':'개선'; openKeywordReviewsModal(it.word, pname, ty); } },
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.parsed.x+'건';}}}},
       scales:{x:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{font:{size:10}},grid:{display:false}}}}
   });
 }
