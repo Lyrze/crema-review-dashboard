@@ -1250,7 +1250,7 @@
     <div class="kpi-grid">
       <div class="card" data-key="kpi-reviews">
         <div class="card-header">
-          <span class="card-title">전월 대비 리뷰 수</span>
+          <span class="card-title kpi-insight-link" onclick="openKpiMetricInsight('reviews')" title="클릭 → 전월 대비 증감 상품 인사이트" style="cursor:pointer;">전월 대비 리뷰 수 🔎</span>
           <div style="display:flex;align-items:center;gap:6px;">
             <span id="kpi-total-delta" class="delta neu">—</span>
             <button class="ai-card-btn" id="btn-ai-kpi-reviews" onclick="aiAnalyzeSection('kpi-reviews')">✦</button>
@@ -1261,7 +1261,7 @@
       </div>
       <div class="card" data-key="kpi-sentiment">
         <div class="card-header">
-          <span class="card-title">감성 분포</span>
+          <span class="card-title kpi-insight-link" onclick="openKpiMetricInsight('sentiment')" title="클릭 → 전월 대비 긍/부정 키워드 증감 인사이트" style="cursor:pointer;">감성 분포 🔎</span>
           <button class="ai-card-btn" id="btn-ai-kpi-sentiment" onclick="aiAnalyzeSection('kpi-sentiment')">✦</button>
         </div>
         <div style="position:relative;height:170px;"><canvas id="sentiment-chart" role="img" aria-label="감성 분포 도넛"></canvas></div>
@@ -1269,7 +1269,7 @@
       </div>
       <div class="card" data-key="kpi-rating">
         <div class="card-header">
-          <span class="card-title">평균 별점</span>
+          <span class="card-title kpi-insight-link" onclick="openKpiMetricInsight('rating')" title="클릭 → 전월 대비 별점 증감 상품 인사이트" style="cursor:pointer;">평균 별점 🔎</span>
           <div style="display:flex;align-items:center;gap:6px;">
             <span id="kpi-rating-delta" class="delta neu">—</span>
             <button class="ai-card-btn" id="btn-ai-kpi-rating" onclick="aiAnalyzeSection('kpi-rating')">✦</button>
@@ -2209,6 +2209,8 @@ async function aiAnalyzeSection(key){
   }
 
   if(!prompt){ btn.disabled=false; btn.textContent=origText; return; }
+  // 모든 섹션 AI에 대시보드 전체 데이터 컨텍스트 동봉 (추가 질문 외 상황도 데이터 기반)
+  prompt += '\n\n[참고 — 대시보드 전체 데이터]\n'+buildDashboardContext();
   if(popBody) popBody.innerHTML='데이터 분석 중... <span class="aic-cursor">▍</span>';
   var sysPrompt='당신은 헬스케어/마사지기 브랜드 "'+(STATE.brand||'슬룸')+'"의 고객 리뷰 데이터 분석가입니다. '+
     '반드시 제공된 수치·키워드 데이터에만 근거해 한국어로 답하세요. 데이터에 없는 사실을 지어내지 마세요. '+
@@ -2619,6 +2621,110 @@ function openKpiReviewInsight(){
     reviews:rv, highlight:[],
     aiLabel:(STATE.brand||'슬룸')+' '+STATE.month+' 전체 리뷰'
   });
+}
+
+// ── 섹션② KPI 항목별 인사이트 (전월 대비 증감 내역) ──
+var KIM_CTX={metric:null, summary:''};
+
+function kimEnsureModal(){
+  var modal=$('kpi-insight-modal');
+  if(modal) return modal;
+  modal=document.createElement('div'); modal.id='kpi-insight-modal';
+  modal.style.cssText='display:none;position:fixed;inset:0;z-index:855;background:rgba(0,0,0,.55);align-items:flex-start;justify-content:center;padding-top:60px;';
+  modal.onclick=function(e){ if(e.target===modal) modal.style.display='none'; };
+  modal.innerHTML='<div style="background:var(--card);border-radius:14px;width:100%;max-width:720px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.22);">'+
+    '<div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">'+
+      '<div style="flex:1;min-width:0;"><div id="kim-title" style="font-size:15px;font-weight:800;color:var(--text);"></div><div id="kim-subtitle" style="font-size:11.5px;color:var(--text-secondary);margin-top:4px;"></div></div>'+
+      '<div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">'+
+        '<button id="kim-ai-btn" onclick="kimAskAI()" style="padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;">✦ AI 요약</button>'+
+        '<button onclick="document.getElementById(\'kpi-insight-modal\').style.display=\'none\'" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--text-secondary);padding:0;line-height:1;">×</button>'+
+      '</div>'+
+    '</div>'+
+    '<div id="kim-ai-result" style="display:none;padding:14px 22px;border-bottom:1px solid var(--border);background:rgba(91,94,244,.04);font-size:12.5px;line-height:1.7;color:var(--text);"></div>'+
+    '<div id="kim-body" style="flex:1;overflow-y:auto;padding:16px 22px;"></div>'+
+  '</div>';
+  document.body.appendChild(modal);
+  return modal;
+}
+
+function kimCol(title,color,items,rowFn){
+  return '<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:800;color:'+color+';margin-bottom:8px;">'+title+'</div>'+
+    (items.length?items.map(rowFn).join(''):'<div style="font-size:11.5px;color:var(--text-secondary);padding:8px 0;">없음</div>')+'</div>';
+}
+
+function openKpiMetricInsight(metric){
+  var modal=kimEnsureModal();
+  modal.style.display='flex';
+  $('kim-ai-result').style.display='none';
+  var titleEl=$('kim-title'), subEl=$('kim-subtitle'), bodyEl=$('kim-body');
+  var prods=(STATE.products||REAL_DATA.products);
+  function prodRow(x){
+    var dColor=x.d>0?'#16a34a':x.d<0?'#dc2626':'var(--text-secondary)';
+    var safe=x.name.replace(/'/g,"\\'");
+    return '<div onclick="openInsightModal(\''+safe+'\')" title="클릭 → 리뷰 인사이트" style="cursor:pointer;display:flex;justify-content:space-between;gap:8px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;background:var(--surface);">'+
+      '<span style="font-size:12px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:52%;">'+escapeHtml(fmtS(x.name)||x.name)+'</span>'+
+      '<span style="font-size:11px;color:var(--text-secondary);">'+x.detail+' <strong style="color:'+dColor+';">'+x.dtxt+'</strong></span></div>';
+  }
+  if(metric==='reviews'){
+    titleEl.textContent='📊 전월 대비 리뷰 수 변화';
+    var wp=prods.filter(function(p){return p.prev_review_count!=null;});
+    var arr=wp.map(function(p){var d=p.review_count-p.prev_review_count;return {name:p.name,d:d,detail:p.prev_review_count+'→'+p.review_count,dtxt:(d>=0?'+':'')+d+'건'};});
+    var inc=arr.filter(function(x){return x.d>0;}).sort(function(a,b){return b.d-a.d;});
+    var dec=arr.filter(function(x){return x.d<0;}).sort(function(a,b){return a.d-b.d;});
+    if(!arr.length){ bodyEl.innerHTML='<div style="color:var(--text-secondary);font-size:12px;padding:10px;">전월 데이터가 없습니다.</div>'; subEl.textContent=''; KIM_CTX={metric:metric,summary:'전월 데이터 없음'}; return; }
+    subEl.textContent='증가 '+inc.length+'개 · 감소 '+dec.length+'개 — 상품 클릭 시 리뷰 인사이트';
+    bodyEl.innerHTML='<div style="display:flex;gap:16px;">'+kimCol('📈 리뷰 증가 ('+inc.length+')','#16a34a',inc,prodRow)+kimCol('📉 리뷰 감소 ('+dec.length+')','#dc2626',dec,prodRow)+'</div>';
+    KIM_CTX={metric:'reviews',summary:'리뷰 증가 상위: '+inc.slice(0,6).map(function(x){return (fmtS(x.name)||x.name)+'('+x.dtxt+')';}).join(', ')+' / 감소 상위: '+dec.slice(0,6).map(function(x){return (fmtS(x.name)||x.name)+'('+x.dtxt+')';}).join(', ')};
+  } else if(metric==='rating'){
+    titleEl.textContent='📊 전월 대비 평균 별점 변화';
+    var wpr=prods.filter(function(p){return p.prev_avg_rating!=null;});
+    var arr2=wpr.map(function(p){var d=p.avg_rating-p.prev_avg_rating;return {name:p.name,d:d,detail:'★'+p.prev_avg_rating.toFixed(2)+'→'+p.avg_rating.toFixed(2),dtxt:(d>=0?'+':'')+d.toFixed(2)};});
+    var incR=arr2.filter(function(x){return x.d>0.005;}).sort(function(a,b){return b.d-a.d;});
+    var decR=arr2.filter(function(x){return x.d<-0.005;}).sort(function(a,b){return a.d-b.d;});
+    if(!arr2.length){ bodyEl.innerHTML='<div style="color:var(--text-secondary);font-size:12px;padding:10px;">전월 데이터가 없습니다.</div>'; subEl.textContent=''; KIM_CTX={metric:metric,summary:'전월 데이터 없음'}; return; }
+    subEl.textContent='상승 '+incR.length+'개 · 하락 '+decR.length+'개 — 상품 클릭 시 리뷰 인사이트';
+    bodyEl.innerHTML='<div style="display:flex;gap:16px;">'+kimCol('📈 별점 상승 ('+incR.length+')','#16a34a',incR,prodRow)+kimCol('📉 별점 하락 ('+decR.length+')','#dc2626',decR,prodRow)+'</div>';
+    KIM_CTX={metric:'rating',summary:'별점 상승: '+incR.slice(0,6).map(function(x){return (fmtS(x.name)||x.name)+'('+x.dtxt+')';}).join(', ')+' / 하락: '+decR.slice(0,6).map(function(x){return (fmtS(x.name)||x.name)+'('+x.dtxt+')';}).join(', ')};
+  } else if(metric==='sentiment'){
+    titleEl.textContent='📊 전월 대비 감성 키워드 변화';
+    subEl.textContent='전월 비교 분석 중…'; bodyEl.innerHTML='<div style="color:var(--text-secondary);font-size:12px;padding:10px;">로딩 중…</div>';
+    var prevMonth=getPrevMonth(STATE.month);
+    if(!prevMonth){ bodyEl.innerHTML='<div style="color:var(--text-secondary);font-size:12px;padding:10px;">비교할 전월 데이터가 없습니다.</div>'; subEl.textContent=''; KIM_CTX={metric:metric,summary:'전월 데이터 없음'}; return; }
+    fetchJSON('data/'+encodeURIComponent(STATE.brand||'슬룸')+'/'+prevMonth+'/keywords.json').then(function(prevKw){
+      var curBi=((STATE.keywords||{}).by_intent)||{}, prevBi=(prevKw&&prevKw.by_intent)||{};
+      function mapOf(){ var m={}; for(var i=0;i<arguments.length;i++){ (arguments[i]||[]).forEach(function(k){m[k.word]=(m[k.word]||0)+(k.count||0);}); } return m; }
+      var pPos=mapOf(prevBi.praise), pNeg=mapOf(prevBi.complaint, prevBi.improvement);
+      function diff(curArr, prevMap, type){ return (curArr||[]).map(function(k){var prev=prevMap[k.word]||0; return {word:k.word,cur:k.count||0,prev:prev,d:(k.count||0)-prev,type:type};}); }
+      var posD=diff(curBi.praise, pPos, '긍정');
+      var negD=(curBi.complaint||[]).concat(curBi.improvement||[]).map(function(k){var prev=pNeg[k.word]||0; return {word:k.word,cur:k.count||0,prev:prev,d:(k.count||0)-prev,type:'부정'};});
+      var posInc=posD.filter(function(x){return x.d>0;}).sort(function(a,b){return b.d-a.d;}).slice(0,8);
+      var posDec=posD.filter(function(x){return x.d<0;}).sort(function(a,b){return a.d-b.d;}).slice(0,8);
+      var negInc=negD.filter(function(x){return x.d>0;}).sort(function(a,b){return b.d-a.d;}).slice(0,8);
+      var negDec=negD.filter(function(x){return x.d<0;}).sort(function(a,b){return a.d-b.d;}).slice(0,8);
+      function kwRow(x){ var dColor=x.d>0?(x.type==='부정'?'#dc2626':'#16a34a'):'var(--text-secondary)'; var safe=x.word.replace(/'/g,"\\'"); return '<div onclick="openKeywordReviewsModal(\''+safe+'\','+(STATE.productFocus?'\''+STATE.productFocus.replace(/'/g,"\\'")+'\'':'null')+',\''+x.type+'\')" title="클릭 → 관련 리뷰" style="cursor:pointer;display:flex;justify-content:space-between;gap:8px;padding:6px 9px;border:1px solid var(--border);border-radius:8px;margin-bottom:5px;background:var(--surface);">'+'<span style="font-size:12px;font-weight:600;color:var(--text);">'+escapeHtml(x.word)+'</span>'+'<span style="font-size:11px;color:var(--text-secondary);">'+x.prev+'→'+x.cur+' <strong style="color:'+dColor+';">'+(x.d>0?'+':'')+x.d+'</strong></span></div>'; }
+      subEl.textContent='전월('+prevMonth+') 대비 키워드 증감 — 클릭 시 관련 리뷰'+(STATE.productFocus?' · 🛒 '+(fmtS(STATE.productFocus)||STATE.productFocus):'');
+      bodyEl.innerHTML=
+        '<div style="font-size:12.5px;font-weight:800;color:#16a34a;margin-bottom:8px;">🟢 긍정 키워드</div>'+
+        '<div style="display:flex;gap:16px;margin-bottom:18px;">'+kimCol('▲ 증가','#16a34a',posInc,kwRow)+kimCol('▼ 감소','#64748b',posDec,kwRow)+'</div>'+
+        '<div style="font-size:12.5px;font-weight:800;color:#dc2626;margin-bottom:8px;">🔴 부정 · 개선 키워드</div>'+
+        '<div style="display:flex;gap:16px;">'+kimCol('▲ 증가 (주의)','#dc2626',negInc,kwRow)+kimCol('▼ 감소 (개선됨)','#16a34a',negDec,kwRow)+'</div>';
+      KIM_CTX={metric:'sentiment',summary:'긍정 증가: '+posInc.slice(0,6).map(function(x){return x.word+'(+'+x.d+')';}).join(', ')+' / 부정 증가(주의): '+negInc.slice(0,6).map(function(x){return x.word+'(+'+x.d+')';}).join(', ')+' / 부정 감소(개선): '+negDec.slice(0,6).map(function(x){return x.word+'('+x.d+')';}).join(', ')};
+    }).catch(function(){ bodyEl.innerHTML='<div style="color:var(--text-secondary);font-size:12px;padding:10px;">전월 키워드 데이터를 불러오지 못했습니다.</div>'; });
+  }
+}
+
+async function kimAskAI(){
+  var btn=$('kim-ai-btn'), res=$('kim-ai-result');
+  if($('ollama-dot').className.indexOf('online')<0){ res.style.display='block'; res.innerHTML='⚠️ Ollama가 오프라인입니다.'; return; }
+  btn.disabled=true; btn.textContent='✦ 분석 중...'; res.style.display='block'; res.innerHTML='분석 중... <span class="aic-cursor">▍</span>';
+  var label=KIM_CTX.metric==='reviews'?'전월 대비 리뷰 수 변화':KIM_CTX.metric==='rating'?'전월 대비 별점 변화':'전월 대비 감성 키워드 변화';
+  var prompt='['+label+' 요약]\n'+(KIM_CTX.summary||'')+'\n\n[대시보드 전체 데이터]\n'+buildDashboardContext()+'\n\n위 데이터에 근거해 '+label+'의 핵심을 한국어로 분석하세요. 주목할 상품/키워드와 그 의미·대응 방향을 구체적 수치와 함께 3~5줄로 정리하세요.';
+  await ollamaStream(prompt,
+    function(_t,f){ res.innerHTML=mdToHtml(f)+'<span class="aic-cursor">▍</span>'; },
+    function(f){ res.innerHTML=mdToHtml(f); btn.disabled=false; btn.textContent='✦ AI 요약'; },
+    function(e){ res.innerHTML='❌ '+escapeHtml(e.message); btn.disabled=false; btn.textContent='✦ AI 요약'; },
+    {temperature:0.2}
+  );
 }
 
 function renderKwBar(cid,kws,color,onClickCb){
