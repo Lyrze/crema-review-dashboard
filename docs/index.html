@@ -1341,7 +1341,7 @@
     </div>
     <!-- 일별 추이: 풀폭 카드 -->
     <div class="chart-card" style="margin-top:16px;">
-      <div class="card-header"><div><div class="card-title">일별 리뷰 추이</div><div class="card-sub">일별 리뷰 수(막대) + 평균 별점(라인)</div></div><button class="ai-card-btn" id="btn-ai-kpi-timeline" onclick="aiAnalyzeSection('kpi-timeline')">✦</button></div>
+      <div class="card-header"><div><div class="card-title" id="timeline-title">일별 리뷰 추이</div><div class="card-sub" id="timeline-sub">일별 리뷰 수(막대) + 평균 별점(라인)</div></div><button class="ai-card-btn" id="btn-ai-kpi-timeline" onclick="aiAnalyzeSection('kpi-timeline')">✦</button></div>
       <div class="chart-wrap" style="min-height:220px;"><canvas id="timeline-chart" role="img" aria-label="일별 리뷰 추이 콤보 차트"></canvas></div>
       <div class="chart-legend">
         <div style="display:flex;align-items:center;gap:5px;"><div class="legend-bar" style="background:rgba(91,94,244,.4)"></div><span>일별 리뷰 수</span></div>
@@ -2546,7 +2546,10 @@ function renderSentimentCloud(){
 }
 
 function renderTimeline(){
+  var ttl=$('timeline-title'), tsub=$('timeline-sub');
   if(STATE.productFocus){
+    if(ttl) ttl.textContent='별점 분포 ('+(fmtS(STATE.productFocus)||STATE.productFocus)+')';
+    if(tsub) tsub.textContent='상품 필터 적용 — 일별 추이 대신 별점 분포 표시';
     var prod=(STATE.products||REAL_DATA.products).find(function(p){return p.name===STATE.productFocus;});
     if(prod&&prod.rating_distribution){
       var dist=prod.rating_distribution;
@@ -2561,6 +2564,8 @@ function renderTimeline(){
       return;
     }
   }
+  if(ttl) ttl.textContent='일별 리뷰 추이';
+  if(tsub) tsub.textContent='일별 리뷰 수(막대) + 평균 별점(라인)';
   var tl=(STATE.summary||REAL_DATA.summary).timeline;
   tl=filterTimelineByOverride(tl);
   var dates=tl.map(function(d){return d.date.slice(5);}),counts=tl.map(function(d){return d.count;}),ratings=tl.map(function(d){return d.avg_rating;});
