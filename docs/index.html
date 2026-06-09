@@ -2895,7 +2895,7 @@ function renderNewKeywords(){
         var isNew = prev===0 && cur>=2;
         var isSurge = prev>0 && cur>=prev*1.5 && (cur-prev)>=5;
         if(isNew||isSurge){
-          rows.push({word:k.word, type:type, cur:cur, prev:prev, isNew:isNew, delta:cur-prev});
+          rows.push({word:k.word, type:type, cur:cur, prev:prev, isNew:isNew, delta:cur-prev, bp:(k.by_product||[])});
         }
       });
     });
@@ -2908,17 +2908,39 @@ function renderNewKeywords(){
       return;
     }
     var typeColor={'긍정':'#16a34a','부정':'#dc2626','개선':'#d97706'};
-    cont.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:8px;">'+rows.map(function(r){
+    cont.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">'+rows.map(function(r){
       var badge=r.isNew?'<span style="background:#dc2626;color:#fff;font-size:9px;font-weight:800;padding:1px 6px;border-radius:8px;margin-left:6px;">NEW</span>'
                        :'<span style="background:rgba(217,119,6,.15);color:#b45309;font-size:9px;font-weight:800;padding:1px 6px;border-radius:8px;margin-left:6px;">▲'+r.delta+'</span>';
       var meta=r.isNew?('전월 0 → '+r.cur+'건'):('전월 '+r.prev+' → '+r.cur+'건');
       var safeWord=r.word.replace(/'/g,"\\'");
-      return '<div class="nkw-chip" onclick="openKeywordReviewsModal(\''+safeWord+'\','+(STATE.productFocus?'\''+STATE.productFocus.replace(/'/g,"\\'")+'\'':'null')+',\''+r.type+'\')" '+
-        'style="cursor:pointer;border:1px solid var(--border);border-left:3px solid '+typeColor[r.type]+';border-radius:9px;padding:8px 11px;background:var(--surface);min-width:160px;transition:background .12s;" '+
-        'onmouseover="this.style.background=\'var(--surface-hover)\'" onmouseout="this.style.background=\'var(--surface)\'" '+
-        'title="클릭 → '+escapeHtml(r.word)+' 관련 리뷰">'+
-        '<div style="font-size:12.5px;font-weight:700;color:var(--text);">'+escapeHtml(r.word)+badge+'</div>'+
-        '<div style="font-size:10.5px;color:var(--text-secondary);margin-top:3px;">'+r.type+' · '+meta+'</div>'+
+      // SKU 분포 — 키워드 전체 매칭 대비 각 SKU 비중
+      var bpTotal=(r.bp||[]).reduce(function(s,b){return s+(b.count||0);},0);
+      var skuRows='';
+      if(bpTotal>0){
+        skuRows=(r.bp||[]).slice().sort(function(a,b){return b.count-a.count;}).slice(0,5).map(function(b){
+          var pct=(b.count/bpTotal*100).toFixed(0);
+          var safeP=b.product.replace(/'/g,"\\'");
+          return '<div onclick="event.stopPropagation();openKeywordReviewsModal(\''+safeWord+'\',\''+safeP+'\',\''+r.type+'\')" '+
+            'title="클릭 → '+escapeHtml(fmtS(b.product)||b.product)+'의 \\\''+escapeHtml(r.word)+'\\\' 리뷰" '+
+            'style="cursor:pointer;display:flex;align-items:center;gap:6px;margin-top:4px;">'+
+            '<span style="flex:0 0 96px;font-size:10.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(fmtS(b.product)||b.product)+'</span>'+
+            '<span style="flex:1;height:6px;background:var(--bg);border-radius:4px;overflow:hidden;"><span style="display:block;height:100%;width:'+pct+'%;background:'+typeColor[r.type]+';opacity:.7;"></span></span>'+
+            '<span style="flex:0 0 64px;text-align:right;font-size:10px;color:var(--text-secondary);">'+b.count+'건 '+pct+'%</span>'+
+          '</div>';
+        }).join('');
+      } else {
+        skuRows='<div style="font-size:10px;color:var(--text-secondary);margin-top:4px;">SKU 분포 데이터 없음</div>';
+      }
+      return '<div class="nkw-chip" '+
+        'style="border:1px solid var(--border);border-left:3px solid '+typeColor[r.type]+';border-radius:10px;padding:10px 12px;background:var(--surface);">'+
+        '<div onclick="openKeywordReviewsModal(\''+safeWord+'\','+(STATE.productFocus?'\''+STATE.productFocus.replace(/'/g,"\\'")+'\'':'null')+',\''+r.type+'\')" style="cursor:pointer;" title="클릭 → '+escapeHtml(r.word)+' 관련 리뷰">'+
+          '<div style="font-size:12.5px;font-weight:700;color:var(--text);">'+escapeHtml(r.word)+badge+'</div>'+
+          '<div style="font-size:10.5px;color:var(--text-secondary);margin-top:3px;">'+r.type+' · '+meta+' · 총 '+(bpTotal||r.cur)+'건</div>'+
+        '</div>'+
+        '<div style="margin-top:6px;border-top:1px dashed var(--border);padding-top:6px;">'+
+          '<div style="font-size:9.5px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;">SKU 분포 (키워드 내 비중)</div>'+
+          skuRows+
+        '</div>'+
       '</div>';
     }).join('')+'</div>';
   }).catch(function(){
