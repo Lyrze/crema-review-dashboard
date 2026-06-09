@@ -136,7 +136,8 @@ def main() -> int:
     print()
 
     # 2. cloudflared 실행 — 프록시가 떴으면 프록시 포트, 아니면 Ollama 직결
-    tunnel_target = ("http://localhost:%s" % proxy_port) if proxy_proc else "http://localhost:11434"
+    # localhost는 Windows에서 IPv6(::1)로 먼저 해석되어 프록시(127.0.0.1 바인딩)에 못 붙는다 → 127.0.0.1 명시
+    tunnel_target = ("http://127.0.0.1:%s" % proxy_port) if proxy_proc else "http://127.0.0.1:11434"
     try:
         proc = subprocess.Popen(
             ["cloudflared", "tunnel", "--url", tunnel_target],
