@@ -99,6 +99,17 @@
     .animate { opacity:0; animation: fadeInUp 0.4s ease forwards; }
     .delay-1{animation-delay:.05s} .delay-2{animation-delay:.10s} .delay-3{animation-delay:.15s}
     .delay-4{animation-delay:.20s} .delay-5{animation-delay:.25s} .delay-6{animation-delay:.30s}
+    /* ── 은은한 인터랙션 / 스크롤 리빌 ── */
+    .card, .chart-card, .pvoc-k-card, .sc-kpi-card, .sc-chart-card, .tx-card { transition: transform .18s ease, box-shadow .2s ease, border-color .18s ease; }
+    .card:hover, .chart-card:hover, .pvoc-k-card:hover, .sc-kpi-card:hover, .sc-chart-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.08); }
+    .reveal { opacity:0; transform: translateY(14px); transition: opacity .5s ease, transform .5s ease; }
+    .reveal.in { opacity:1; transform: none; }
+    .filter-chip, .ai-card-btn, .ai-analyze-btn, .tx-io-btn, .nkw-chip, .pvoc-k-item { transition: background .14s ease, transform .12s ease, box-shadow .14s ease; }
+    .filter-chip:active, .ai-card-btn:active, .ai-analyze-btn:active { transform: scale(.96); }
+    @media (prefers-reduced-motion: reduce){
+      *, .animate { animation: none !important; transition: none !important; }
+      .reveal { opacity:1 !important; transform:none !important; }
+    }
     /* ─── Bento Sidebar ─── */
     #sidebar { width:240px; min-height:100vh; background:var(--sidebar-bg); border-right:1px solid var(--border); position:fixed; top:0; left:0; display:flex; flex-direction:column; z-index:100; transition:transform .25s; overflow-y:auto; }
     .sb-header { padding:var(--space-4) var(--space-4) var(--space-3); border-bottom:1px solid var(--border); }
@@ -2277,6 +2288,43 @@ async function loadIndex(){
   }catch(e){ $('brand-select').innerHTML='<option value="슬룸">슬룸</option>'; }
   populateMonths();
   await reload();
+  setTimeout(initAnimations, 100);
+}
+
+// ── 은은한 진입 애니메이션: 스크롤 리빌 + KPI 숫자 카운트업 (1회) ──
+var ANIM_DONE=false;
+function initAnimations(){
+  if(ANIM_DONE) return; ANIM_DONE=true;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduce) return;
+  // 1) 스크롤 리빌 — 섹션 내 카드 (정적 요소만, 재렌더와 무관)
+  if('IntersectionObserver' in window){
+    var cards=document.querySelectorAll('.section .card, .section .chart-card');
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); } });
+    }, {threshold:0.08, rootMargin:'0px 0px -40px 0px'});
+    cards.forEach(function(c){ c.classList.add('reveal'); io.observe(c); });
+  }
+  // 2) KPI 핵심 숫자 카운트업
+  countUpEl($('kpi-total-val'));
+  countUpEl($('kpi-rating-val'));
+}
+
+function countUpEl(el){
+  if(!el) return;
+  var raw=(el.textContent||'').replace(/[,\s]/g,'');
+  var target=parseFloat(raw);
+  if(isNaN(target)||target<=0) return;
+  var isFloat=raw.indexOf('.')>=0;
+  var dur=700, t0=null;
+  function step(ts){
+    if(!t0) t0=ts; var p=Math.min((ts-t0)/dur,1);
+    var ease=1-Math.pow(1-p,3);
+    var cur=target*ease;
+    el.textContent=isFloat?cur.toFixed(2):fmt(Math.round(cur));
+    if(p<1) requestAnimationFrame(step); else el.textContent=isFloat?target.toFixed(2):fmt(target);
+  }
+  requestAnimationFrame(step);
 }
 
 function populateMonths(){
