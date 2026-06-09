@@ -953,6 +953,14 @@
       <input type="text" id="ollama-url-input" placeholder="https://tunnel.example.com 또는 http://localhost:11434" title="Ollama 엔드포인트 URL" />
       <div style="font-size:9.5px;color:var(--text-secondary);margin-top:4px;line-height:1.4;">💡 Cloudflare Tunnel URL 입력 시 외부 PC에서도 AI 사용 가능</div>
     </div>
+    <div class="ollama-url-row" id="ollama-ctx-row" style="margin-top:10px;">
+      <label>AI 사용 용도</label>
+      <select id="ollama-ctx-select" onchange="onCtxChange(this.value)" title="AI가 한 번에 참고하는 정보량(메모리)을 용도에 맞게 조절합니다">
+        <option value="8192">리뷰 분류용 · 빠름</option>
+        <option value="16384">대화·분석용 · 긴 맥락</option>
+      </select>
+      <div style="font-size:9.5px;color:var(--text-secondary);margin-top:4px;line-height:1.4;">💡 <b>분류용</b>: 키워드 재분류를 빠르게 / <b>대화용</b>: Hey Sloom·AI 분석에서 긴 대화도 기억 (메모리 더 사용)</div>
+    </div>
   </div>
 </aside>
 
@@ -1878,7 +1886,7 @@ var REAL_DATA = {
   ]
 };
 
-var STATE = { brand:'슬룸', month:'2026-04', index:null, summary:null, products:null, keywords:null, ollamaModel: localStorage.getItem('ollamaModel') || 'exaone3.5:7.8b', ollamaUrl: localStorage.getItem('ollamaUrl') || 'http://localhost:11434', skuSort:'review_count', skuMin:10, productFocus:null, dateOverride:null /* {from:'YYYY-MM-DD',to:'YYYY-MM-DD'} */ };
+var STATE = { brand:'슬룸', month:'2026-04', index:null, summary:null, products:null, keywords:null, ollamaModel: localStorage.getItem('ollamaModel') || 'exaone3.5:7.8b', ollamaUrl: localStorage.getItem('ollamaUrl') || 'http://localhost:11434', ollamaCtx: parseInt(localStorage.getItem('ollamaCtx'),10)||8192, skuSort:'review_count', skuMin:10, productFocus:null, dateOverride:null /* {from:'YYYY-MM-DD',to:'YYYY-MM-DD'} */ };
 
 // ── 차트 진입 애니메이션 강화 (전역) — 막대/포인트 스태거 등장 + 도넛 회전·확대 ──
 (function(){
@@ -2192,6 +2200,18 @@ function resetOllamaUrl(){
   if(inputEl){ inputEl.value=STATE.ollamaUrl; inputEl.classList.remove('error'); }
   showToast('↺ 로컬 Ollama로 초기화');
   pingOllama();
+}
+
+// AI 사용 용도(컨텍스트 길이) 변경 — 담당자용 친절 라벨, 요청마다 num_ctx로 적용
+function onCtxChange(v){
+  var n=parseInt(v,10)||0;
+  STATE.ollamaCtx=n;
+  if(n>0) localStorage.setItem('ollamaCtx', String(n));
+  else localStorage.removeItem('ollamaCtx');
+  var msg = n>=16384 ? '✓ 대화·분석용으로 설정 (긴 맥락 기억)'
+          : n>0       ? '✓ 리뷰 분류용으로 설정 (빠름)'
+          :             '✓ 자동 (모델 기본값)';
+  showToast(msg);
 }
 
 function setSKUSort(field){
@@ -4537,7 +4557,7 @@ var AI_KO_SYSTEM='반드시 한국어로만 답변하세요. 중국어(한자), 
 async function ollamaGenerateOnce(prompt){
   var r=await fetch(getOllamaUrl()+'/api/generate',{
     method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:STATE.ollamaModel||'exaone3.5:7.8b', prompt:prompt, stream:false, system:AI_KO_SYSTEM, options:{temperature:0.0, num_predict:512}})
+    body:JSON.stringify({model:STATE.ollamaModel||'exaone3.5:7.8b', prompt:prompt, stream:false, system:AI_KO_SYSTEM, options:(STATE.ollamaCtx>0?{temperature:0.0, num_predict:512, num_ctx:STATE.ollamaCtx}:{temperature:0.0, num_predict:512})})
   });
   if(!r.ok) throw new Error('HTTP '+r.status);
   var j=await r.json();
@@ -5753,6 +5773,7 @@ async function ollamaStream(prompt, onToken, onDone, onError, opts){
   try{
     var payload={model:STATE.ollamaModel||'exaone3.5:7.8b', prompt:prompt, stream:true,
       options:{temperature: (opts.temperature!=null?opts.temperature:0.3), num_predict: opts.num_predict||1024}};
+    if(STATE.ollamaCtx>0) payload.options.num_ctx=STATE.ollamaCtx;
     // 한국어 강제(한자 드리프트 방지)를 항상 포함, 호출자 system이 있으면 결합
     payload.system=(opts.system?opts.system+'\n':'')+AI_KO_SYSTEM;
     var r=await fetch(getOllamaUrl()+'/api/generate',{
@@ -7978,6 +7999,9 @@ document.addEventListener('DOMContentLoaded', async function(){
       if(e.key==='Enter'){ e.preventDefault(); onOllamaUrlChange(); ollamaUrlInput.blur(); }
     });
   }
+  // AI 사용 용도 select 초기값 동기화
+  var ctxSel=$('ollama-ctx-select');
+  if(ctxSel){ ctxSel.value=String(STATE.ollamaCtx||8192); }
   pingOllama();
   txLoad();  // Taxonomy 데이터 로드 (localStorage)
   applyURLParams();  // URL 쿼리에서 상태 복원
