@@ -1195,6 +1195,14 @@
             <button class="frc-mode-btn active" data-rc="batch" onclick="frcSetMode('batch')" style="padding:5px 12px;background:var(--accent);border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:700;color:#fff;font-family:inherit;">배치 (빠름)</button>
             <button class="frc-mode-btn" data-rc="item" onclick="frcSetMode('item')" style="padding:5px 12px;background:transparent;border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:700;color:var(--text-secondary);font-family:inherit;">정밀 (느림)</button>
           </div>
+          <span style="font-size:11.5px;font-weight:700;color:var(--text-secondary);margin-left:8px;">동시 처리</span>
+          <select id="frc-conc" onchange="frcSetConcurrency(this.value)" style="padding:5px 8px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:11.5px;font-family:inherit;">
+            <option value="1">1 (안전)</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+          <span style="font-size:10.5px;color:var(--text-secondary);">※ Ollama OLLAMA_NUM_PARALLEL 설정 필요</span>
         </div>
         <div id="frc-warn" style="font-size:11.5px;color:var(--text-secondary);background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:10px 13px;line-height:1.6;margin-bottom:14px;">
           ⚠️ 키워드 수 × 후보 리뷰만큼 AI가 판별하므로 <strong>수 분~수십 분</strong> 걸릴 수 있습니다. Ollama(또는 AI 서버 URL)가 켜져 있어야 하며, 결과는 이 브라우저에 저장됩니다. 모두에게 반영하려면 파이프라인 <code>--reclassify-full</code>로 재생성이 필요합니다.
@@ -4611,7 +4619,7 @@ async function krmReclassify(){
   try{
     if(KRM_RECLASS_MODE==='batch'){
       // 배치: 8건씩 묶어 한 번에 판별
-      var BATCH=8;
+      var BATCH=12;
       for(var s=0;s<cands.length;s+=BATCH){
         var chunk=cands.slice(s, s+BATCH);
         var listText=chunk.map(function(it,i){ return '['+i+'] '+(it.r.text||'').replace(/\s+/g,' ').slice(0,220); }).join('\n');
@@ -4719,7 +4727,26 @@ function krmParseMatched(resp, n){
 // ═══════════════════════════════════════════════
 //  전체 키워드 일괄 재분류 (대시보드판 --reclassify-full)
 // ═══════════════════════════════════════════════
-var FRC_STATE={mode:'batch', running:false, cancel:false};
+var FRC_STATE={mode:'batch', running:false, cancel:false, concurrency:(parseInt(localStorage.getItem('frc_conc'),10)||1)};
+
+// 동시 실행 풀 (limit개씩 병렬) — Ollama OLLAMA_NUM_PARALLEL 설정과 함께 써야 효과
+async function runPool(items, limit, worker){
+  var idx=0;
+  var n=Math.max(1, Math.min(limit, items.length));
+  async function loop(){
+    while(idx<items.length && !FRC_STATE.cancel){
+      var i=idx++;
+      try{ await worker(items[i], i); }catch(e){ /* 개별 실패는 건너뜀 */ }
+    }
+  }
+  var loops=[]; for(var w=0;w<n;w++) loops.push(loop());
+  await Promise.all(loops);
+}
+
+function frcSetConcurrency(v){
+  FRC_STATE.concurrency=Math.max(1, parseInt(v,10)||1);
+  try{ localStorage.setItem('frc_conc', String(FRC_STATE.concurrency)); }catch(e){}
+}
 
 function openFullReclassPanel(){
   var m=$('full-reclass-modal'); if(!m) return;
@@ -4731,6 +4758,7 @@ function openFullReclassPanel(){
   // 캐시 존재 시 복원 버튼 노출
   var hasCache=false; try{ hasCache=!!localStorage.getItem(fullReclassCacheKey()); }catch(e){}
   $('frc-reset').style.display=hasCache?'inline-block':'none';
+  var cs=$('frc-conc'); if(cs) cs.value=String(FRC_STATE.concurrency||1);
 }
 function closeFullReclassPanel(){ var m=$('full-reclass-modal'); if(m) m.style.display='none'; }
 function frcSetMode(mode){
@@ -4802,7 +4830,7 @@ async function aiVerifyKeywordCandidates(word, typeKr, cands, mode, onProgress){
       if(onProgress) onProgress(k+1, cands.length);
     }
   } else {
-    var BATCH=8;
+    var BATCH=12;
     for(var s=0;s<cands.length;s+=BATCH){
       if(FRC_STATE.cancel) break;
       var chunk=cands.slice(s,s+BATCH);
@@ -4920,9 +4948,9 @@ async function runFullReclassifyAll(){
   var totalAdded=0, totalRemoved=0, doneKw=0;
 
   try{
-    for(var j=0;j<jobs.length;j++){
-      if(FRC_STATE.cancel) break;
-      var job=jobs[j];
+    var conc=FRC_STATE.concurrency||1;
+    await runPool(jobs, conc, async function(job){
+      if(FRC_STATE.cancel) return;
       var kwObj=job.kwObj;
       var curIds=(kwObj.all_review_ids||[]).map(String);
       var curSet={}; curIds.forEach(function(id){curSet[id]=true;});
@@ -4932,16 +4960,10 @@ async function runFullReclassifyAll(){
         var newC=cands.filter(function(c){return c._isNew;});
         cands=curC.concat(newC.slice(0, Math.max(0, CAP-curC.length)));
       }
-      var jIdx=j;
-      (function(jobLabel, candTotal){
-        $('frc-progress-text').textContent='('+(jIdx+1)+'/'+jobs.length+') "'+jobLabel+'" 후보 '+candTotal+'건 판별 중...';
-      })(kwObj.word, cands.length);
       var kept=await aiVerifyKeywordCandidates(kwObj.word, job.kr, cands, FRC_STATE.mode, function(p,t){
-        var pct=Math.round(((j + (t?p/t:1)) / jobs.length)*100);
-        $('frc-bar').style.width=pct+'%';
-        $('frc-progress-text').textContent='('+(j+1)+'/'+jobs.length+') "'+kwObj.word+'" '+p+'/'+t+'건 판별...';
+        if($('frc-progress-text')) $('frc-progress-text').textContent=doneKw+'/'+jobs.length+' 키워드 · 진행 중 "'+kwObj.word+'" '+p+'/'+t;
       });
-      if(FRC_STATE.cancel) break;
+      if(FRC_STATE.cancel) return;
       var keptIds=[]; var ks={};
       kept.forEach(function(it){ var id=String(it.r.review_id); if(!ks[id]){ks[id]=true; keptIds.push(id);} });
       byType[job.type][kwObj.word]=keptIds;
@@ -4949,8 +4971,9 @@ async function runFullReclassifyAll(){
       totalRemoved += curIds.filter(function(id){return !ks[id];}).length;
       rebuildKeywordFromIds(kwObj, keptIds);
       doneKw++;
-      $('frc-bar').style.width=Math.round(((j+1)/jobs.length)*100)+'%';
-    }
+      if($('frc-bar')) $('frc-bar').style.width=Math.round((doneKw/jobs.length)*100)+'%';
+      if($('frc-progress-text')) $('frc-progress-text').textContent=doneKw+'/'+jobs.length+' 키워드 완료'+(conc>1?' (동시 '+conc+')':'');
+    });
 
     // 진행 중 월/브랜드가 바뀌었으면 잘못된 키 저장·렌더 방지
     if(fullReclassCacheKey()!==startKey){
