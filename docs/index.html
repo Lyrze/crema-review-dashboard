@@ -1872,6 +1872,30 @@ var REAL_DATA = {
 
 var STATE = { brand:'슬룸', month:'2026-04', index:null, summary:null, products:null, keywords:null, ollamaModel: localStorage.getItem('ollamaModel') || 'exaone3.5:7.8b', ollamaUrl: localStorage.getItem('ollamaUrl') || 'http://localhost:11434', skuSort:'review_count', skuMin:10, productFocus:null, dateOverride:null /* {from:'YYYY-MM-DD',to:'YYYY-MM-DD'} */ };
 
+// ── 차트 진입 애니메이션 강화 (전역) — 막대/포인트 스태거 등장 + 도넛 회전·확대 ──
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!window.Chart || reduce) return;
+  Chart.defaults.animation = {
+    duration: 850,
+    easing: 'easeOutQuart',
+    // 데이터 인덱스/데이터셋 순서대로 살짝씩 지연 → 차례로 그려지는 효과
+    delay: function(ctx){
+      if(ctx && ctx.type==='data' && ctx.mode==='default' && typeof ctx.dataIndex==='number'){
+        return Math.min(ctx.dataIndex,20)*35 + (ctx.datasetIndex||0)*70;
+      }
+      return 0;
+    }
+  };
+  // 값 변화(업데이트) 시 부드러운 트윈
+  Chart.defaults.animations = { numbers: { type:'number', duration:700, easing:'easeOutQuart' } };
+  // 도넛/파이: 회전 + 스케일 등장
+  if(Chart.defaults.elements){ /* noop */ }
+  Chart.defaults.datasets = Chart.defaults.datasets || {};
+  Chart.defaults.datasets.doughnut = Object.assign({}, Chart.defaults.datasets.doughnut, {animateRotate:true, animateScale:true});
+  Chart.defaults.datasets.pie = Object.assign({}, Chart.defaults.datasets.pie, {animateRotate:true, animateScale:true});
+})();
+
 // Ollama URL 정규화 (끝의 / 제거)
 function getOllamaUrl(){
   var u=(STATE.ollamaUrl||'http://localhost:11434').trim();
