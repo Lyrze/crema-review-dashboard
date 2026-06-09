@@ -1909,7 +1909,7 @@ var $ = function(id){ return document.getElementById(id); };
 function fmt(n){ return n!=null ? Number(n).toLocaleString('ko-KR') : '-'; }
 
 // ── 간단한 마크다운 → HTML 변환 (AI 응답 가독성용) ──
-function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function mdToHtml(text){
   if(!text) return '';
   var s=escapeHtml(text);
@@ -2381,6 +2381,11 @@ async function loadData(brand,month){
   // 전체 리뷰 인덱스 (review_id → {rating,date,product,text})
   STATE.reviewsById = (res[3].status==='fulfilled' && res[3].value && res[3].value.reviews) ? res[3].value.reviews : null;
   STATE.brand=brand; STATE.month=month;
+  // 상품 필터가 현재 월/브랜드에 없는 상품이면 해제 (칩만 남고 데이터는 브랜드로 폴백되는 불일치 방지)
+  if(STATE.productFocus && !(STATE.products||[]).some(function(p){return p.name===STATE.productFocus;})){
+    STATE.productFocus=null;
+    try{ if(typeof syncChipBarFromState==='function') syncChipBarFromState(); }catch(e){}
+  }
   // 분류 조정 통합 반영 (전체 재분류 캐시 + Taxonomy 수동 분류) → 차트/카드/표 일관
   applyClassificationAdjustments();
   var banner=document.getElementById('data-load-banner');
@@ -2439,9 +2444,10 @@ function renderKPI(){
   var k=prod?{
     total_reviews:prod.review_count, avg_rating:prod.avg_rating,
     positive_rate:prod.positive_rate||0, negative_rate:prod.negative_rate||0,
-    positive_count:Math.round((prod.positive_rate||0)/100*prod.review_count),
-    negative_count:Math.round((prod.negative_rate||0)/100*prod.review_count),
-    neutral_count:prod.review_count-Math.round((prod.positive_rate||0)/100*prod.review_count)-Math.round((prod.negative_rate||0)/100*prod.review_count)
+    // 실제 sentiment 카운트 우선 (없으면 비율로 추정 — 라운딩 드리프트 방지)
+    positive_count: prod.sentiment?prod.sentiment.positive:Math.round((prod.positive_rate||0)/100*prod.review_count),
+    negative_count: prod.sentiment?prod.sentiment.negative:Math.round((prod.negative_rate||0)/100*prod.review_count),
+    neutral_count: prod.sentiment?prod.sentiment.neutral:(prod.review_count-Math.round((prod.positive_rate||0)/100*prod.review_count)-Math.round((prod.negative_rate||0)/100*prod.review_count))
   }:(STATE.summary||REAL_DATA.summary).kpis;
   var prevRv=prod&&prod.prev_review_count!=null?prod.prev_review_count:FALLBACK_PREV.total_reviews;
   var prevRt=prod&&prod.prev_avg_rating!=null?prod.prev_avg_rating:FALLBACK_PREV.avg_rating;
@@ -4835,6 +4841,7 @@ function applyTaxonomyToKeywords(){
   ['praise','complaint','improvement'].forEach(function(t){
     (STATE.keywords.by_intent[t]||[]).forEach(function(kwObj){
       if(!kwObj || !kwObj.word) return;
+      var changed=false;
       // (1) include: 수동으로 이 키워드(매칭 토픽)에 넣은 리뷰 추가
       var enh=enhanceKeywordWithTaxonomy(kwObj);
       if(enh && enh._manualBoost>0){
@@ -4844,6 +4851,7 @@ function applyTaxonomyToKeywords(){
         (enh.review_samples||[]).forEach(function(s){ if(s._manual) idset[String(s.review_id)]=true; });
         kwObj.all_review_ids=Object.keys(idset);
         kwObj._manualBoost=enh._manualBoost; kwObj._origCount=enh._origCount;
+        changed=true;
       }
       // (2) exclude: 수동으로 이 키워드(매칭 토픽)에서 제외한 리뷰 제거
       var matches=(typeof txFindTopicsMatchingKeyword==='function')?txFindTopicsMatchingKeyword(kwObj.word):[];
@@ -4860,10 +4868,11 @@ function applyTaxonomyToKeywords(){
           kwObj.all_review_ids=(kwObj.all_review_ids||[]).filter(function(id){return !exSet[String(id)];});
           kwObj.review_samples=(kwObj.review_samples||[]).filter(function(s){return !exSet[String(s.review_id)];});
           kwObj._manualExcluded=Object.keys(exSet).length;
+          changed=true;
         }
       }
-      // 카운트는 all_review_ids 기준으로 일관화
-      if(kwObj.all_review_ids) kwObj.count=kwObj.all_review_ids.length;
+      // 실제 조정이 있었던 키워드만 count 재계산 (원본 count 보존)
+      if(changed && kwObj.all_review_ids) kwObj.count=kwObj.all_review_ids.length;
     });
   });
 }
@@ -5998,7 +6007,7 @@ function renderPVOCKanban(){
       var pfArg=STATE.productFocus?'\''+STATE.productFocus.replace(/'/g,"\\'")+'\'':'null';
       return '<div class="pvoc-k-item clickable" onclick="openKeywordReviewsModal(\''+safeWord+'\','+pfArg+',\''+resolvedType+'\',\''+safeSearch+'\')" style="cursor:pointer;" title="'+tooltip+'">'+
         '<span class="pvoc-k-num">'+(i+1)+'</span>'+
-        '<div class="pvoc-k-text">'+w+(cnt!==''?'<span class="pvoc-k-cnt">'+cnt+'</span>':'')+'</div>'+
+        '<div class="pvoc-k-text">'+escapeHtml(w)+(cnt!==''?'<span class="pvoc-k-cnt">'+cnt+'</span>':'')+'</div>'+
         '</div>';
     }).join('');
     // 상품 필터 시 매칭 키워드가 없으면 안내 (예시 데이터로 채우지 않음)

@@ -68,7 +68,10 @@ def gh_headers(raw: bool = False) -> dict:
 
 
 def _safe_seg(s: str, fallback: str) -> str:
+    """경로 한 세그먼트로 안전하게: 슬래시·금지문자 제거 + 상위경로(..) 차단."""
     s = "".join(c for c in (s or "") if c not in '/\\:*?"<>|').strip()
+    s = s.replace("..", "")          # 상위 경로 이동 차단
+    s = s.strip(". ")                # 선행/후행 점·공백 제거
     return s or fallback
 
 
@@ -164,8 +167,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
             payload = json.loads(self.rfile.read(ln) or b"{}")
         except (ValueError, OSError):
             return self._json(400, {"error": "잘못된 요청 본문"})
-        brand = payload.get("brand", "슬룸")
-        month = payload.get("month", "")
+        # 경로 주입 방지: brand/month/owner 전부 안전 세그먼트로 정제 (.. / 슬래시 차단)
+        brand = _safe_seg(payload.get("brand"), "슬룸")
+        month = _safe_seg(payload.get("month"), "unknown")
         owner = _safe_seg(payload.get("owner"), "담당자")
         data = payload.get("data")
         if data is None:
@@ -203,8 +207,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return self._json(502, {"error": str(e)})
 
     def gh_list(self, q):
-        brand = q.get("brand", ["슬룸"])[0]
-        month = q.get("month", [""])[0]
+        brand = _safe_seg(q.get("brand", ["슬룸"])[0], "슬룸")
+        month = _safe_seg(q.get("month", [""])[0], "unknown")
         path = "docs/data/%s/%s/taxonomy" % (brand, month)
         url = GH_API + "/repos/" + REPO + "/contents/" + urllib.parse.quote(path)
         try:
@@ -229,6 +233,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
         path = q.get("path", [""])[0]
         if not path:
             return self._json(400, {"error": "path 없음"})
+        # 화이트리스트: taxonomy 폴더의 .json 만 허용 (.. 차단)
+        if (".." in path or not path.startswith("docs/data/")
+                or "/taxonomy/" not in path or not path.endswith(".json")):
+            return self._json(400, {"error": "허용되지 않는 경로"})
         url = GH_API + "/repos/" + REPO + "/contents/" + urllib.parse.quote(path)
         try:
             r = requests.get(url, headers=gh_headers(), params={"ref": BRANCH}, timeout=15)
