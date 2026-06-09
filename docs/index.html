@@ -6963,34 +6963,68 @@ async function txGithubUpload(){
   }catch(e){ alert('업로드 실패 — 터널(배치)이 켜져 있는지 확인하세요.\n'+e.message); }
 }
 
+// 불러오기는 공개 저장소 직접 읽기(토큰·PC 불필요). 직접 실패 시 프록시 폴백.
+var GH_REPO_INFO={owner:'Lyrze', repo:'crema-review-dashboard', branch:'main'};
+var TX_GH_FILES=[];
+
 async function txGithubOpenList(){
-  var base=txGhBase();
-  if(!base){ alert('터널/AI 서버 URL이 설정되지 않았습니다.'); return; }
   var modal=$('tx-gh-modal'), list=$('tx-gh-list');
   modal.style.display='flex'; list.innerHTML='<div style="color:var(--text-secondary);font-size:12.5px;padding:8px;">불러오는 중…</div>';
+  var dir='docs/data/'+STATE.brand+'/'+STATE.month+'/taxonomy';
+  var files=[];
+  // 1순위: 공개 GitHub API 직접 (PC 없어도 가능)
   try{
-    var r=await fetch(base+'/gh/list?brand='+encodeURIComponent(STATE.brand)+'&month='+encodeURIComponent(STATE.month));
-    var j=await r.json().catch(function(){return {};});
-    if(!r.ok){ list.innerHTML='목록 조회 실패: '+escapeHtml(j.error||('HTTP '+r.status)); return; }
-    var files=j.files||[];
-    if(!files.length){ list.innerHTML='<div style="color:var(--text-secondary);font-size:12.5px;padding:8px;">['+escapeHtml(STATE.brand)+']['+escapeHtml(STATE.month)+'] 업로드된 분류가 없습니다.</div>'; return; }
-    list.innerHTML=files.map(function(f){
-      var safe=(f.path||'').replace(/'/g,"\\'");
-      return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px;border:1px solid var(--border);border-radius:9px;margin-bottom:8px;">'+
-        '<div><div style="font-size:12.5px;font-weight:700;color:var(--text);">['+escapeHtml(STATE.brand)+']['+escapeHtml(STATE.month)+']['+escapeHtml(f.owner||'?')+']</div>'+
-        '<div style="font-size:10.5px;color:var(--text-secondary);">'+escapeHtml(f.ts||'')+'</div></div>'+
-        '<button onclick="txGithubLoad(\''+safe+'\')" style="padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;">불러오기(병합)</button>'+
-      '</div>';
-    }).join('');
-  }catch(e){ list.innerHTML='조회 실패 — 터널 확인: '+escapeHtml(e.message); }
+    var api='https://api.github.com/repos/'+GH_REPO_INFO.owner+'/'+GH_REPO_INFO.repo+'/contents/'+
+      dir.split('/').map(encodeURIComponent).join('/')+'?ref='+GH_REPO_INFO.branch+'&_='+Date.now();
+    var r=await fetch(api,{headers:{'Accept':'application/vnd.github+json'}});
+    if(r.status===404){ files=[]; }
+    else if(r.ok){
+      (await r.json()).forEach(function(it){
+        if(it.type==='file' && /\.json$/.test(it.name)){
+          var nm=it.name.slice(0,-5); var p=nm.indexOf('__');
+          files.push({name:it.name, owner:p>=0?nm.slice(0,p):nm, ts:p>=0?nm.slice(p+2).replace(/_/g,' '):'', download_url:it.download_url, path:it.path});
+        }
+      });
+      files.sort(function(a,b){return a.ts<b.ts?1:-1;});
+    } else { throw new Error('HTTP '+r.status); }
+  }catch(e1){
+    // 2순위: 프록시 폴백 (PC/터널 켜진 경우)
+    try{
+      var base=txGhBase();
+      if(base){
+        var pr=await fetch(base+'/gh/list?brand='+encodeURIComponent(STATE.brand)+'&month='+encodeURIComponent(STATE.month));
+        var pj=await pr.json().catch(function(){return {};});
+        if(pr.ok) files=(pj.files||[]).map(function(f){return {name:f.name, owner:f.owner, ts:f.ts, path:f.path, download_url:null};});
+      }
+    }catch(e2){}
+  }
+  TX_GH_FILES=files;
+  if(!files.length){ list.innerHTML='<div style="color:var(--text-secondary);font-size:12.5px;padding:8px;">['+escapeHtml(STATE.brand)+']['+escapeHtml(STATE.month)+'] 업로드된 분류가 없습니다.<br><span style="font-size:11px;">(업로드 직후라면 GitHub 반영까지 ~1분 소요)</span></div>'; return; }
+  list.innerHTML=files.map(function(f,i){
+    return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px;border:1px solid var(--border);border-radius:9px;margin-bottom:8px;">'+
+      '<div><div style="font-size:12.5px;font-weight:700;color:var(--text);">['+escapeHtml(STATE.brand)+']['+escapeHtml(STATE.month)+']['+escapeHtml(f.owner||'?')+']</div>'+
+      '<div style="font-size:10.5px;color:var(--text-secondary);">'+escapeHtml(f.ts||'')+'</div></div>'+
+      '<button onclick="txGithubLoad('+i+')" style="padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;">불러오기(병합)</button>'+
+    '</div>';
+  }).join('');
 }
 
-async function txGithubLoad(path){
-  var base=txGhBase();
+async function txGithubLoad(idx){
+  var f=TX_GH_FILES[idx]; if(!f){ return; }
   try{
-    var r=await fetch(base+'/gh/load?path='+encodeURIComponent(path));
-    var j=await r.json().catch(function(){return {};});
-    if(!r.ok){ alert('불러오기 실패: '+(j.error||('HTTP '+r.status))); return; }
+    var j=null;
+    if(f.download_url){
+      // 공개 raw 직접 (PC 불필요)
+      var r=await fetch(f.download_url+(f.download_url.indexOf('?')>=0?'&':'?')+'_='+Date.now(),{cache:'no-cache'});
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      j=await r.json();
+    } else {
+      // 프록시 폴백
+      var base=txGhBase();
+      var pr=await fetch(base+'/gh/load?path='+encodeURIComponent(f.path));
+      j=await pr.json().catch(function(){return {};});
+      if(!pr.ok) throw new Error(j.error||('HTTP '+pr.status));
+    }
     var incoming=(j && Array.isArray(j.taxonomies)) ? j.taxonomies : (Array.isArray(j)?j:null);
     if(!incoming){ alert('인식할 수 없는 형식입니다.'); return; }
     txMergeIncoming(incoming);
