@@ -968,7 +968,7 @@
       </div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <span class="tx-counter" id="tx-counter">0 Taxonomies</span>
-        <button class="tx-io-btn" onclick="txGithubUpload()" title="현재 분류를 GitHub 저장소에 업로드 (담당자·일시 태그)" style="border-color:var(--accent);color:var(--accent);">☁️ 저장소 업로드</button>
+        <button class="tx-io-btn" onclick="txGithubUpload()" title="Taxonomy 분류 + AI 전체 재분류 결과를 GitHub 저장소에 업로드 (담당자·일시 태그)" style="border-color:var(--accent);color:var(--accent);">☁️ 저장소 업로드</button>
         <button class="tx-io-btn" onclick="txGithubOpenList()" title="저장소에 업로드된 분류 불러오기" style="border-color:var(--accent);color:var(--accent);">☁️ 불러오기</button>
         <button class="tx-io-btn" onclick="txExportBackup()" title="JSON 파일로 백업">⬇ 백업</button>
         <button class="tx-io-btn" onclick="txImportBackup()" title="백업 JSON 파일에서 복원/병합">⬆ 복원</button>
@@ -6957,6 +6957,34 @@ function txImportFileChosen(evt){
 // ── GitHub 저장소 업로드/불러오기 (start-tunnel 로컬 프록시 경유) ──
 function txGhBase(){ return (getOllamaUrl()||'').replace(/\/+$/,''); }
 
+// 현재 브랜드/월의 AI 재분류 결과(localStorage)를 수집 — 업로드 동봉용
+function collectReclassify(){
+  var out={full:null, perKeyword:{}};
+  try{ var f=localStorage.getItem(fullReclassCacheKey()); if(f) out.full=JSON.parse(f); }catch(e){}
+  var prefix='krmReclass::'+(STATE.brand||'')+'::'+(STATE.month||'')+'::';
+  try{
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);
+      if(k && k.indexOf(prefix)===0){ out.perKeyword[k]=JSON.parse(localStorage.getItem(k)); }
+    }
+  }catch(e){}
+  if(!out.full && Object.keys(out.perKeyword).length===0) return null;
+  return out;
+}
+
+// 불러온 재분류 결과를 localStorage에 복원
+function restoreReclassify(rc){
+  if(!rc) return false;
+  var any=false;
+  try{ if(rc.full){ localStorage.setItem(fullReclassCacheKey(), JSON.stringify(rc.full)); any=true; } }catch(e){}
+  if(rc.perKeyword){
+    Object.keys(rc.perKeyword).forEach(function(k){
+      try{ localStorage.setItem(k, JSON.stringify(rc.perKeyword[k])); any=true; }catch(e){}
+    });
+  }
+  return any;
+}
+
 function txMergeIncoming(incoming){
   txLoad();
   var byId={}; TAXONOMIES.forEach(function(t){ byId[t.id]=t; });
@@ -6983,7 +7011,8 @@ function txMergeIncoming(incoming){
 
 async function txGithubUpload(){
   txLoad();
-  if(!TAXONOMIES.length){ alert('업로드할 Taxonomy가 없습니다.'); return; }
+  var reclassify=collectReclassify();
+  if(!TAXONOMIES.length && !reclassify){ alert('업로드할 분류/재분류 결과가 없습니다.'); return; }
   var base=txGhBase();
   if(!base){ alert('터널/AI 서버 URL이 설정되지 않았습니다. 좌측 사이드바에서 입력하세요.'); return; }
   var owner=prompt('담당자 이름을 입력하세요 (파일 태그용):', localStorage.getItem('gh_owner')||'');
@@ -6991,12 +7020,13 @@ async function txGithubUpload(){
   owner=(owner||'').trim();
   if(!owner){ alert('담당자 이름이 필요합니다.'); return; }
   localStorage.setItem('gh_owner', owner);
-  showToast('저장소 업로드 중…');
+  var rcNote=reclassify?(' + AI 재분류'+(reclassify.full?'(전체)':'')):'';
+  showToast('저장소 업로드 중… (Taxonomy'+rcNote+')');
   try{
     var r=await fetch(base+'/gh/upload',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({brand:STATE.brand, month:STATE.month, owner:owner, data:TAXONOMIES})});
+      body:JSON.stringify({brand:STATE.brand, month:STATE.month, owner:owner, data:TAXONOMIES, reclassify:reclassify})});
     var j=await r.json().catch(function(){return {};});
-    if(r.ok && j.ok){ showToast('✅ 업로드 완료 — ['+STATE.brand+']['+STATE.month+']['+owner+']['+(j.ts||'')+']'); }
+    if(r.ok && j.ok){ showToast('✅ 업로드 완료 — ['+STATE.brand+']['+STATE.month+']['+owner+']['+(j.ts||'')+'] (Taxonomy'+rcNote+')'); }
     else { alert('업로드 실패: '+(j.error||('HTTP '+r.status))+(j.detail?'\n'+j.detail:'')); }
   }catch(e){ alert('업로드 실패 — 터널(배치)이 켜져 있는지 확인하세요.\n'+e.message); }
 }
@@ -7064,12 +7094,14 @@ async function txGithubLoad(idx){
       if(!pr.ok) throw new Error(j.error||('HTTP '+pr.status));
     }
     var incoming=(j && Array.isArray(j.taxonomies)) ? j.taxonomies : (Array.isArray(j)?j:null);
-    if(!incoming){ alert('인식할 수 없는 형식입니다.'); return; }
-    txMergeIncoming(incoming);
+    var rcRestored=false;
+    if(j && j.reclassify){ rcRestored=restoreReclassify(j.reclassify); }
+    if(!incoming && !rcRestored){ alert('인식할 수 없는 형식입니다.'); return; }
+    if(incoming) txMergeIncoming(incoming);
     var m=$('tx-gh-modal'); if(m) m.style.display='none';
     txRenderGrid();
     if(typeof refreshDashboardFromClassification==='function') refreshDashboardFromClassification();
-    showToast('✅ 저장소 분류 불러오기·병합 완료');
+    showToast('✅ 불러오기·병합 완료'+(rcRestored?' (Taxonomy + AI 재분류)':' (Taxonomy)'));
   }catch(e){ alert('불러오기 실패: '+e.message); }
 }
 

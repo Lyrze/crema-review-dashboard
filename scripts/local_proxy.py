@@ -180,6 +180,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             "brand": brand, "month": month, "owner": payload.get("owner") or owner,
             "uploaded_at": datetime.datetime.now().isoformat(timespec="seconds"),
             "taxonomies": data,
+            "reclassify": payload.get("reclassify"),  # AI 전체 재분류 결과(있으면)
         }
         b64 = base64.b64encode(
             json.dumps(content_obj, ensure_ascii=False, indent=2).encode("utf-8")
