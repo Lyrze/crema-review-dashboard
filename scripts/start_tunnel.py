@@ -19,6 +19,7 @@ Ollama Cloudflare Quick Tunnel 자동 실행 스크립트
 """
 
 import subprocess
+import os
 import re
 import sys
 import time
@@ -106,14 +107,39 @@ def main() -> int:
 
     print("[OK] Ollama 실행 중 (127.0.0.1:11434)")
     print()
+
+    # 1-b. 로컬 프록시 실행 (Ollama 중계 + GitHub 저장소 업로드)
+    proxy_port = os.environ.get("PROXY_PORT", "8799")
+    proxy_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "local_proxy.py")
+    proxy_proc = None
+    if os.path.exists(proxy_path):
+        try:
+            proxy_proc = subprocess.Popen(
+                [sys.executable, proxy_path],
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                text=True, encoding="utf-8", errors="replace", bufsize=1,
+            )
+            # 프록시 기동 로그 한두 줄 출력
+            time.sleep(1.2)
+            print("[OK] 로컬 프록시 시작 (127.0.0.1:%s) — AI 중계 + 저장소 업로드" % proxy_port)
+            # GitHub 토큰 안내
+            from local_proxy import get_token  # type: ignore[import]
+            if not get_token():
+                print("[!] GitHub 토큰 미설정 → 업로드는 비활성(불러오기는 가능). "
+                      "scripts/.gh_token 파일에 토큰을 넣으면 업로드됩니다.")
+        except Exception as exc:  # noqa: BLE001
+            print("[!] 로컬 프록시 시작 실패 (%s) — AI는 직접 11434로 연결됩니다." % exc)
+            proxy_proc = None
+    print()
     print("Cloudflare Tunnel 시작 중...")
     print("(잠시만 기다려주세요, 약 3~10초 소요)")
     print()
 
-    # 2. cloudflared 실행 (stdout/stderr 동시 캡처)
+    # 2. cloudflared 실행 — 프록시가 떴으면 프록시 포트, 아니면 Ollama 직결
+    tunnel_target = ("http://localhost:%s" % proxy_port) if proxy_proc else "http://localhost:11434"
     try:
         proc = subprocess.Popen(
-            ["cloudflared", "tunnel", "--url", "http://localhost:11434"],
+            ["cloudflared", "tunnel", "--url", tunnel_target],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
@@ -184,14 +210,20 @@ def main() -> int:
         print("[!] Ctrl+C 감지 - 터널 종료 중...")
         proc.terminate()
         proc.wait(timeout=5)
+        if proxy_proc:
+            proxy_proc.terminate()
         print("[OK] 터널 정상 종료")
         return 0
     except Exception as exc:
         print(f"\n[X] 오류 발생: {exc}")
         proc.terminate()
+        if proxy_proc:
+            proxy_proc.terminate()
         return 1
 
     # 4. cloudflared가 자체 종료된 경우
+    if proxy_proc:
+        proxy_proc.terminate()
     rc = proc.wait()
     print()
     print(f"[!] cloudflared가 종료되었습니다 (exit code: {rc})")

@@ -968,12 +968,23 @@
       </div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <span class="tx-counter" id="tx-counter">0 Taxonomies</span>
-        <button class="tx-io-btn" onclick="txExportBackup()" title="모든 Taxonomy·수동 분류를 JSON 파일로 백업">⬇ 백업</button>
+        <button class="tx-io-btn" onclick="txGithubUpload()" title="현재 분류를 GitHub 저장소에 업로드 (담당자·일시 태그)" style="border-color:var(--accent);color:var(--accent);">☁️ 저장소 업로드</button>
+        <button class="tx-io-btn" onclick="txGithubOpenList()" title="저장소에 업로드된 분류 불러오기" style="border-color:var(--accent);color:var(--accent);">☁️ 불러오기</button>
+        <button class="tx-io-btn" onclick="txExportBackup()" title="JSON 파일로 백업">⬇ 백업</button>
         <button class="tx-io-btn" onclick="txImportBackup()" title="백업 JSON 파일에서 복원/병합">⬆ 복원</button>
         <button class="tx-add-btn" onclick="txCreateNew()">+ Taxonomy</button>
       </div>
     </div>
-    <div class="tx-io-note" id="tx-io-note">💾 분류 내용은 이 브라우저에 자동 저장됩니다. 캐시 삭제·다른 PC 대비 <strong>⬇ 백업</strong>으로 파일 저장을 권장합니다.</div>
+    <div class="tx-io-note" id="tx-io-note">💾 분류는 이 브라우저에 자동 저장됩니다. 팀 공유·다른 PC는 <strong>☁️ 저장소 업로드/불러오기</strong>(터널 켜진 상태)나 <strong>⬇ 백업</strong> 파일을 사용하세요.</div>
+    <div id="tx-gh-modal" style="display:none;position:fixed;inset:0;z-index:880;background:rgba(0,0,0,.55);align-items:flex-start;justify-content:center;padding-top:70px;" onclick="if(event.target===this)this.style.display='none';">
+      <div style="background:var(--card);border-radius:14px;width:100%;max-width:560px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.22);">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:15px;font-weight:800;">☁️ 저장소에서 분류 불러오기</div>
+          <button onclick="document.getElementById('tx-gh-modal').style.display='none'" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--text-secondary);">×</button>
+        </div>
+        <div id="tx-gh-list" style="padding:12px 20px;overflow-y:auto;"></div>
+      </div>
+    </div>
     <input type="file" id="tx-import-file" accept="application/json,.json" style="display:none;" onchange="txImportFileChosen(event)" />
     <div class="tx-grid" id="tx-grid"></div>
   </div>
@@ -6903,6 +6914,91 @@ function txImportFileChosen(evt){
     showToast('복원 완료 — 현재 Taxonomy '+TAXONOMIES.length+'개 · 수동 분류 '+total+'건');
   };
   reader.readAsText(file);
+}
+
+// ── GitHub 저장소 업로드/불러오기 (start-tunnel 로컬 프록시 경유) ──
+function txGhBase(){ return (getOllamaUrl()||'').replace(/\/+$/,''); }
+
+function txMergeIncoming(incoming){
+  txLoad();
+  var byId={}; TAXONOMIES.forEach(function(t){ byId[t.id]=t; });
+  incoming.forEach(function(it){
+    if(!it||!it.id) return;
+    var cur=byId[it.id];
+    if(!cur){ TAXONOMIES.push(it); byId[it.id]=it; return; }
+    var curTopicIds={}; (cur.topics||[]).forEach(function(tp){curTopicIds[tp.id]=tp;});
+    (it.topics||[]).forEach(function(tp){
+      if(curTopicIds[tp.id]){ cur.topics[cur.topics.indexOf(curTopicIds[tp.id])]=tp; }
+      else { cur.topics=cur.topics||[]; cur.topics.push(tp); }
+    });
+    cur.manualClassifications=cur.manualClassifications||{};
+    var inc=it.manualClassifications||{};
+    Object.keys(inc).forEach(function(rid){
+      var a=cur.manualClassifications[rid]||{include:[],exclude:[]};
+      var b=inc[rid]||{include:[],exclude:[]};
+      function uniq(arr){var o={};(arr||[]).forEach(function(x){o[x]=1;});return Object.keys(o);}
+      cur.manualClassifications[rid]={include:uniq((a.include||[]).concat(b.include||[])),exclude:uniq((a.exclude||[]).concat(b.exclude||[]))};
+    });
+  });
+  txSave();
+}
+
+async function txGithubUpload(){
+  txLoad();
+  if(!TAXONOMIES.length){ alert('업로드할 Taxonomy가 없습니다.'); return; }
+  var base=txGhBase();
+  if(!base){ alert('터널/AI 서버 URL이 설정되지 않았습니다. 좌측 사이드바에서 입력하세요.'); return; }
+  var owner=prompt('담당자 이름을 입력하세요 (파일 태그용):', localStorage.getItem('gh_owner')||'');
+  if(owner===null) return;
+  owner=(owner||'').trim();
+  if(!owner){ alert('담당자 이름이 필요합니다.'); return; }
+  localStorage.setItem('gh_owner', owner);
+  showToast('저장소 업로드 중…');
+  try{
+    var r=await fetch(base+'/gh/upload',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({brand:STATE.brand, month:STATE.month, owner:owner, data:TAXONOMIES})});
+    var j=await r.json().catch(function(){return {};});
+    if(r.ok && j.ok){ showToast('✅ 업로드 완료 — ['+STATE.brand+']['+STATE.month+']['+owner+']['+(j.ts||'')+']'); }
+    else { alert('업로드 실패: '+(j.error||('HTTP '+r.status))+(j.detail?'\n'+j.detail:'')); }
+  }catch(e){ alert('업로드 실패 — 터널(배치)이 켜져 있는지 확인하세요.\n'+e.message); }
+}
+
+async function txGithubOpenList(){
+  var base=txGhBase();
+  if(!base){ alert('터널/AI 서버 URL이 설정되지 않았습니다.'); return; }
+  var modal=$('tx-gh-modal'), list=$('tx-gh-list');
+  modal.style.display='flex'; list.innerHTML='<div style="color:var(--text-secondary);font-size:12.5px;padding:8px;">불러오는 중…</div>';
+  try{
+    var r=await fetch(base+'/gh/list?brand='+encodeURIComponent(STATE.brand)+'&month='+encodeURIComponent(STATE.month));
+    var j=await r.json().catch(function(){return {};});
+    if(!r.ok){ list.innerHTML='목록 조회 실패: '+escapeHtml(j.error||('HTTP '+r.status)); return; }
+    var files=j.files||[];
+    if(!files.length){ list.innerHTML='<div style="color:var(--text-secondary);font-size:12.5px;padding:8px;">['+escapeHtml(STATE.brand)+']['+escapeHtml(STATE.month)+'] 업로드된 분류가 없습니다.</div>'; return; }
+    list.innerHTML=files.map(function(f){
+      var safe=(f.path||'').replace(/'/g,"\\'");
+      return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px;border:1px solid var(--border);border-radius:9px;margin-bottom:8px;">'+
+        '<div><div style="font-size:12.5px;font-weight:700;color:var(--text);">['+escapeHtml(STATE.brand)+']['+escapeHtml(STATE.month)+']['+escapeHtml(f.owner||'?')+']</div>'+
+        '<div style="font-size:10.5px;color:var(--text-secondary);">'+escapeHtml(f.ts||'')+'</div></div>'+
+        '<button onclick="txGithubLoad(\''+safe+'\')" style="padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;">불러오기(병합)</button>'+
+      '</div>';
+    }).join('');
+  }catch(e){ list.innerHTML='조회 실패 — 터널 확인: '+escapeHtml(e.message); }
+}
+
+async function txGithubLoad(path){
+  var base=txGhBase();
+  try{
+    var r=await fetch(base+'/gh/load?path='+encodeURIComponent(path));
+    var j=await r.json().catch(function(){return {};});
+    if(!r.ok){ alert('불러오기 실패: '+(j.error||('HTTP '+r.status))); return; }
+    var incoming=(j && Array.isArray(j.taxonomies)) ? j.taxonomies : (Array.isArray(j)?j:null);
+    if(!incoming){ alert('인식할 수 없는 형식입니다.'); return; }
+    txMergeIncoming(incoming);
+    var m=$('tx-gh-modal'); if(m) m.style.display='none';
+    txRenderGrid();
+    if(typeof refreshDashboardFromClassification==='function') refreshDashboardFromClassification();
+    showToast('✅ 저장소 분류 불러오기·병합 완료');
+  }catch(e){ alert('불러오기 실패: '+e.message); }
 }
 
 // ── 매칭 엔진 — 키워드 → 리뷰 매칭 ──

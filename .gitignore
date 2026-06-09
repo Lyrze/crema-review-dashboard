@@ -157,3 +157,8 @@ cover/
 # ======================
 *.bak
 *.orig
+
+# GitHub 업로드 토큰 (절대 커밋 금지)
+scripts/.gh_token
+.gh_token
+.crema_gh_token
