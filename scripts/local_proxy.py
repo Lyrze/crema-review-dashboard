@@ -26,9 +26,17 @@ import datetime
 import http.server
 import json
 import os
+import sys
 import urllib.parse
 
 import requests
+
+# Windows 한국어 콘솔(cp949)에서 유니코드 기호 출력 시 크래시 방지 → 표준출력을 UTF-8로 강제
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 
 OLLAMA = os.environ.get("OLLAMA_URL", "http://localhost:11434").rstrip("/")
 REPO = os.environ.get("GH_REPO", "Lyrze/crema-review-dashboard")
@@ -256,7 +264,7 @@ def main():
     print("  크리마 로컬 프록시  http://127.0.0.1:%d" % PORT)
     print("  - Ollama 중계 : %s" % OLLAMA)
     print("  - GitHub 저장소: %s (%s)" % (REPO, BRANCH))
-    print("  - GitHub 토큰 : %s" % ("설정됨 ✓" if get_token() else "없음 ✗ (업로드 불가, 가이드 참고)"))
+    print("  - GitHub 토큰 : %s" % ("설정됨 [OK]" if get_token() else "없음 [X] (업로드 불가, 가이드 참고)"))
     print("=" * 64)
     try:
         httpd.serve_forever()
