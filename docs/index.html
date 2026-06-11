@@ -892,6 +892,52 @@
       .sc-selector-bar { grid-template-columns:1fr; }
       .sc-vs { display:none; }
     }
+    /* ─── 주요 SKU 스코어카드 ─── */
+    .sku-score-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px;}
+    .sku-score-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px 12px;border-top:5px solid #16a34a;}
+    .sku-score-card.warn{border-top-color:#f59e0b;}
+    .sku-score-card.bad{border-top-color:#dc2626;}
+    .sku-sc-name{font-size:13.5px;font-weight:800;margin-bottom:10px;letter-spacing:-.01em;line-height:1.3;}
+    .sku-sc-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:3px 0;}
+    .sku-sc-lbl{color:var(--text-secondary);font-weight:600;}
+    .sku-sc-val{font-weight:800;font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:6px;}
+    .sku-sc-delta{font-size:10px;font-weight:800;padding:1px 6px;border-radius:8px;}
+    .sku-sc-delta.up{background:rgba(22,163,74,.12);color:#16a34a;}
+    .sku-sc-delta.down{background:rgba(220,38,38,.1);color:#dc2626;}
+    .sku-sc-sub{font-size:11.5px;font-weight:800;margin:10px 0 6px;}
+    .sku-sc-chips{display:flex;gap:6px;flex-wrap:wrap;min-height:22px;}
+    .sku-sc-chip{background:rgba(220,38,38,.08);color:#b91c1c;border:1px solid rgba(220,38,38,.18);font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:10px;cursor:pointer;}
+    .sku-sc-chip:hover{background:rgba(220,38,38,.16);}
+    .sku-sc-foot{margin-top:10px;padding-top:8px;border-top:1px solid var(--border);font-size:10.5px;color:var(--text-secondary);}
+    /* ─── 구매경험 VOC — 고정 분류 3컬럼 ─── */
+    #pvoc-kanban{display:block;overflow:visible;}
+    .pvj-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px;}
+    .pvj-sum-card{border-radius:14px;padding:14px 18px;display:flex;gap:12px;align-items:center;border:1px solid var(--border);}
+    .pvj-sum-card .ic{font-size:24px;}
+    .pvj-sum-lbl{font-size:11px;font-weight:800;}
+    .pvj-sum-val{font-size:21px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.2;}
+    .pvj-sum-desc{font-size:10.5px;color:var(--text-secondary);}
+    .pvj-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start;}
+    .pvj-col{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;}
+    .pvj-col-title{font-size:12.5px;font-weight:800;margin-bottom:8px;}
+    .pvj-item{padding:9px 8px;border-radius:10px;cursor:pointer;transition:background .12s;}
+    .pvj-item:hover{background:rgba(0,0,0,.04);}
+    .pvj-item.alert{background:rgba(220,38,38,.05);}
+    .pvj-item.alert:hover{background:rgba(220,38,38,.09);}
+    .pvj-i-head{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:700;gap:8px;}
+    .pvj-i-cnt{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:var(--text-secondary);white-space:nowrap;}
+    .pvj-badge{background:#fee2e2;color:#b91c1c;font-size:9.5px;font-weight:800;padding:1px 7px;border-radius:8px;}
+    .pvj-bar{height:8px;border-radius:5px;background:rgba(0,0,0,.07);margin:6px 0 4px;overflow:hidden;display:flex;}
+    .pvj-bar .pos{background:#22c55e;height:100%;}
+    .pvj-bar .neg{background:#ef4444;height:100%;}
+    .pvj-rates{display:flex;justify-content:space-between;font-size:10.5px;font-weight:700;}
+    .pvj-rates .p{color:#16a34a;}
+    .pvj-rates .n{color:#dc2626;}
+    .pvj-cap{font-size:10.5px;color:var(--text-secondary);margin-top:3px;}
+    .pvj-foot{margin-top:10px;padding:9px 11px;border-radius:10px;background:rgba(0,0,0,.035);font-size:11px;line-height:1.55;}
+    .pvj-fav{margin-top:14px;padding:12px 14px;border:1px dashed var(--border);border-radius:12px;}
+    .pvj-fav-chip{display:inline-block;margin:3px 4px 3px 0;padding:3px 10px;border-radius:10px;background:var(--card);border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;}
+    @media(max-width:900px){.pvj-grid,.pvj-summary{grid-template-columns:1fr;}}
   </style>
 </head>
 <body>
@@ -912,6 +958,7 @@
   <nav>
     <div class="nav-group">분석 섹션</div>
     <a href="#sec-exec" class="active" onclick="goToSection(this,'#sec-exec',event)"><span class="icon">📊</span> Executive Summary</a>
+    <a href="#sec-sku-score" onclick="goToSection(this,'#sec-sku-score',event)"><span class="icon">📇</span> SKU 스코어카드</a>
     <a href="#sec-kpi" onclick="goToSection(this,'#sec-kpi',event)"><span class="icon">📈</span> 리뷰 지표</a>
     <a href="#sec-sku-table" onclick="goToSection(this,'#sec-sku-table',event)"><span class="icon">📋</span> SKU별 데이터</a>
     <a href="#sec-sku-combo" onclick="goToSection(this,'#sec-sku-combo',event)"><span class="icon">📉</span> SKU 콤보차트</a>
@@ -1304,6 +1351,17 @@
   </section>
 
   <!-- ② 리뷰 지표 -->
+  <!-- ①-b 주요 SKU 스코어카드 — 빠른 의사결정 인사이트 -->
+  <section class="section animate delay-1" id="sec-sku-score" aria-label="주요 SKU 스코어카드">
+    <div class="section-header">
+      <div>
+        <div class="section-title"><span class="drag-handle" title="드래그해서 이동">⠿</span>📇 주요 SKU 스코어카드</div>
+        <div class="section-subtitle">빠른 의사결정 인사이트 — 리뷰 수 · 평균 별점 · 부정률 · 핵심 부정 키워드 (전월 대비 증감)</div>
+      </div>
+    </div>
+    <div class="sku-score-row" id="sku-scorecards"></div>
+  </section>
+
   <section class="section animate delay-2" id="sec-kpi" aria-label="리뷰 지표 통합">
     <div class="section-header">
       <div>
@@ -1534,13 +1592,13 @@
     <div class="section-header">
       <div>
         <div class="section-title"><span class="drag-handle" title="드래그해서 이동">⠿</span><span class="sec-num">7</span>구매경험 VOC</div>
-        <div class="section-subtitle">구매 전 / 후 경험 분류 분석</div>
+        <div class="section-subtitle">구매 전 탐색 → 구매 동기 → 구매 후 과정 · 브랜드 전체 언급 기준 · SKU별 상세는 상단 필터 사용</div>
       </div>
     </div>
     <div class="pvoc-kanban" id="pvoc-kanban">
       <!-- JS로 동적 생성 -->
     </div>
-    <div class="section-desc">* 구매경험 VOC는 리뷰 텍스트에서 구매 전/후 경험 관련 언급을 분류한 결과입니다. 가로로 스크롤하여 모든 카드를 확인하세요.</div>
+    <div class="section-desc">* 고정 기준 키워드로 리뷰 본문을 분류한 결과입니다 (★4 이상 = 긍정 · ★3 이하 = 부정). 항목 클릭 시 관련 리뷰를 확인할 수 있고, 기준 키워드 확장은 Taxonomy에서 가능합니다.</div>
   </section>
 
   <!-- ⑧ 커스텀 차트 (구 ⑨, AI 커스텀 질문은 Hey Sloom 패널로 통합됨) -->
@@ -2437,7 +2495,7 @@ function onMonthChange(v){
 }
 async function reload(){ await loadData(STATE.brand,STATE.month); render(); }
 
-function render(){ renderHeader(); renderExec(); renderKPI(); renderTimeline(); renderSKUTable(); renderSKUCombo(); renderChangeTables(); renderVOC(); updateProductFocusBar(); updateCustomAIModelLabel(); populateCompareMonths(); updateCompareBanner(); renderPVOCKanban(); syncChipBarFromState(); refreshOpenInsightModal(); setTimeout(enhanceCardActions,50); }
+function render(){ renderHeader(); renderExec(); renderSKUScorecards(); renderKPI(); renderTimeline(); renderSKUTable(); renderSKUCombo(); renderChangeTables(); renderVOC(); updateProductFocusBar(); updateCustomAIModelLabel(); populateCompareMonths(); updateCompareBanner(); renderPVOCKanban(); syncChipBarFromState(); refreshOpenInsightModal(); setTimeout(enhanceCardActions,50); }
 
 // View Insight 모달이 열려 있으면 인사이트 카드 숫자도 즉시 갱신
 function refreshOpenInsightModal(){
@@ -4657,14 +4715,18 @@ async function krmReclassify(){
         var listText=chunk.map(function(it,i){ return '['+i+'] '+(it.r.text||'').replace(/\s+/g,' ').slice(0,220); }).join('\n');
         var prompt='당신은 한국어 리뷰 분류 전문가입니다.\n'+
           '키워드: "'+kw+'" (이 키워드는 제품에 대해 '+typeLabel+' 주제입니다)\n\n'+
-          '아래 리뷰들 중에서, 그 리뷰가 실제로 "'+kw+'" 주제를 ('+ctx.type+' 맥락으로) 다루고 있는 리뷰의 번호만 고르세요.\n'+
+          '아래 리뷰들 중에서 실제로 "'+kw+'" 주제를 다루는 리뷰를 고르고, 각 리뷰가 그 주제에 대해 갖는 감성(긍정/부정/중립)을 함께 판정하세요.\n'+
           '현재 다른 분류에 있든 없든 상관없이, 의미상 이 키워드에 해당하면 포함하세요.\n'+
-          '단어가 우연히 포함됐을 뿐 의미상 무관하거나, 반대 맥락인 리뷰는 제외하세요.\n\n'+
+          '단어가 우연히 포함됐을 뿐 의미상 무관한 리뷰는 제외하세요.\n\n'+
           '리뷰:\n'+listText+'\n\n'+
-          '맞는 번호만 JSON으로: {"matched":[0,2,...]}  (없으면 {"matched":[]})';
+          'JSON으로만 답하세요: {"matched":[{"no":0,"sent":"긍정"},{"no":2,"sent":"부정"}]}  (없으면 {"matched":[]})';
         var resp=await ollamaGenerateOnce(prompt);
-        var matched=krmParseMatched(resp, chunk.length);
-        chunk.forEach(function(it,i){ if(matched.indexOf(i)>=0) kept.push(it); });
+        var matched=krmParseMatchedSent(resp, chunk.length);
+        matched.forEach(function(mx){
+          var it=chunk[mx.i];
+          // 키워드 극성과 반대 감성 리뷰는 제외 (예: 긍정 키워드에 부정 리뷰)
+          if(it && kwSentOk(ctx.type, mx.sent)){ it._sent=mx.sent; kept.push(it); }
+        });
         processed+=chunk.length;
         if(statusEl) statusEl.textContent=scopeNote+' 검토 '+processed+'/'+total+' (A 귀속 '+kept.length+')';
       }
@@ -4672,13 +4734,14 @@ async function krmReclassify(){
       // 정밀: 1건씩 yes/no
       for(var k=0;k<cands.length;k++){
         var it=cands[k];
-        var p1='키워드: "'+kw+'" ('+ctx.type+' 맥락).\n'+
-          '다음 리뷰가 실제로 "'+kw+'" 주제를 '+ctx.type+' 맥락으로 다루나요? 단어만 우연히 포함된 경우는 아니오.\n'+
+        var p1='키워드: "'+kw+'"\n'+
+          '다음 리뷰가 실제로 "'+kw+'" 주제를 다루나요? 단어만 우연히 포함된 경우는 무관입니다.\n'+
           '리뷰: '+(it.r.text||'').replace(/\s+/g,' ').slice(0,300)+'\n\n'+
-          '오직 "예" 또는 "아니오"로만 답하세요.';
+          '다음 중 하나로만 답하세요: 무관 / 긍정 / 부정 / 중립\n'+
+          '(긍정·부정·중립은 이 리뷰가 해당 주제에 대해 갖는 감성입니다)';
         var r1=await ollamaGenerateOnce(p1);
-        var yes=/예|네|맞|yes|true|해당/i.test(r1) && !/아니|no|false|무관|해당\s*없/i.test(r1);
-        if(yes) kept.push(it);
+        var sent1=krmParseSingleSent(r1);
+        if(sent1 && kwSentOk(ctx.type, sent1)){ it._sent=sent1; kept.push(it); }
         processed++;
         if(statusEl) statusEl.textContent=scopeNote+' 정밀 검토 '+processed+'/'+total+' (A 귀속 '+kept.length+')';
       }
@@ -4754,6 +4817,49 @@ function krmParseMatched(resp, n){
   var arr=resp.match(/\[([0-9,\s]*)\]/);
   if(arr){ return arr[1].split(',').map(function(x){return parseInt(x.trim(),10);}).filter(function(x){return !isNaN(x)&&x>=0&&x<n;}); }
   return [];
+}
+
+// ── 감성 포함 매칭 파싱: {"matched":[{"no":0,"sent":"긍정"},...]} (구형 {"matched":[0,2]}도 허용) ──
+function krmParseMatchedSent(resp, n){
+  var out=[]; var seen={};
+  function push(i, sent){ if(Number.isInteger(i)&&i>=0&&i<n&&!seen[i]){ seen[i]=1; out.push({i:i, sent:sent||null}); } }
+  if(!resp) return out;
+  try{
+    var m=resp.match(/\{[\s\S]*\}/);
+    if(m){
+      var o=JSON.parse(m[0]);
+      if(o && Array.isArray(o.matched)){
+        o.matched.forEach(function(x){
+          if(Number.isInteger(x)) push(x, null);
+          else if(x && Number.isInteger(x.no)){
+            var s=String(x.sent||'');
+            push(x.no, s.indexOf('부')>=0?'부정':s.indexOf('긍')>=0?'긍정':'중립');
+          }
+        });
+        return out;
+      }
+    }
+  }catch(e){}
+  krmParseMatched(resp, n).forEach(function(i){ push(i, null); });
+  return out;
+}
+
+// 키워드 극성 ↔ 리뷰 감성 일치 검사 — 반대 감성 리뷰는 귀속 제외
+function kwSentOk(typeKr, sent){
+  if(!sent || sent==='중립') return true;
+  if(typeKr==='긍정') return sent!=='부정';
+  if(typeKr==='부정') return sent!=='긍정';
+  return true; // 개선: 긍정 리뷰 속 개선 요청도 유효
+}
+
+// 단건 응답에서 감성 추출 (무관이면 null)
+function krmParseSingleSent(r){
+  var t=String(r||'');
+  if(/무관|아니|관련\s*없|해당\s*없|no/i.test(t)) return null;
+  if(/부정/.test(t)) return '부정';
+  if(/긍정/.test(t)) return '긍정';
+  if(/중립/.test(t)) return '중립';
+  return /예|해당|관련|yes/i.test(t)?'중립':null;
 }
 
 // ═══════════════════════════════════════════════
@@ -4855,10 +4961,10 @@ async function aiVerifyKeywordCandidates(word, typeKr, cands, mode, onProgress){
     for(var k=0;k<cands.length;k++){
       if(FRC_STATE.cancel) break;
       var it=cands[k];
-      var p='키워드: "'+word+'" ('+typeKr+' 맥락).\n다음 리뷰가 실제로 "'+word+'" 주제를 '+typeKr+' 맥락으로 다루나요? 단어만 우연히 포함된 경우는 아니오.\n리뷰: '+(it.r.text||'').replace(/\s+/g,' ').slice(0,300)+'\n\n오직 "예" 또는 "아니오"로만 답하세요.';
+      var p='키워드: "'+word+'"\n다음 리뷰가 실제로 "'+word+'" 주제를 다루나요? 단어만 우연히 포함된 경우는 무관입니다.\n리뷰: '+(it.r.text||'').replace(/\s+/g,' ').slice(0,300)+'\n\n다음 중 하나로만 답하세요: 무관 / 긍정 / 부정 / 중립\n(긍정·부정·중립은 이 리뷰가 해당 주제에 대해 갖는 감성입니다)';
       var r=await ollamaGenerateOnce(p);
-      var yes=/예|네|맞|yes|true|해당/i.test(r) && !/아니|no|false|무관|해당\s*없/i.test(r);
-      if(yes) kept.push(it);
+      var sentI=krmParseSingleSent(r);
+      if(sentI && kwSentOk(typeKr, sentI)){ it._sent=sentI; kept.push(it); }
       if(onProgress) onProgress(k+1, cands.length);
     }
   } else {
@@ -4867,10 +4973,13 @@ async function aiVerifyKeywordCandidates(word, typeKr, cands, mode, onProgress){
       if(FRC_STATE.cancel) break;
       var chunk=cands.slice(s,s+BATCH);
       var listText=chunk.map(function(it,i){return '['+i+'] '+(it.r.text||'').replace(/\s+/g,' ').slice(0,220);}).join('\n');
-      var prompt='당신은 한국어 리뷰 분류 전문가입니다.\n키워드: "'+word+'" (이 키워드는 제품에 대해 '+typeDesc+' 주제입니다)\n\n아래 리뷰들 중에서, 그 리뷰가 실제로 "'+word+'" 주제를 ('+typeKr+' 맥락으로) 다루고 있는 리뷰의 번호만 고르세요.\n현재 다른 분류에 있든 없든 상관없이, 의미상 이 키워드에 해당하면 포함하세요.\n단어가 우연히 포함됐을 뿐 의미상 무관하거나 반대 맥락인 리뷰는 제외하세요.\n\n리뷰:\n'+listText+'\n\n맞는 번호만 JSON으로: {"matched":[0,2,...]} (없으면 {"matched":[]})';
+      var prompt='당신은 한국어 리뷰 분류 전문가입니다.\n키워드: "'+word+'" (이 키워드는 제품에 대해 '+typeDesc+' 주제입니다)\n\n아래 리뷰들 중에서 실제로 "'+word+'" 주제를 다루는 리뷰를 고르고, 각 리뷰가 그 주제에 대해 갖는 감성(긍정/부정/중립)을 함께 판정하세요.\n현재 다른 분류에 있든 없든 상관없이, 의미상 이 키워드에 해당하면 포함하세요.\n단어가 우연히 포함됐을 뿐 의미상 무관한 리뷰는 제외하세요.\n\n리뷰:\n'+listText+'\n\nJSON으로만 답하세요: {"matched":[{"no":0,"sent":"긍정"},{"no":2,"sent":"부정"}]} (없으면 {"matched":[]})';
       var resp=await ollamaGenerateOnce(prompt);
-      var matched=krmParseMatched(resp, chunk.length);
-      chunk.forEach(function(it,i){ if(matched.indexOf(i)>=0) kept.push(it); });
+      var matchedS=krmParseMatchedSent(resp, chunk.length);
+      matchedS.forEach(function(mx){
+        var it=chunk[mx.i];
+        if(it && kwSentOk(typeKr, mx.sent)){ it._sent=mx.sent; kept.push(it); }
+      });
       if(onProgress) onProgress(Math.min(s+BATCH,cands.length), cands.length);
     }
   }
@@ -5945,7 +6054,7 @@ function pvocShowAllReviews(idx){
   openKeywordReviewsModal(combined, STATE.productFocus||null, card.type, searchTerms.join('|'));
 }
 
-function renderPVOCKanban(){
+function renderPVOCKanban_legacy(){
   var container=$('pvoc-kanban');
   if(!container) return;
   var kw=STATE.keywords||REAL_DATA.keywords||{};
@@ -6087,6 +6196,195 @@ function renderPVOCKanban(){
         '<span class="pvoc-k-ts">Updated on '+ts+'</span>'+
         '<div class="pvoc-k-vote"><button title="좋아요">👍</button><button title="별로">👎</button></div>'+
       '</div>'+
+      '</div>';
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════
+//  구매경험 VOC — 고정 기준 키워드 분류 체계 (담당자 합의값)
+//  확장은 Taxonomy에서 · ★4 이상=긍정 / ★3 이하=부정
+// ═══════════════════════════════════════════════
+var PVOC_TAXONOMY=[
+  {key:'pre', icon:'🔍', label:'구매 전 탐색', desc:'광고·상세페이지·상담', accent:'#64748b',
+   items:[
+     {name:'광고 / PPL', icon:'📣', pats:['광고','유튜브','유투브','인스타','페이스북','협찬','ppl','보고 샀','보고 구매','보고구매','영상 보고','쇼츠','릴스','덤순이']},
+     {name:'제품 상세페이지', icon:'📄', pats:['상세페이지','상세 페이지','홈페이지','상품 페이지','사용 방법','사용법을','사용방법','설명서','상세 설명','설명이 부족','설명이 자세']},
+     {name:'상담 (구매 전)', icon:'💬', pats:['구매 전 문의','구매전 문의','사기 전에 문의','문의했','문의드렸','상담 받','상담받','추천을 잘','추천해 주','추천해주셔','쿠폰 적용','쿠폰이']}
+   ]},
+  {key:'motive', icon:'💡', label:'구매 동기', desc:'실제 구매 결심 계기', accent:'#16a34a',
+   items:[
+     {name:'통증 해결', icon:'🩹', pats:['통증','아파서','아프고','아픈','허리가','목이 아','어깨가','결림','뻐근','코골이','디스크','거북목','두통','저려','저림','불편해서 구매','아프지 않','안 아프','안아프']},
+     {name:'효도 / 선물', icon:'🎁', pats:['선물','효도','부모님','어머니','아버지','엄마가','엄마한테','아빠가','아빠한테','장모님','시어머니','시아버지','할머니','할아버지','드리려고','드릴려고','사드렸','사드리']},
+     {name:'지인 추천', icon:'🗣️', pats:['추천받','추천으로','추천해서','추천해줘서','친구가','친구 추천','지인이','지인 추천','언니가','동생이','동료가','소개로','입소문','좋다고 해서','좋다고해서','좋다길래']},
+     {name:'재구매', icon:'🔁', pats:['재구매','또 구매','다시 구매','두 번째 구매','두번째 구매','하나 더','한개 더','한 개 더','재주문','다시 샀','또 샀','추가 구매','추가로 구매','새로 구매']}
+   ]},
+  {key:'post', icon:'📮', label:'구매 후 과정', desc:'배송·교환·반품·AS·CS', accent:'#f59e0b',
+   items:[
+     {name:'배송', icon:'📦', pats:['배송','택배','도착','출고','포장','배달','분실']},
+     {name:'반품 / 교환', icon:'🔄', pats:['반품','교환','환불']},
+     {name:'불량 / AS 접수', icon:'🛠️', pats:['as기간','as 기간','as가','as는','as 접수','수리','보증','애프터서비스','애프터 서비스']},
+     {name:'하자 / 초기 불량', icon:'⚠️', pats:['불량','고장','기스','흠집','스크래치','실밥','파손','하자','터져','찢어','작동이 안','작동 안','안 켜져','안켜져','안 됩니다','작동하지 않']},
+     {name:'상담 (구매 후)', icon:'📞', pats:['고객센터','고객 센터','상담사','상담원','채팅 상담','전화 상담','상담 연결','상담연결','응대가','응대도','답이 없','답변이 없','ai 상담','상담 종료']}
+   ]}
+];
+
+// 패턴 매칭 — 짧은 영문 토큰(as 등)은 경계 검사, 한글은 부분 문자열
+function pvjMatchText(txt, pats){
+  for(var i=0;i<pats.length;i++){
+    var p=pats[i];
+    if(/^[a-z][a-z ]{0,3}$/.test(p)){
+      if(new RegExp('(^|[^a-z])'+p+'($|[^a-z])').test(txt)) return true;
+    } else if(txt.indexOf(p)>=0) return true;
+  }
+  return false;
+}
+
+// 전체 리뷰(reviews.json)에서 고정 분류 집계 — productFocus 존중
+function pvjCompute(){
+  var src=[];
+  if(STATE.reviewsById){
+    Object.keys(STATE.reviewsById).forEach(function(id){
+      var rv=STATE.reviewsById[id];
+      if(STATE.productFocus && rv.product!==STATE.productFocus) return;
+      src.push({id:String(id), rating:rv.rating||0, text:(rv.text||'').toLowerCase()});
+    });
+  } else {
+    txGetAllReviews().forEach(function(r){
+      if(STATE.productFocus && r.product!==STATE.productFocus) return;
+      src.push({id:String(r.review_id), rating:r.rating||0, text:(r.text||'').toLowerCase()});
+    });
+  }
+  return PVOC_TAXONOMY.map(function(col){
+    var items=col.items.map(function(it){
+      var pos=0, neg=0;
+      for(var i=0;i<src.length;i++){
+        var r=src[i];
+        if(!r.text) continue;
+        if(pvjMatchText(r.text, it.pats)){
+          if(r.rating>=4) pos++; else neg++;
+        }
+      }
+      return {name:it.name, icon:it.icon, pats:it.pats, pos:pos, neg:neg, total:pos+neg};
+    });
+    return {key:col.key, icon:col.icon, label:col.label, desc:col.desc, accent:col.accent,
+            items:items, total:items.reduce(function(s,x){return s+x.total;},0)};
+  });
+}
+
+var PVJ_DATA=null;
+function renderPVOCKanban(){
+  var container=$('pvoc-kanban');
+  if(!container) return;
+  var cols=pvjCompute();
+  PVJ_DATA=cols;
+  // 상단 요약 카드
+  var head='<div class="pvj-summary">'+cols.map(function(c){
+    return '<div class="pvj-sum-card" style="background:'+c.accent+'14;">'+
+      '<span class="ic">'+c.icon+'</span><div>'+
+      '<div class="pvj-sum-lbl" style="color:'+c.accent+';">'+c.label+'</div>'+
+      '<div class="pvj-sum-val">'+fmt(c.total)+'건</div>'+
+      '<div class="pvj-sum-desc">'+c.desc+'</div></div></div>';
+  }).join('')+'</div>';
+  // 3컬럼 항목
+  var grid='<div class="pvj-grid">'+cols.map(function(c, ci){
+    var maxC=1; c.items.forEach(function(it){ if(it.total>maxC) maxC=it.total; });
+    var rows=c.items.map(function(it, ii){
+      var pr=it.total? Math.round(it.pos/it.total*100) : 0;
+      var nr=it.total? 100-pr : 0;
+      var alert=(it.total>=5 && nr>=60);
+      var cap = !it.total ? '언급 없음'
+        : alert ? '부정 집중 — 리뷰 확인 권장'
+        : nr>=40 ? '긍·부정 혼재'
+        : '긍정 신호';
+      var wP=Math.round(it.pos/maxC*100), wN=Math.round(it.neg/maxC*100);
+      return '<div class="pvj-item'+(alert?' alert':'')+'" onclick="pvjOpenItem('+ci+','+ii+')" title="클릭하여 관련 리뷰 보기">'+
+        '<div class="pvj-i-head"><span>'+it.icon+' '+escapeHtml(it.name)+'</span>'+
+        '<span class="pvj-i-cnt">👍 <b style="color:#16a34a;">'+it.pos+'</b> | 👎 <b style="color:#dc2626;">'+it.neg+'</b> &nbsp;'+it.total+'건'+(alert?' <span class="pvj-badge">주의</span>':'')+'</span></div>'+
+        '<div class="pvj-bar"><div class="pos" style="width:'+wP+'%;"></div><div class="neg" style="width:'+wN+'%;"></div></div>'+
+        '<div class="pvj-rates"><span class="p">긍정 '+pr+'%</span><span class="n">부정 '+nr+'%</span></div>'+
+        '<div class="pvj-cap">'+cap+'</div></div>';
+    }).join('');
+    // 컬럼 인사이트: 부정 최다 항목
+    var worst=null;
+    c.items.forEach(function(it){ if(it.total>=5 && (!worst || it.neg/(it.total||1) > worst.neg/(worst.total||1))) worst=it; });
+    var foot = (worst && worst.neg/(worst.total)>=0.4)
+      ? '💡 <strong>'+escapeHtml(worst.name)+'('+worst.total+'건)</strong> 부정 '+Math.round(worst.neg/worst.total*100)+'% — 우선 점검 대상입니다.'
+      : '💡 두드러진 부정 신호 없음 — 긍정 흐름 유지 중.';
+    return '<div class="pvj-col"><div class="pvj-col-title" style="color:'+c.accent+';">'+c.icon+' '+c.label+(STATE.productFocus?' · '+escapeHtml(fmtS(STATE.productFocus)||STATE.productFocus):'')+'</div>'+rows+'<div class="pvj-foot">'+foot+'</div></div>';
+  }).join('')+'</div>';
+  // 즐겨찾기 Taxonomy 칩 (기존 기능 유지)
+  var favHtml='';
+  if(typeof TAXONOMIES!=='undefined' && TAXONOMIES.length){
+    var favs=TAXONOMIES.filter(function(t){return t.favorite && !t.system && (t.topics||[]).length>0;});
+    if(favs.length){
+      var allReviews=txGetAllReviews();
+      if(STATE.productFocus) allReviews=allReviews.filter(function(r){return r.product===STATE.productFocus;});
+      var chips=[];
+      favs.forEach(function(tax){
+        (tax.topics||[]).slice(0,8).forEach(function(tp){
+          var n=txMatchTopic(tp, allReviews, tax).length;
+          if(!n) return;
+          var sTax=tax.id.replace(/'/g,"\\'"), sTp=tp.id.replace(/'/g,"\\'");
+          chips.push('<span class="pvj-fav-chip" onclick="showTaxonomyPage();setTimeout(function(){txOpenTaxonomy(\''+sTax+'\');setTimeout(function(){txSelectTopic(\''+sTp+'\');},80);},80);" title="Taxonomy로 이동">📂 '+escapeHtml(tp.name)+' <b>'+n+'</b></span>');
+        });
+      });
+      if(chips.length) favHtml='<div class="pvj-fav"><div style="font-size:11px;font-weight:800;margin-bottom:5px;color:var(--text-secondary);">⭐ 즐겨찾기 Taxonomy</div>'+chips.join('')+'</div>';
+    }
+  }
+  container.innerHTML=head+grid+favHtml;
+}
+
+// 항목 클릭 → 패턴 OR 검색으로 관련 리뷰 모달
+function pvjOpenItem(ci, ii){
+  var col=PVJ_DATA && PVJ_DATA[ci]; if(!col) return;
+  var it=col.items[ii]; if(!it || !it.total) return;
+  var domType = it.neg>it.pos ? '부정' : '긍정';
+  var terms=it.pats.slice(0,8).join('|');
+  openKeywordReviewsModal(it.name, STATE.productFocus||null, domType, terms);
+}
+
+// ═══════════════════════════════════════════════
+//  주요 SKU 스코어카드 — 빠른 의사결정 인사이트
+// ═══════════════════════════════════════════════
+function renderSKUScorecards(){
+  var el=$('sku-scorecards'); if(!el) return;
+  var prods=(STATE.products||[]).slice();
+  if(STATE.productFocus) prods=prods.filter(function(p){return p.name===STATE.productFocus;});
+  prods.sort(function(a,b){return (b.review_count||0)-(a.review_count||0);});
+  var top=prods.slice(0,5);
+  if(!top.length){ el.innerHTML='<div style="grid-column:1/-1;padding:20px;text-align:center;color:var(--text-secondary);font-size:12px;">표시할 상품 데이터가 없습니다.</div>'; return; }
+  var bi=(STATE.keywords&&STATE.keywords.by_intent)||{};
+  var negPool=(bi.complaint||[]).concat(bi.improvement||[]);
+  el.innerHTML=top.map(function(p){
+    var negR=p.negative_rate!=null?p.negative_rate:0;
+    var rat=p.avg_rating||0;
+    var health=(negR>=3||rat<4.3)?'bad':(negR>=2||rat<4.55)?'warn':'good';
+    var negColor=health==='bad'?'#dc2626':health==='warn'?'#d97706':'#16a34a';
+    var dR=(p.prev_review_count!=null&&p.prev_review_count!==undefined)?(p.review_count-p.prev_review_count):null;
+    var dS=(p.prev_avg_rating!=null&&p.prev_avg_rating!==undefined)?(rat-p.prev_avg_rating):null;
+    var dRHtml=dR===null?'':'<span class="sku-sc-delta '+(dR>=0?'up':'down')+'">'+(dR>=0?'▲':'▼')+Math.abs(dR)+'</span>';
+    var dSHtml=dS===null?'':'<span class="sku-sc-delta '+(dS>=0?'up':'down')+'">'+(dS>=0?'▲':'▼')+Math.abs(dS).toFixed(2)+'</span>';
+    var negKws=negPool.map(function(k){
+        var bp=(k.by_product||[]).find(function(b){return b.product===p.name;});
+        return (bp&&bp.count>0)?{word:k.word,count:bp.count}:null;
+      }).filter(Boolean).sort(function(a,b){return b.count-a.count;}).slice(0,2);
+    var safeP=p.name.replace(/'/g,"\\'");
+    var chips=negKws.length
+      ? negKws.map(function(k){
+          var sw=k.word.replace(/'/g,"\\'");
+          return '<span class="sku-sc-chip" onclick="openKeywordReviewsModal(\''+sw+'\',\''+safeP+'\',\'부정\')" title="'+escapeHtml(k.word)+' 관련 리뷰 보기 ('+k.count+'건)">'+escapeHtml(k.word)+'</span>';
+        }).join('')
+      : '<span style="color:var(--text-secondary);font-size:11px;">—</span>';
+    var posR=p.positive_rate!=null?p.positive_rate.toFixed(1):'—';
+    var photo=p.photo_count!=null?(' · 📷 '+fmt(p.photo_count)+'장'):'';
+    return '<div class="sku-score-card '+health+'">'+
+      '<div class="sku-sc-name">'+escapeHtml(fmtS(p.name)||p.name)+'</div>'+
+      '<div class="sku-sc-row"><span class="sku-sc-lbl">리뷰 수</span><span class="sku-sc-val">'+fmt(p.review_count)+dRHtml+'</span></div>'+
+      '<div class="sku-sc-row"><span class="sku-sc-lbl">평균 별점</span><span class="sku-sc-val" style="color:#d97706;">★'+rat.toFixed(2)+dSHtml+'</span></div>'+
+      '<div class="sku-sc-row"><span class="sku-sc-lbl">부정률</span><span class="sku-sc-val" style="color:'+negColor+';">'+negR.toFixed(2)+'%</span></div>'+
+      '<div class="sku-sc-sub">핵심 부정 키워드</div>'+
+      '<div class="sku-sc-chips">'+chips+'</div>'+
+      '<div class="sku-sc-foot">긍정률 '+posR+'%'+photo+'</div>'+
       '</div>';
   }).join('');
 }
