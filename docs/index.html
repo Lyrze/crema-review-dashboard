@@ -7221,28 +7221,30 @@ function txLoad(){
     var raw=localStorage.getItem('taxonomies');
     if(raw){
       TAXONOMIES=JSON.parse(raw);
-      txEnsurePvocTaxonomies(); // 기존 사용자도 신규 고정 분류 자동 추가 (마이그레이션)
+      txCleanupLegacySeeds();      // 미사용 기본 시드 정리 (Saved topics·예시 불량 라벨)
+      txEnsurePvocTaxonomies();    // 기존 사용자도 신규 고정 분류 자동 추가 (마이그레이션)
       return;
     }
   }catch(e){}
-  // 첫 사용 시 기본 시드 — 구매경험은 고정 분류(PVOC_TAXONOMY)에서 시드됨
-  TAXONOMIES=[
-    {id:'tx-saved', name:'Saved topics', favorite:true, system:true, description:'즐겨찾기한 키워드 모음', topics:[]},
-    {id:'tx-defect', name:'불량 라벨', favorite:false, description:'제품 불량 유형별 분류', topics:[
-      {id:'t-ems', name:'EMS 강도 불량', keywords:['ems','강도','약해','약함','미흡'], mode:'any'},
-      {id:'t-noise', name:'소음 불량', keywords:['소음','시끄','웅소리','우웅','떨림'], mode:'any'},
-      {id:'t-airbag', name:'에어백 작동 불량', keywords:['에어백','공기','부풀'], mode:'any'},
-      {id:'t-heat', name:'온열 강도 불량', keywords:['온열','따뜻','발열','히터','미지근'], mode:'any'},
-      {id:'t-vibe', name:'진동 강도 불량', keywords:['진동','떨림','두통','어지러'], mode:'any'},
-      {id:'t-charge', name:'충전/전원 불량', keywords:['충전','배터리','전원','꺼짐','어댑터'], mode:'any'},
-      {id:'t-remote', name:'리모컨 불량', keywords:['리모컨','버튼','조작'], mode:'any'},
-      {id:'t-exterior', name:'외관 불량', keywords:['외관','스크래치','흠집','파손','이물'], mode:'any'},
-      {id:'t-cover', name:'커버 제작 불량', keywords:['커버','지퍼','봉제','마감'], mode:'any'},
-      {id:'t-missing', name:'구성품 누락', keywords:['누락','없음','빠짐','구성품'], mode:'any'}
-    ]}
-  ];
+  // 첫 사용 시 — 고정 분류(구매 전 탐색/구매 동기/구매 후 과정)만 시드
+  TAXONOMIES=[];
   txEnsurePvocTaxonomies();
   txSave();
+}
+
+// 구버전 기본 시드 정리:
+//  - 'Saved topics': 연결된 기능이 없는 죽은 시드 → 무조건 제거
+//  - '불량 라벨'(예시): 수동 분류 작업이 없을 때만 제거 (작업물 보존)
+function txCleanupLegacySeeds(){
+  var before=TAXONOMIES.length;
+  TAXONOMIES=TAXONOMIES.filter(function(t){
+    if(t.id==='tx-saved') return false;
+    var noWork=Object.keys(t.manualClassifications||{}).length===0;
+    if(t.id==='tx-defect' && noWork) return false;
+    if(t.id==='tx-experience' && noWork) return false; // 구 '구매 전 경험' — 고정 분류로 대체됨
+    return true;
+  });
+  if(TAXONOMIES.length!==before) txSave();
 }
 
 // ── 구매경험 고정 분류(PVOC_TAXONOMY) → Taxonomy 시드/마이그레이션 ──
@@ -7817,9 +7819,13 @@ function txCreateNew(){
 function txDeleteTaxonomy(id){
   var t=TAXONOMIES.find(function(x){return x.id===id;});
   if(!t) return;
-  if(!confirm('"'+t.name+'" Taxonomy를 삭제하시겠습니까?')) return;
+  var msg = t.pvoc
+    ? '"'+t.name+'"은 구매경험 VOC 고정 분류입니다.\n삭제하면 다음 접속 때 기본 키워드로 초기화(재생성)됩니다.\n\n계속하시겠습니까?'
+    : '"'+t.name+'" Taxonomy를 삭제하시겠습니까?\n(수동 분류 작업도 함께 삭제됩니다)';
+  if(!confirm(msg)) return;
   TAXONOMIES=TAXONOMIES.filter(function(x){return x.id!==id;});
   txSave(); txRenderGrid();
+  renderPVOCKanban(); // 고정 분류 삭제 시 ⑦구매경험 VOC는 내장 기본값으로 폴백
 }
 
 // ── 상세 페이지 ──
