@@ -6240,33 +6240,49 @@ function pvjMatchText(txt, pats){
 }
 
 // 전체 리뷰(reviews.json)에서 고정 분류 집계 — productFocus 존중
+// Taxonomy에 고정 분류(tx-pvoc-*)가 있으면 그것을 기준으로 집계 →
+// Taxonomy에서 키워드/Topic 추가·수동 분류(포함/제외)가 ⑦구매경험 VOC에 즉시 반영된다.
 function pvjCompute(){
   var src=[];
   if(STATE.reviewsById){
     Object.keys(STATE.reviewsById).forEach(function(id){
       var rv=STATE.reviewsById[id];
       if(STATE.productFocus && rv.product!==STATE.productFocus) return;
-      src.push({id:String(id), rating:rv.rating||0, text:(rv.text||'').toLowerCase()});
+      src.push({review_id:String(id), rating:rv.rating||0, text:(rv.text||'').toLowerCase()});
     });
   } else {
     txGetAllReviews().forEach(function(r){
       if(STATE.productFocus && r.product!==STATE.productFocus) return;
-      src.push({id:String(r.review_id), rating:r.rating||0, text:(r.text||'').toLowerCase()});
+      src.push({review_id:String(r.review_id), rating:r.rating||0, text:(r.text||'').toLowerCase()});
     });
   }
   return PVOC_TAXONOMY.map(function(col){
-    var items=col.items.map(function(it){
-      var pos=0, neg=0;
-      for(var i=0;i<src.length;i++){
-        var r=src[i];
-        if(!r.text) continue;
-        if(pvjMatchText(r.text, it.pats)){
-          if(r.rating>=4) pos++; else neg++;
+    var tax=(typeof TAXONOMIES!=='undefined')?TAXONOMIES.find(function(t){return t.pvoc===col.key;}):null;
+    var items;
+    if(tax && (tax.topics||[]).length){
+      // Taxonomy 기준 — txMatchTopic이 수동 포함/제외까지 처리
+      items=(tax.topics||[]).map(function(tp){
+        var matched=txMatchTopic(tp, src, tax);
+        var pos=0, neg=0;
+        matched.forEach(function(r){ if((r.rating||0)>=4) pos++; else neg++; });
+        return {name:tp.name, icon:tp.icon||'🏷️', pats:(tp.keywords||[]).slice(), pos:pos, neg:neg, total:pos+neg};
+      });
+    } else {
+      // 폴백: 내장 고정값
+      items=col.items.map(function(it){
+        var pos=0, neg=0;
+        for(var i=0;i<src.length;i++){
+          var r=src[i];
+          if(!r.text) continue;
+          if(pvjMatchText(r.text, it.pats)){
+            if(r.rating>=4) pos++; else neg++;
+          }
         }
-      }
-      return {name:it.name, icon:it.icon, pats:it.pats, pos:pos, neg:neg, total:pos+neg};
-    });
+        return {name:it.name, icon:it.icon, pats:it.pats, pos:pos, neg:neg, total:pos+neg};
+      });
+    }
     return {key:col.key, icon:col.icon, label:col.label, desc:col.desc, accent:col.accent,
+            taxId:tax?tax.id:null,
             items:items, total:items.reduce(function(s,x){return s+x.total;},0)};
   });
 }
@@ -6310,7 +6326,8 @@ function renderPVOCKanban(){
     var foot = (worst && worst.neg/(worst.total)>=0.4)
       ? '💡 <strong>'+escapeHtml(worst.name)+'('+worst.total+'건)</strong> 부정 '+Math.round(worst.neg/worst.total*100)+'% — 우선 점검 대상입니다.'
       : '💡 두드러진 부정 신호 없음 — 긍정 흐름 유지 중.';
-    return '<div class="pvj-col"><div class="pvj-col-title" style="color:'+c.accent+';">'+c.icon+' '+c.label+(STATE.productFocus?' · '+escapeHtml(fmtS(STATE.productFocus)||STATE.productFocus):'')+'</div>'+rows+'<div class="pvj-foot">'+foot+'</div></div>';
+    var editLink=c.taxId?'<span onclick="showTaxonomyPage();setTimeout(function(){txOpenTaxonomy(\''+c.taxId.replace(/'/g,"\\'")+'\');},60);" style="float:right;font-size:10px;font-weight:700;color:var(--text-secondary);cursor:pointer;" title="Taxonomy에서 이 분류의 Topic·키워드 편집 (수정 즉시 반영)">✎ 분류 편집</span>':'';
+    return '<div class="pvj-col"><div class="pvj-col-title" style="color:'+c.accent+';">'+c.icon+' '+c.label+(STATE.productFocus?' · '+escapeHtml(fmtS(STATE.productFocus)||STATE.productFocus):'')+editLink+'</div>'+rows+'<div class="pvj-foot">'+foot+'</div></div>';
   }).join('')+'</div>';
   // 즐겨찾기 Taxonomy 칩 (기존 기능 유지)
   var favHtml='';
@@ -7202,9 +7219,13 @@ var TX_UNCLASSIFIED = '__unclassified__';
 function txLoad(){
   try{
     var raw=localStorage.getItem('taxonomies');
-    if(raw){ TAXONOMIES=JSON.parse(raw); return; }
+    if(raw){
+      TAXONOMIES=JSON.parse(raw);
+      txEnsurePvocTaxonomies(); // 기존 사용자도 신규 고정 분류 자동 추가 (마이그레이션)
+      return;
+    }
   }catch(e){}
-  // 첫 사용 시 기본 예시 시드
+  // 첫 사용 시 기본 시드 — 구매경험은 고정 분류(PVOC_TAXONOMY)에서 시드됨
   TAXONOMIES=[
     {id:'tx-saved', name:'Saved topics', favorite:true, system:true, description:'즐겨찾기한 키워드 모음', topics:[]},
     {id:'tx-defect', name:'불량 라벨', favorite:false, description:'제품 불량 유형별 분류', topics:[
@@ -7218,15 +7239,33 @@ function txLoad(){
       {id:'t-exterior', name:'외관 불량', keywords:['외관','스크래치','흠집','파손','이물'], mode:'any'},
       {id:'t-cover', name:'커버 제작 불량', keywords:['커버','지퍼','봉제','마감'], mode:'any'},
       {id:'t-missing', name:'구성품 누락', keywords:['누락','없음','빠짐','구성품'], mode:'any'}
-    ]},
-    {id:'tx-experience', name:'구매 전 경험', favorite:false, description:'구매 의사결정 단계별 경험', topics:[
-      {id:'t-ad', name:'광고 메시지 기대치', keywords:['광고','영상','유튜브','유튜버','협찬','기대','다르'], mode:'any'},
-      {id:'t-motive', name:'구매 결심에 영향을 준 계기', keywords:['선물','효도','부모님','통증','재구매','추천'], mode:'any'},
-      {id:'t-consult', name:'상담 응대 만족도', keywords:['상담','연결','문의','친절','응대'], mode:'any'},
-      {id:'t-detail', name:'상세페이지 이해도', keywords:['상세','설명','구조','에어백','기능'], mode:'any'}
     ]}
   ];
+  txEnsurePvocTaxonomies();
   txSave();
+}
+
+// ── 구매경험 고정 분류(PVOC_TAXONOMY) → Taxonomy 시드/마이그레이션 ──
+// 없으면 생성 — 여기서 키워드·Topic을 편집하면 ⑦구매경험 VOC에 즉시 반영된다.
+// (삭제해도 다음 로드 때 기본값으로 재생성 = 초기화 동작)
+function txEnsurePvocTaxonomies(){
+  if(typeof PVOC_TAXONOMY==='undefined') return;
+  var changed=false;
+  PVOC_TAXONOMY.forEach(function(col){
+    if(TAXONOMIES.some(function(t){return t.pvoc===col.key;})) return;
+    TAXONOMIES.push({
+      id:'tx-pvoc-'+col.key,
+      pvoc:col.key,
+      name:col.icon+' '+col.label,
+      favorite:false,
+      description:'구매경험 VOC 고정 분류 — Topic·키워드를 수정하면 대시보드 ⑦구매경험 VOC에 즉시 반영됩니다.',
+      topics:col.items.map(function(it, i){
+        return {id:'t-pv-'+col.key+'-'+i, name:it.name, icon:it.icon, keywords:it.pats.slice(), mode:'any'};
+      })
+    });
+    changed=true;
+  });
+  if(changed) txSave();
 }
 
 function txSave(){
@@ -8197,6 +8236,7 @@ function txSaveRule(){
   txSave();
   txCloseRule();
   txRenderDetail();
+  renderPVOCKanban(); // 고정 분류(tx-pvoc-*) 편집 시 ⑦구매경험 VOC 즉시 반영
   showToast('✓ 매칭 완료 — '+keywords.length+'개 키워드로 분류됨');
 }
 
@@ -8208,6 +8248,7 @@ function txDeleteTopic(){
   txSave();
   txCloseRule();
   txRenderDetail();
+  renderPVOCKanban(); // 고정 분류 Topic 삭제 시 ⑦구매경험 VOC 즉시 반영
 }
 
 // ── CSV 내보내기 ──
