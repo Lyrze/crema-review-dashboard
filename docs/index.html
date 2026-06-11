@@ -966,6 +966,9 @@
 
 <main id="main-content">
 
+  <!-- 데이터 로드 실패 경고 배너 (loadData에서 표시 제어) -->
+  <div id="data-load-banner" style="display:none;margin:0 0 14px;padding:10px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;color:#b91c1c;font-size:12.5px;font-weight:600;">⚠️ 일부 데이터 파일을 불러오지 못했습니다. 표시 중인 수치가 최신이 아닐 수 있습니다 — 새로고침(Ctrl+Shift+R) 후에도 계속되면 담당자에게 알려주세요.</div>
+
   <!-- ── Syncly 스타일 상단 필터 칩 바 ── -->
   <!-- ───────── Taxonomy 페이지 (분류 관리) ───────── -->
   <div id="taxonomy-page">
@@ -2422,7 +2425,16 @@ async function loadData(brand,month){
 }
 
 function onBrandChange(v){ STATE.brand=v; populateMonths(); reload(); }
-function onMonthChange(v){ STATE.month=v; reload(); }
+function onMonthChange(v){
+  STATE.month=v;
+  // 월 전환 시 기간 필터 초기화 — 이전 월 날짜가 남으면 새 월 타임라인이 비어 보임
+  if(STATE.dateOverride){
+    STATE.dateOverride=null;
+    var co=$('chip-override'); if(co) co.classList.remove('override-active');
+    var cov=$('chip-override-val'); if(cov) cov.textContent='Override date filter';
+  }
+  reload();
+}
 async function reload(){ await loadData(STATE.brand,STATE.month); render(); }
 
 function render(){ renderHeader(); renderExec(); renderKPI(); renderTimeline(); renderSKUTable(); renderSKUCombo(); renderChangeTables(); renderVOC(); updateProductFocusBar(); updateCustomAIModelLabel(); populateCompareMonths(); updateCompareBanner(); renderPVOCKanban(); syncChipBarFromState(); refreshOpenInsightModal(); setTimeout(enhanceCardActions,50); }
@@ -7136,6 +7148,11 @@ async function txGithubLoad(idx){
       var pr=await fetch(base+'/gh/load?path='+encodeURIComponent(f.path));
       j=await pr.json().catch(function(){return {};});
       if(!pr.ok) throw new Error(j.error||('HTTP '+pr.status));
+    }
+    // 다른 브랜드/월 분류본 가드 — 재분류 캐시가 현재 화면의 월 키로 저장되므로 불일치 시 적용이 어긋남
+    if(j && ((j.month && j.month!==STATE.month) || (j.brand && j.brand!==STATE.brand))){
+      var ok=confirm('이 파일은 ['+(j.brand||'?')+']['+(j.month||'?')+'] 분류본입니다.\n현재 화면은 ['+STATE.brand+']['+STATE.month+'] — 그대로 불러오면 분류가 어긋나게 적용될 수 있습니다.\n\n계속 불러올까요?');
+      if(!ok) return;
     }
     var incoming=(j && Array.isArray(j.taxonomies)) ? j.taxonomies : (Array.isArray(j)?j:null);
     var rcRestored=false;
