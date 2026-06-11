@@ -660,6 +660,20 @@ class OllamaAnalyzer:
             "개선": "제품에 대해 개선을 요청하는",
         }.get(polarity, "관련된")
 
+        def sent_ok(sent: str) -> bool:
+            """키워드 극성 ↔ 리뷰 감성 일치 검사 — 반대 감성이면 귀속 제외.
+
+            예: 긍정 키워드 '배송'에 '배송이 늦었어요'(부정) 유입 차단.
+            중립은 허용, '개선'은 긍정 리뷰 속 개선 요청도 유효하므로 모두 허용.
+            """
+            if not sent or sent == "중립":
+                return True
+            if polarity == "긍정":
+                return sent != "부정"
+            if polarity == "부정":
+                return sent != "긍정"
+            return True
+
         if mode == "item":
             kept: List[dict] = []
             for sm in samples:
@@ -667,11 +681,12 @@ class OllamaAnalyzer:
                 if not text.strip():
                     continue
                 prompt = (
-                    f'키워드: "{word}" ({polarity} 맥락).\n'
-                    f'다음 리뷰가 실제로 "{word}" 주제를 {polarity} 맥락으로 다루나요? '
-                    f"단어만 우연히 포함된 경우는 아니오.\n"
+                    f'키워드: "{word}"\n'
+                    f'다음 리뷰가 실제로 "{word}" 주제를 다루나요? '
+                    f"단어만 우연히 포함된 경우는 무관입니다.\n"
                     f"리뷰: {text}\n\n"
-                    '오직 "예" 또는 "아니오"로만 답하세요.'
+                    "다음 중 하나로만 답하세요: 무관 / 긍정 / 부정 / 중립\n"
+                    "(긍정·부정·중립은 이 리뷰가 해당 주제에 대해 갖는 감성입니다)"
                 )
                 try:
                     raw = self.client.generate(
@@ -683,17 +698,21 @@ class OllamaAnalyzer:
                     logger.warning("재분류(item) 실패, 보존: %s", exc)
                     kept.append(sm)
                     continue
-                low = raw.strip().lower()
-                # 부정 표현 우선 판정 ("해당 없음/없다"가 "해당"으로 오인되지 않도록)
-                is_no = any(t in low for t in ("아니", "no", "false", "무관", "없")) or "해당없" in low.replace(" ", "")
-                is_yes = (not is_no) and any(t in low for t in ("예", "네", "맞", "yes", "true", "해당"))
-                if is_yes:
+                low = raw.strip()
+                # 무관 판정 우선 ("해당 없음"이 "해당"으로 오인되지 않도록)
+                if any(t in low for t in ("무관", "아니")) or "해당없" in low.replace(" ", "") or "no" in low.lower():
+                    continue
+                sent = "부정" if "부정" in low else "긍정" if "긍정" in low else "중립" if "중립" in low else None
+                if sent is None and any(t in low for t in ("예", "해당", "관련")):
+                    sent = "중립"
+                if sent and sent_ok(sent):
+                    sm["ai_sent"] = sent
                     kept.append(sm)
             return kept
 
-        # batch 모드 (기본): 8건씩 묶어 판별
+        # batch 모드 (기본): 12건씩 묶어 판별 (감성 동시 판정)
         kept = []
-        BATCH = 8
+        BATCH = 12
         for i in range(0, len(samples), BATCH):
             chunk = samples[i: i + BATCH]
             list_text = "\n".join(
@@ -703,11 +722,12 @@ class OllamaAnalyzer:
             prompt = (
                 f"당신은 한국어 리뷰 분류 검증 전문가입니다.\n"
                 f'키워드: "{word}" (이 키워드는 {type_desc} 주제입니다)\n\n'
-                f'아래 리뷰들 중에서, 그 리뷰가 실제로 "{word}" 주제를 ({polarity} 맥락으로) '
-                f"다루고 있는 리뷰의 번호만 고르세요.\n"
-                f"단어가 우연히 포함됐을 뿐 의미상 무관하거나, 반대 맥락인 리뷰는 제외하세요.\n\n"
+                f'아래 리뷰들 중에서 실제로 "{word}" 주제를 다루는 리뷰를 고르고, '
+                f"각 리뷰가 그 주제에 대해 갖는 감성(긍정/부정/중립)을 함께 판정하세요.\n"
+                f"단어가 우연히 포함됐을 뿐 의미상 무관한 리뷰는 제외하세요.\n\n"
                 f"리뷰:\n{list_text}\n\n"
-                '맞는 번호만 JSON으로: {"matched":[0,2]}  (없으면 {"matched":[]})'
+                'JSON으로만 답하세요: {"matched":[{"no":0,"sent":"긍정"},{"no":2,"sent":"부정"}]}  '
+                '(없으면 {"matched":[]})'
             )
             try:
                 raw = self.client.generate(
@@ -716,11 +736,26 @@ class OllamaAnalyzer:
                     temperature=0.0,
                 )
                 parsed = extract_json_from_response(raw)
-                matched = []
+                picks: List[tuple] = []  # (idx, sent|None) — 구형 [0,2] 응답도 호환
                 if isinstance(parsed, dict) and isinstance(parsed.get("matched"), list):
-                    matched = [x for x in parsed["matched"] if isinstance(x, int) and 0 <= x < len(chunk)]
-                for j, sm in enumerate(chunk):
-                    if j in matched:
+                    for x in parsed["matched"]:
+                        if isinstance(x, int) and 0 <= x < len(chunk):
+                            picks.append((x, None))
+                        elif isinstance(x, dict):
+                            no = x.get("no")
+                            if isinstance(no, int) and 0 <= no < len(chunk):
+                                s = str(x.get("sent", ""))
+                                sent = "부정" if "부" in s else "긍정" if "긍" in s else "중립"
+                                picks.append((no, sent))
+                seen_idx: set = set()
+                for j, sent in picks:
+                    if j in seen_idx:
+                        continue
+                    seen_idx.add(j)
+                    if sent_ok(sent):
+                        sm = chunk[j]
+                        if sent:
+                            sm["ai_sent"] = sent
                         kept.append(sm)
             except RuntimeError as exc:
                 logger.warning("재분류(batch) 실패, 청크 보존: %s", exc)

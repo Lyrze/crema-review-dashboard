@@ -73,7 +73,7 @@ def main():
         eprint("          경로 형식: data\\raw\\{브랜드}\\{YYYY-MM}\\reviews.csv")
         sys.exit(1)
 
-    eprint("  [1/3] 처리 가능한 데이터:")
+    eprint("  [1/4] 처리 가능한 데이터:")
     eprint()
     for i, x in enumerate(items, 1):
         status = "[완료]" if x["done"] else "[미처리]"
@@ -111,7 +111,7 @@ def main():
 
     # 2. Ollama 모델 선택
     eprint()
-    eprint("  [2/3] AI 분석 설정...")
+    eprint("  [2/4] AI 분석 설정...")
     models = get_ollama_models()
     ai_flag = "--skip-ai"
 
@@ -148,10 +148,41 @@ def main():
     else:
         eprint("  Ollama 오프라인 — AI 분석 건너뜀")
 
+    # 3. AI 정밀 키워드 분류 (재분류 + 감성 판정) — 업로드 전에 정확하게
+    reclass_flag = ""
+    if models:
+        eprint()
+        eprint("  [3/4] AI 정밀 키워드 분류 (오매칭 제거 + 긍/부정 감성 판정)")
+        eprint()
+        eprint("    1. 포함 - 전체 리뷰 기준 정밀 분류 (권장, 약 20~40분 소요)")
+        eprint("    2. 건너뛰기 - 정규식 분류 그대로 (빠르지만 부정확할 수 있음)")
+        eprint()
+        while True:
+            try:
+                raw_in = input("  선택 (1~2, Enter=1번 권장): ").strip()
+                rsel = 1 if raw_in == "" else int(raw_in)
+                if rsel in (1, 2):
+                    break
+                eprint("  1 또는 2를 입력하세요.")
+            except ValueError:
+                eprint("  1 또는 2를 입력하세요.")
+            except EOFError:
+                rsel = 2
+                break
+        if rsel == 1:
+            reclass_flag = "--reclassify-full --reclassify-mode batch"
+            if ai_flag == "--skip-ai":
+                # AI 분석은 건너뛰어도 재분류에는 모델이 필요 → 설치된 1번 모델 사용
+                reclass_flag += f" --ollama-model {models[0]}"
+                eprint(f"  재분류 모델: {models[0]}")
+            eprint("  정밀 분류 포함 — 처리 시간이 깁니다. 창을 닫지 마세요.")
+        else:
+            eprint("  정밀 분류 건너뜀 — 대시보드에서 나중에 'AI 전체 재분류' 가능.")
+
     anon_out = f"data/anonymized/{brand}/{month}/reviews_anon.csv"
 
     eprint()
-    eprint("  [3/3] 데이터 처리를 시작합니다...")
+    eprint("  [4/4] 데이터 처리를 시작합니다...")
     eprint()
 
     # stdout에 결과 출력 (배치파일이 파싱)
@@ -160,6 +191,7 @@ def main():
     print(f"CSV={csv_path}")
     print(f"PREV_FLAG={prev_flag}")
     print(f"AI_FLAG={ai_flag}")
+    print(f"RECLASS_FLAG={reclass_flag}")
     print(f"ANON_OUT={anon_out}")
 
 
