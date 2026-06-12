@@ -787,11 +787,48 @@ class OllamaAnalyzer:
                 return False
             return rt <= 3 if polarity == "긍정" else rt >= 4
 
+        def _recheck(sm) -> bool:
+            """의심 귀속 정밀 재확인 — 근거 서술 후 예/아니오 (4지선다 감성보다 정확).
+
+            비교 대상 혼동("마사지샵 효과는 며칠"), 가정 표현("유선이었으면 불편"),
+            걱정-해소 화법("걱정했는데 조용") 같은 까다로운 케이스를 거른다.
+            """
+            text = str(sm.get("text", "")).replace("\n", " ")[:300]
+            if polarity == "긍정":
+                q = (
+                    f'질문: 이 리뷰 작성자가 **이 제품**의 "{word}" 항목에 대해 '
+                    f"만족이나 칭찬을 직접 표현했습니까?\n"
+                    f"- 다른 제품/장소에 대한 칭찬은 아니오\n"
+                    f"- 이 제품의 그 항목에 불만을 말하면 아니오\n"
+                )
+            else:
+                q = (
+                    f'질문: 이 리뷰 작성자가 **이 제품**의 "{word}" 문제로 '
+                    f"불만이나 불편을 직접 표현했습니까?\n"
+                    f"- 다른 제품/장소(마사지샵, 예전 제품 등)에 대한 불만은 아니오\n"
+                    f"- 이 제품을 칭찬하거나 문제없다고 하면 아니오\n"
+                    f'- "유선이었으면 불편했을 것" 같은 가정 표현은 실제 불만이 아니므로 아니오\n'
+                )
+            prompt = (
+                f"리뷰: {text}\n\n{q}\n"
+                '먼저 근거를 한 문장으로 쓰고, 마지막 줄에 "답: 예" 또는 "답: 아니오"로 끝내세요.'
+            )
+            try:
+                raw = self.client.generate(
+                    model=self.model, prompt=prompt,
+                    system="당신은 한국어 리뷰 분석가입니다.", temperature=0.0,
+                )
+            except RuntimeError:
+                return True  # 판정 실패 시 보존
+            lines = raw.strip().splitlines()
+            last = lines[-1] if lines else ""
+            return ("예" in last) and ("아니" not in last)
+
         sus = [sm for sm in kept if _suspicious(sm)]
         if sus:
-            confirmed = {id(x) for x in self.verify_keyword_reviews(word, polarity, sus, mode="item")}
             before_n = len(kept)
-            kept = [sm for sm in kept if not _suspicious(sm) or id(sm) in confirmed]
+            keep_ids = {id(sm) for sm in sus if _recheck(sm)}
+            kept = [sm for sm in kept if not _suspicious(sm) or id(sm) in keep_ids]
             if len(kept) != before_n:
                 logger.info("  2차 검증 '%s': 의심 %d건 중 %d건 제외", word, len(sus), before_n - len(kept))
         return kept
