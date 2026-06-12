@@ -224,7 +224,8 @@ def extract_json_from_response(text: str) -> Any:
             pass
 
     # 2) 중괄호/대괄호 블록 직접 추출 (가장 바깥쪽)
-    for start_char, end_char in (("[", "]"), ("{", "}")):
+    #    중괄호 우선: {"matched":[...]} 같은 응답에서 내부 배열만 뽑히는 것 방지
+    for start_char, end_char in (("{", "}"), ("[", "]")):
         start = text.find(start_char)
         end = text.rfind(end_char)
         if start != -1 and end > start:
@@ -660,19 +661,19 @@ class OllamaAnalyzer:
             "개선": "제품에 대해 개선을 요청하는",
         }.get(polarity, "관련된")
 
-        def sent_ok(sent: str) -> bool:
-            """키워드 극성 ↔ 리뷰 감성 일치 검사 — 반대 감성이면 귀속 제외.
+        def sent_ok(sent) -> bool:
+            """키워드 극성 ↔ 리뷰 감성 엄격 일치 — 같은 극성 판정만 귀속.
 
-            예: 긍정 키워드 '배송'에 '배송이 늦었어요'(부정) 유입 차단.
-            중립은 허용, '개선'은 긍정 리뷰 속 개선 요청도 유효하므로 모두 허용.
+            예: 부정 키워드 '소음'에 '조용해요/소음 걱정 없어요'(긍정·중립) 유입 차단.
+            '개선'은 부정·중립 허용(개선 요청은 만족 표현이 아님). None(미판정)은 보존.
             """
-            if not sent or sent == "중립":
+            if sent is None:
                 return True
             if polarity == "긍정":
-                return sent != "부정"
+                return sent == "긍정"
             if polarity == "부정":
-                return sent != "긍정"
-            return True
+                return sent == "부정"
+            return sent != "긍정"
 
         if mode == "item":
             kept: List[dict] = []
@@ -686,7 +687,8 @@ class OllamaAnalyzer:
                     f"단어만 우연히 포함된 경우는 무관입니다.\n"
                     f"리뷰: {text}\n\n"
                     "다음 중 하나로만 답하세요: 무관 / 긍정 / 부정 / 중립\n"
-                    "(긍정·부정·중립은 이 리뷰가 해당 주제에 대해 갖는 감성입니다)"
+                    "(그 주제에 대한 평가 기준 — 불만·불편이면 부정, 만족하거나 "
+                    '"문제없다/조용하다/괜찮다"처럼 문제가 없다는 표현이면 긍정, 단순 언급이면 중립)'
                 )
                 try:
                     raw = self.client.generate(
@@ -725,6 +727,12 @@ class OllamaAnalyzer:
                 f'아래 리뷰들 중에서 실제로 "{word}" 주제를 다루는 리뷰를 고르고, '
                 f"각 리뷰가 그 주제에 대해 갖는 감성(긍정/부정/중립)을 함께 판정하세요.\n"
                 f"단어가 우연히 포함됐을 뿐 의미상 무관한 리뷰는 제외하세요.\n\n"
+                f"감성 판정 기준 (그 주제에 대한 평가 기준, 별점·전체 분위기와 무관):\n"
+                f"- 그 주제에 불만·불편·문제를 말하면 → 부정\n"
+                f"- 그 주제가 만족스럽거나 문제없다고 말하면 → 긍정\n"
+                f'- 특히 "소음이 없어요", "조용해요", "걱정했는데 괜찮아요"처럼 '
+                f"문제가 없다는 표현은 반드시 긍정입니다\n"
+                f"- 단순 언급뿐 평가가 없으면 → 중립\n\n"
                 f"리뷰:\n{list_text}\n\n"
                 'JSON으로만 답하세요: {"matched":[{"no":0,"sent":"긍정"},{"no":2,"sent":"부정"}]}  '
                 '(없으면 {"matched":[]})'
@@ -736,9 +744,15 @@ class OllamaAnalyzer:
                     temperature=0.0,
                 )
                 parsed = extract_json_from_response(raw)
-                picks: List[tuple] = []  # (idx, sent|None) — 구형 [0,2] 응답도 호환
+                # dict({"matched":[...]}) 또는 배열만 온 경우 모두 수용
+                mlist = None
                 if isinstance(parsed, dict) and isinstance(parsed.get("matched"), list):
-                    for x in parsed["matched"]:
+                    mlist = parsed["matched"]
+                elif isinstance(parsed, list):
+                    mlist = parsed
+                picks: List[tuple] = []  # (idx, sent|None) — 구형 [0,2] 응답도 호환
+                if mlist is not None:
+                    for x in mlist:
                         if isinstance(x, int) and 0 <= x < len(chunk):
                             picks.append((x, None))
                         elif isinstance(x, dict):

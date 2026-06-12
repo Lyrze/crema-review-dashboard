@@ -4718,6 +4718,11 @@ async function krmReclassify(){
           '아래 리뷰들 중에서 실제로 "'+kw+'" 주제를 다루는 리뷰를 고르고, 각 리뷰가 그 주제에 대해 갖는 감성(긍정/부정/중립)을 함께 판정하세요.\n'+
           '현재 다른 분류에 있든 없든 상관없이, 의미상 이 키워드에 해당하면 포함하세요.\n'+
           '단어가 우연히 포함됐을 뿐 의미상 무관한 리뷰는 제외하세요.\n\n'+
+          '감성 판정 기준 (그 주제에 대한 평가 기준, 별점·전체 분위기와 무관):\n'+
+          '- 그 주제에 불만·불편·문제를 말하면 → 부정\n'+
+          '- 그 주제가 만족스럽거나 문제없다고 말하면 → 긍정\n'+
+          '- 특히 "소음이 없어요", "조용해요", "걱정했는데 괜찮아요"처럼 문제가 없다는 표현은 반드시 긍정입니다\n'+
+          '- 단순 언급뿐 평가가 없으면 → 중립\n\n'+
           '리뷰:\n'+listText+'\n\n'+
           'JSON으로만 답하세요: {"matched":[{"no":0,"sent":"긍정"},{"no":2,"sent":"부정"}]}  (없으면 {"matched":[]})';
         var resp=await ollamaGenerateOnce(prompt);
@@ -4738,7 +4743,7 @@ async function krmReclassify(){
           '다음 리뷰가 실제로 "'+kw+'" 주제를 다루나요? 단어만 우연히 포함된 경우는 무관입니다.\n'+
           '리뷰: '+(it.r.text||'').replace(/\s+/g,' ').slice(0,300)+'\n\n'+
           '다음 중 하나로만 답하세요: 무관 / 긍정 / 부정 / 중립\n'+
-          '(긍정·부정·중립은 이 리뷰가 해당 주제에 대해 갖는 감성입니다)';
+          '(그 주제에 대한 평가 기준 — 불만·불편이면 부정, 만족하거나 "문제없다/조용하다/괜찮다"처럼 문제가 없다는 표현이면 긍정, 단순 언급이면 중립)';
         var r1=await ollamaGenerateOnce(p1);
         var sent1=krmParseSingleSent(r1);
         if(sent1 && kwSentOk(ctx.type, sent1)){ it._sent=sent1; kept.push(it); }
@@ -4844,12 +4849,13 @@ function krmParseMatchedSent(resp, n){
   return out;
 }
 
-// 키워드 극성 ↔ 리뷰 감성 일치 검사 — 반대 감성 리뷰는 귀속 제외
+// 키워드 극성 ↔ 리뷰 감성 엄격 일치 — 같은 극성 판정만 귀속
+// (부정 키워드 '소음'에 '조용해요/소음 걱정 없어요' 같은 긍정·중립 리뷰 유입 차단)
 function kwSentOk(typeKr, sent){
-  if(!sent || sent==='중립') return true;
-  if(typeKr==='긍정') return sent!=='부정';
-  if(typeKr==='부정') return sent!=='긍정';
-  return true; // 개선: 긍정 리뷰 속 개선 요청도 유효
+  if(!sent) return true; // 감성 미판정(구형 응답) — 보존
+  if(typeKr==='긍정') return sent==='긍정';
+  if(typeKr==='부정') return sent==='부정';
+  return sent!=='긍정'; // 개선: 부정·중립만 (개선 요청은 만족 표현이 아님)
 }
 
 // 단건 응답에서 감성 추출 (무관이면 null)
@@ -4961,7 +4967,7 @@ async function aiVerifyKeywordCandidates(word, typeKr, cands, mode, onProgress){
     for(var k=0;k<cands.length;k++){
       if(FRC_STATE.cancel) break;
       var it=cands[k];
-      var p='키워드: "'+word+'"\n다음 리뷰가 실제로 "'+word+'" 주제를 다루나요? 단어만 우연히 포함된 경우는 무관입니다.\n리뷰: '+(it.r.text||'').replace(/\s+/g,' ').slice(0,300)+'\n\n다음 중 하나로만 답하세요: 무관 / 긍정 / 부정 / 중립\n(긍정·부정·중립은 이 리뷰가 해당 주제에 대해 갖는 감성입니다)';
+      var p='키워드: "'+word+'"\n다음 리뷰가 실제로 "'+word+'" 주제를 다루나요? 단어만 우연히 포함된 경우는 무관입니다.\n리뷰: '+(it.r.text||'').replace(/\s+/g,' ').slice(0,300)+'\n\n다음 중 하나로만 답하세요: 무관 / 긍정 / 부정 / 중립\n(그 주제에 대한 평가 기준 — 불만·불편이면 부정, 만족하거나 "문제없다/조용하다/괜찮다"처럼 문제가 없다는 표현이면 긍정, 단순 언급이면 중립)';
       var r=await ollamaGenerateOnce(p);
       var sentI=krmParseSingleSent(r);
       if(sentI && kwSentOk(typeKr, sentI)){ it._sent=sentI; kept.push(it); }
@@ -4973,7 +4979,7 @@ async function aiVerifyKeywordCandidates(word, typeKr, cands, mode, onProgress){
       if(FRC_STATE.cancel) break;
       var chunk=cands.slice(s,s+BATCH);
       var listText=chunk.map(function(it,i){return '['+i+'] '+(it.r.text||'').replace(/\s+/g,' ').slice(0,220);}).join('\n');
-      var prompt='당신은 한국어 리뷰 분류 전문가입니다.\n키워드: "'+word+'" (이 키워드는 제품에 대해 '+typeDesc+' 주제입니다)\n\n아래 리뷰들 중에서 실제로 "'+word+'" 주제를 다루는 리뷰를 고르고, 각 리뷰가 그 주제에 대해 갖는 감성(긍정/부정/중립)을 함께 판정하세요.\n현재 다른 분류에 있든 없든 상관없이, 의미상 이 키워드에 해당하면 포함하세요.\n단어가 우연히 포함됐을 뿐 의미상 무관한 리뷰는 제외하세요.\n\n리뷰:\n'+listText+'\n\nJSON으로만 답하세요: {"matched":[{"no":0,"sent":"긍정"},{"no":2,"sent":"부정"}]} (없으면 {"matched":[]})';
+      var prompt='당신은 한국어 리뷰 분류 전문가입니다.\n키워드: "'+word+'" (이 키워드는 제품에 대해 '+typeDesc+' 주제입니다)\n\n아래 리뷰들 중에서 실제로 "'+word+'" 주제를 다루는 리뷰를 고르고, 각 리뷰가 그 주제에 대해 갖는 감성(긍정/부정/중립)을 함께 판정하세요.\n현재 다른 분류에 있든 없든 상관없이, 의미상 이 키워드에 해당하면 포함하세요.\n단어가 우연히 포함됐을 뿐 의미상 무관한 리뷰는 제외하세요.\n\n감성 판정 기준 (그 주제에 대한 평가 기준, 별점·전체 분위기와 무관):\n- 그 주제에 불만·불편·문제를 말하면 → 부정\n- 그 주제가 만족스럽거나 문제없다고 말하면 → 긍정\n- 특히 "소음이 없어요", "조용해요", "걱정했는데 괜찮아요"처럼 문제가 없다는 표현은 반드시 긍정입니다\n- 단순 언급뿐 평가가 없으면 → 중립\n\n리뷰:\n'+listText+'\n\nJSON으로만 답하세요: {"matched":[{"no":0,"sent":"긍정"},{"no":2,"sent":"부정"}]} (없으면 {"matched":[]})';
       var resp=await ollamaGenerateOnce(prompt);
       var matchedS=krmParseMatchedSent(resp, chunk.length);
       matchedS.forEach(function(mx){
