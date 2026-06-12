@@ -715,12 +715,14 @@ class OllamaAnalyzer:
         # batch 모드 (기본): 12건씩 묶어 판별 (감성 동시 판정)
         kept = []
         BATCH = 12
+        def _line(j, sm):
+            rt = sm.get("rating")
+            tag = f"(★{int(rt)}) " if isinstance(rt, (int, float)) and rt else ""
+            return f"[{j}] {tag}{str(sm.get('text','')).replace(chr(10),' ')[:220]}"
+
         for i in range(0, len(samples), BATCH):
             chunk = samples[i: i + BATCH]
-            list_text = "\n".join(
-                f"[{j}] {str(sm.get('text','')).replace(chr(10),' ')[:220]}"
-                for j, sm in enumerate(chunk)
-            )
+            list_text = "\n".join(_line(j, sm) for j, sm in enumerate(chunk))
             prompt = (
                 f"당신은 한국어 리뷰 분류 검증 전문가입니다.\n"
                 f'키워드: "{word}" (이 키워드는 {type_desc} 주제입니다)\n\n'
@@ -732,6 +734,8 @@ class OllamaAnalyzer:
                 f"- 그 주제가 만족스럽거나 문제없다고 말하면 → 긍정\n"
                 f'- 특히 "소음이 없어요", "조용해요", "걱정했는데 괜찮아요"처럼 '
                 f"문제가 없다는 표현은 반드시 긍정입니다\n"
+                f"- 별점은 참고일 뿐입니다: 별점이 높아도 그 주제에 명시적 불만이 있으면 부정, "
+                f"그 주제를 칭찬·만족하면 별점과 무관하게 긍정입니다\n"
                 f"- 단순 언급뿐 평가가 없으면 → 중립\n\n"
                 f"리뷰:\n{list_text}\n\n"
                 'JSON으로만 답하세요: {"matched":[{"no":0,"sent":"긍정"},{"no":2,"sent":"부정"}]}  '
@@ -774,6 +778,22 @@ class OllamaAnalyzer:
             except RuntimeError as exc:
                 logger.warning("재분류(batch) 실패, 청크 보존: %s", exc)
                 kept.extend(chunk)
+
+        # 2차 정밀 검증 — 별점과 키워드 극성이 상반된 '의심 귀속'만 1건씩 재확인
+        # (배치 판정에서 새는 케이스 차단: 예) 부정 키워드에 ★5 칭찬 리뷰)
+        def _suspicious(sm) -> bool:
+            rt = sm.get("rating")
+            if not isinstance(rt, (int, float)) or not rt:
+                return False
+            return rt <= 3 if polarity == "긍정" else rt >= 4
+
+        sus = [sm for sm in kept if _suspicious(sm)]
+        if sus:
+            confirmed = {id(x) for x in self.verify_keyword_reviews(word, polarity, sus, mode="item")}
+            before_n = len(kept)
+            kept = [sm for sm in kept if not _suspicious(sm) or id(sm) in confirmed]
+            if len(kept) != before_n:
+                logger.info("  2차 검증 '%s': 의심 %d건 중 %d건 제외", word, len(sus), before_n - len(kept))
         return kept
 
     # ── Smart Brief ──

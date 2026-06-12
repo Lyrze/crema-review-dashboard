@@ -1244,7 +1244,7 @@ def reclassify_keyword_full(
                 cur_in = [r for r in cand_ids if r in cur]
                 new_in = [r for r in cand_ids if r not in cur]
                 cand_ids = cur_in + new_in[: max(0, cand_cap - len(cur_in))]
-            samples = [{"review_id": r, "text": reviews[r]["text"]} for r in cand_ids]
+            samples = [{"review_id": r, "text": reviews[r]["text"], "rating": reviews[r]["rating"]} for r in cand_ids]
             before = len(cur)
             try:
                 kept = analyzer.verify_keyword_reviews(word, polarity, samples, mode)

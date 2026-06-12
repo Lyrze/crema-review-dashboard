@@ -4712,7 +4712,7 @@ async function krmReclassify(){
       var BATCH=12;
       for(var s=0;s<cands.length;s+=BATCH){
         var chunk=cands.slice(s, s+BATCH);
-        var listText=chunk.map(function(it,i){ return '['+i+'] '+(it.r.text||'').replace(/\s+/g,' ').slice(0,220); }).join('\n');
+        var listText=chunk.map(function(it,i){ return '['+i+'] (★'+(it.r.rating||'?')+') '+(it.r.text||'').replace(/\s+/g,' ').slice(0,220); }).join('\n');
         var prompt='당신은 한국어 리뷰 분류 전문가입니다.\n'+
           '키워드: "'+kw+'" (이 키워드는 제품에 대해 '+typeLabel+' 주제입니다)\n\n'+
           '아래 리뷰들 중에서 실제로 "'+kw+'" 주제를 다루는 리뷰를 고르고, 각 리뷰가 그 주제에 대해 갖는 감성(긍정/부정/중립)을 함께 판정하세요.\n'+
@@ -4722,6 +4722,7 @@ async function krmReclassify(){
           '- 그 주제에 불만·불편·문제를 말하면 → 부정\n'+
           '- 그 주제가 만족스럽거나 문제없다고 말하면 → 긍정\n'+
           '- 특히 "소음이 없어요", "조용해요", "걱정했는데 괜찮아요"처럼 문제가 없다는 표현은 반드시 긍정입니다\n'+
+          '- 별점은 참고일 뿐: 별점이 높아도 그 주제에 명시적 불만이 있으면 부정, 그 주제를 칭찬·만족하면 별점과 무관하게 긍정입니다\n'+
           '- 단순 언급뿐 평가가 없으면 → 중립\n\n'+
           '리뷰:\n'+listText+'\n\n'+
           'JSON으로만 답하세요: {"matched":[{"no":0,"sent":"긍정"},{"no":2,"sent":"부정"}]}  (없으면 {"matched":[]})';
@@ -4978,8 +4979,8 @@ async function aiVerifyKeywordCandidates(word, typeKr, cands, mode, onProgress){
     for(var s=0;s<cands.length;s+=BATCH){
       if(FRC_STATE.cancel) break;
       var chunk=cands.slice(s,s+BATCH);
-      var listText=chunk.map(function(it,i){return '['+i+'] '+(it.r.text||'').replace(/\s+/g,' ').slice(0,220);}).join('\n');
-      var prompt='당신은 한국어 리뷰 분류 전문가입니다.\n키워드: "'+word+'" (이 키워드는 제품에 대해 '+typeDesc+' 주제입니다)\n\n아래 리뷰들 중에서 실제로 "'+word+'" 주제를 다루는 리뷰를 고르고, 각 리뷰가 그 주제에 대해 갖는 감성(긍정/부정/중립)을 함께 판정하세요.\n현재 다른 분류에 있든 없든 상관없이, 의미상 이 키워드에 해당하면 포함하세요.\n단어가 우연히 포함됐을 뿐 의미상 무관한 리뷰는 제외하세요.\n\n감성 판정 기준 (그 주제에 대한 평가 기준, 별점·전체 분위기와 무관):\n- 그 주제에 불만·불편·문제를 말하면 → 부정\n- 그 주제가 만족스럽거나 문제없다고 말하면 → 긍정\n- 특히 "소음이 없어요", "조용해요", "걱정했는데 괜찮아요"처럼 문제가 없다는 표현은 반드시 긍정입니다\n- 단순 언급뿐 평가가 없으면 → 중립\n\n리뷰:\n'+listText+'\n\nJSON으로만 답하세요: {"matched":[{"no":0,"sent":"긍정"},{"no":2,"sent":"부정"}]} (없으면 {"matched":[]})';
+      var listText=chunk.map(function(it,i){return '['+i+'] (★'+(it.r.rating||'?')+') '+(it.r.text||'').replace(/\s+/g,' ').slice(0,220);}).join('\n');
+      var prompt='당신은 한국어 리뷰 분류 전문가입니다.\n키워드: "'+word+'" (이 키워드는 제품에 대해 '+typeDesc+' 주제입니다)\n\n아래 리뷰들 중에서 실제로 "'+word+'" 주제를 다루는 리뷰를 고르고, 각 리뷰가 그 주제에 대해 갖는 감성(긍정/부정/중립)을 함께 판정하세요.\n현재 다른 분류에 있든 없든 상관없이, 의미상 이 키워드에 해당하면 포함하세요.\n단어가 우연히 포함됐을 뿐 의미상 무관한 리뷰는 제외하세요.\n\n감성 판정 기준 (그 주제에 대한 평가 기준, 별점·전체 분위기와 무관):\n- 그 주제에 불만·불편·문제를 말하면 → 부정\n- 그 주제가 만족스럽거나 문제없다고 말하면 → 긍정\n- 특히 "소음이 없어요", "조용해요", "걱정했는데 괜찮아요"처럼 문제가 없다는 표현은 반드시 긍정입니다\n- 별점은 참고일 뿐: 별점이 높아도 그 주제에 명시적 불만이 있으면 부정, 그 주제를 칭찬·만족하면 별점과 무관하게 긍정입니다\n- 단순 언급뿐 평가가 없으면 → 중립\n\n리뷰:\n'+listText+'\n\nJSON으로만 답하세요: {"matched":[{"no":0,"sent":"긍정"},{"no":2,"sent":"부정"}]} (없으면 {"matched":[]})';
       var resp=await ollamaGenerateOnce(prompt);
       var matchedS=krmParseMatchedSent(resp, chunk.length);
       matchedS.forEach(function(mx){
