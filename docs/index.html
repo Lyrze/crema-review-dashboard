@@ -4311,6 +4311,12 @@ function openKeywordReviewsModal(keyword, productFilter, type, searchTerm, expli
           '<button class="krm-mode-btn active" data-mode="15" onclick="krmSetMode(\'15\')" style="padding:4px 12px;background:var(--accent);border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:600;color:#fff;font-family:inherit;">📝 요약 15건</button>'+
           '<button class="krm-mode-btn" data-mode="all" onclick="krmSetMode(\'all\')" style="padding:4px 12px;background:transparent;border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:600;color:var(--text-secondary);font-family:inherit;">📚 전체 보기</button>'+
         '</div>'+
+        '<span style="font-size:11px;color:var(--text-secondary);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">긍·부정</span>'+
+        '<div style="display:inline-flex;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:3px;">'+
+          '<button class="krm-sent-btn active" data-sent="all" onclick="krmSetSent(\'all\')" style="padding:4px 10px;background:var(--accent);border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:600;color:#fff;font-family:inherit;">전체 <b id="krm-sent-all">0</b></button>'+
+          '<button class="krm-sent-btn" data-sent="pos" onclick="krmSetSent(\'pos\')" title="별점 4점 이상 (긍정)" style="padding:4px 10px;background:transparent;border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:600;color:var(--text-secondary);font-family:inherit;">👍 긍정 <b id="krm-sent-pos">0</b></button>'+
+          '<button class="krm-sent-btn" data-sent="neg" onclick="krmSetSent(\'neg\')" title="별점 3점 이하 (부정)" style="padding:4px 10px;background:transparent;border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:600;color:var(--text-secondary);font-family:inherit;">👎 부정 <b id="krm-sent-neg">0</b></button>'+
+        '</div>'+
         '<span id="krm-mode-info" style="font-size:11px;color:var(--text-secondary);margin-left:auto;"></span>'+
       '</div>'+
       // AI 재분류 컨트롤 — 키워드와 무관한 오매칭 리뷰 제거
@@ -4520,8 +4526,29 @@ function openKeywordReviewsModal(keyword, productFilter, type, searchTerm, expli
     b.style.background=isActive?'var(--accent)':'transparent';
     b.style.color=isActive?'#fff':'var(--text-secondary)';
   });
+  // 긍·부정 필터도 '전체'로 리셋
+  KRM_SENT='all';
+  document.querySelectorAll('.krm-sent-btn').forEach(function(b){
+    var a=b.getAttribute('data-sent')==='all';
+    b.classList.toggle('active', a);
+    b.style.background=a?'var(--accent)':'transparent';
+    b.style.color=a?'#fff':'var(--text-secondary)';
+  });
   // AI 재분류 캐시 자동 적용 (이전에 재분류한 키워드면 필터 복원)
   krmApplyReclassCache();
+  krmRenderList();
+}
+
+// 긍·부정 필터 (별점 ≥4 긍정 / ≤3 부정) — PVOC 등에서 섞여 나오던 리뷰를 구분
+var KRM_SENT='all'; // 'all' | 'pos' | 'neg'
+function krmSetSent(s){
+  KRM_SENT=s;
+  document.querySelectorAll('.krm-sent-btn').forEach(function(b){
+    var a=b.getAttribute('data-sent')===s;
+    b.classList.toggle('active', a);
+    b.style.background=a?'var(--accent)':'transparent';
+    b.style.color=a?'#fff':'var(--text-secondary)';
+  });
   krmRenderList();
 }
 
@@ -4530,14 +4557,28 @@ function krmRenderList(){
   var modal=$('keyword-reviews-modal');
   if(!modal||!modal._ctx) return;
   var ctx=modal._ctx;
-  var allReviews=ctx.reviews||[];
+  var srcAll=ctx.reviews||[];
   var totalCount=ctx.totalCount;
   var keyword=ctx.keyword;
+
+  // 긍·부정 토글 카운트 갱신 + 필터 (별점 ≥4 긍정 / <4 부정)
+  var posN=0, negN=0;
+  srcAll.forEach(function(it){ if(((it.r&&it.r.rating)||0)>=4) posN++; else negN++; });
+  var _eA=$('krm-sent-all'), _eP=$('krm-sent-pos'), _eN=$('krm-sent-neg');
+  if(_eA) _eA.textContent=srcAll.length;
+  if(_eP) _eP.textContent=posN;
+  if(_eN) _eN.textContent=negN;
+  var allReviews = KRM_SENT==='pos' ? srcAll.filter(function(it){return ((it.r&&it.r.rating)||0)>=4;})
+                 : KRM_SENT==='neg' ? srcAll.filter(function(it){return ((it.r&&it.r.rating)||0)<4;})
+                 : srcAll;
 
   var listEl=$('krm-list');
   if(allReviews.length===0){
     var emptyMsg;
-    if(ctx.dataSource==='text-search'){
+    if(KRM_SENT!=='all'){
+      emptyMsg='선택한 '+(KRM_SENT==='pos'?'긍정(★4 이상)':'부정(★3 이하)')+' 리뷰가 없습니다.<br><br>'+
+        '<span style="font-size:11px;color:var(--text-secondary);">상단 \'전체\'를 눌러 모든 리뷰를 보세요.</span>';
+    } else if(ctx.dataSource==='text-search'){
       emptyMsg='"'+escapeHtml(ctx.searchTerm||ctx.keyword)+'" 키워드가 저장된 리뷰 본문에 나타나지 않습니다.<br><br>'+
         '<span style="font-size:11px;color:var(--text-secondary);">💡 이 항목은 설명용 문구일 수 있습니다.<br>'+
         '실제 키워드는 칭찬/불만/개선 차트의 막대를 클릭해보세요.</span>';
