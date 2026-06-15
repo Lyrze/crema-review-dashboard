@@ -1517,7 +1517,7 @@
     </div>
     <div class="grid-2">
       <div class="card" data-key="review-change" style="padding:0;overflow:hidden;">
-        <div class="card-header" style="padding:16px 16px 12px;"><div><div class="card-title">리뷰 수 변화</div><div class="card-sub">MoM 전월 대비</div></div></div>
+        <div class="card-header" style="padding:16px 16px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;"><div><div class="card-title">리뷰 수 변화</div><div class="card-sub">MoM 전월 대비</div></div><select id="rv-chg-sort" onchange="setSkuChgSort('rv',this.value)" title="정렬 기준" style="font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);cursor:pointer;font-family:inherit;"><option value="rv_desc">리뷰수 높은순</option><option value="rv_asc">리뷰수 낮은순</option><option value="rt_desc">별점 높은순</option><option value="rt_asc">별점 낮은순</option><option value="chg_desc">변화율 높은순</option></select></div>
         <div class="table-scroll">
           <table class="change-table">
             <thead><tr><th style="padding-left:12px">상품명</th><th class="r">전월</th><th class="r">현재</th><th class="r" style="padding-right:12px">변화</th></tr></thead>
@@ -1526,7 +1526,7 @@
         </div>
       </div>
       <div class="card" data-key="rating-change" style="padding:0;overflow:hidden;">
-        <div class="card-header" style="padding:16px 16px 12px;"><div><div class="card-title">별점 변화</div><div class="card-sub">MoM 전월 대비</div></div></div>
+        <div class="card-header" style="padding:16px 16px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;"><div><div class="card-title">별점 변화</div><div class="card-sub">MoM 전월 대비</div></div><select id="rt-chg-sort" onchange="setSkuChgSort('rt',this.value)" title="정렬 기준" style="font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);cursor:pointer;font-family:inherit;"><option value="rv_desc">리뷰수 높은순</option><option value="rv_asc">리뷰수 낮은순</option><option value="rt_desc">별점 높은순</option><option value="rt_asc">별점 낮은순</option><option value="chg_desc">변화율 높은순</option></select></div>
         <div class="table-scroll">
           <table class="change-table">
             <thead><tr><th style="padding-left:12px">상품명</th><th class="r">전월</th><th class="r">현재</th><th class="r" style="padding-right:12px">변화</th></tr></thead>
@@ -2770,16 +2770,37 @@ function renderSKUCombo(){
             x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}}}}});
 }
 
+var SKU_CHG_SORT={rv:'rv_desc', rt:'rv_desc'};
+function setSkuChgSort(which, val){ if(which==='rv') SKU_CHG_SORT.rv=val; else SKU_CHG_SORT.rt=val; renderChangeTables(); }
+function skuChgSorted(list, sortKey, metric){
+  function chgPct(p){
+    if(metric==='review'){
+      if(p.prev_review_count==null||p.prev_review_count<=0) return -1;
+      return Math.abs((p.review_count-p.prev_review_count)/p.prev_review_count*100);
+    }
+    if(p.prev_avg_rating==null||p.prev_avg_rating<=0) return -1;
+    return Math.abs((p.avg_rating-p.prev_avg_rating)/p.prev_avg_rating*100);
+  }
+  return list.slice().sort(function(a,b){
+    if(sortKey==='rv_asc') return a.review_count-b.review_count;
+    if(sortKey==='rt_desc') return b.avg_rating-a.avg_rating;
+    if(sortKey==='rt_asc') return a.avg_rating-b.avg_rating;
+    if(sortKey==='chg_desc') return chgPct(b)-chgPct(a);
+    return b.review_count-a.review_count; // rv_desc(기본)
+  });
+}
 function renderChangeTables(){
   var allProds=(STATE.products||REAL_DATA.products);
   if(STATE.productFocus) allProds=allProds.filter(function(p){return p.name===STATE.productFocus;});
-  var prods=allProds.filter(function(p){return p.review_count>=10;}).sort(function(a,b){return b.review_count-a.review_count;});
+  var base=allProds.filter(function(p){return p.review_count>=10;});
   var rvB=$('review-change-body'),rtB=$('rating-change-body');
   if(!rvB||!rtB) return;
   rvB.innerHTML=''; rtB.innerHTML='';
-  prods.forEach(function(p){
+  var rvSel=$('rv-chg-sort'); if(rvSel) rvSel.value=SKU_CHG_SORT.rv;
+  var rtSel=$('rt-chg-sort'); if(rtSel) rtSel.value=SKU_CHG_SORT.rt;
+  // 리뷰 수 변화 테이블 (rv 정렬)
+  skuChgSorted(base, SKU_CHG_SORT.rv, 'review').forEach(function(p){
     var hasPrevRv=p.prev_review_count!==null&&p.prev_review_count!==undefined;
-    var hasPrevRt=p.prev_avg_rating!==null&&p.prev_avg_rating!==undefined;
     var trRv=document.createElement('tr');
     if(hasPrevRv){
       var rvD=p.review_count-p.prev_review_count;
@@ -2800,6 +2821,10 @@ function renderChangeTables(){
     trRv.style.cursor='pointer'; trRv.title='클릭 → 리뷰 인사이트(View Insight)';
     (function(nm){ trRv.addEventListener('click',function(){ openInsightModal(nm); }); })(p.name);
     rvB.appendChild(trRv);
+  });
+  // 별점 변화 테이블 (rt 정렬)
+  skuChgSorted(base, SKU_CHG_SORT.rt, 'rating').forEach(function(p){
+    var hasPrevRt=p.prev_avg_rating!==null&&p.prev_avg_rating!==undefined;
     var trRt=document.createElement('tr');
     if(hasPrevRt){
       var rtD=p.avg_rating-p.prev_avg_rating;
@@ -4258,7 +4283,7 @@ function krmSetMode(mode){
   if(modal && modal._ctx) krmRenderList();
 }
 
-function openKeywordReviewsModal(keyword, productFilter, type, searchTerm){
+function openKeywordReviewsModal(keyword, productFilter, type, searchTerm, explicitReviews){
   var modal=$('keyword-reviews-modal');
   if(!modal){
     // 첫 호출 시 모달 동적 생성
@@ -4318,10 +4343,24 @@ function openKeywordReviewsModal(keyword, productFilter, type, searchTerm){
 
   var totalCount=kwObj?(kwObj.count||0):0;
   var allReviews=[];
-  var dataSource='';  // 'full' | 'samples' | 'id-match' | 'text-search'
+  var dataSource='';  // 'explicit' | 'full' | 'samples' | 'id-match' | 'text-search'
 
-  // 0순위 (최우선): all_review_ids + reviews.json → 진짜 전체 매칭 리뷰
-  if(kwObj && kwObj.all_review_ids && kwObj.all_review_ids.length>0 && STATE.reviewsById){
+  // 최우선: 호출측이 매칭 리뷰를 직접 전달한 경우 (PVOC 등) — 표시 카운트와 100% 일치 보장
+  if(explicitReviews && explicitReviews.length){
+    dataSource='explicit';
+    var seenX={};
+    explicitReviews.forEach(function(item){
+      if(!item||!item.r) return;
+      var rid=String(item.r.review_id);
+      if(productFilter && item.name!==productFilter) return;
+      if(seenX[rid]) return; seenX[rid]=true;
+      allReviews.push(item);
+    });
+    totalCount=allReviews.length;
+  }
+
+  // 0순위: all_review_ids + reviews.json → 진짜 전체 매칭 리뷰
+  if(allReviews.length===0 && kwObj && kwObj.all_review_ids && kwObj.all_review_ids.length>0 && STATE.reviewsById){
     dataSource='full';
     var seenF={};
     kwObj.all_review_ids.forEach(function(rid){
@@ -4412,18 +4451,33 @@ function openKeywordReviewsModal(keyword, productFilter, type, searchTerm){
       if(SYNONYMS[lower]) SYNONYMS[lower].forEach(function(s){if(expandedTokens.indexOf(s)<0) expandedTokens.push(s);});
     });
     // 검색 — 본문에 임의의 토큰이 포함되면 매칭
-    allProds.forEach(function(p){
-      if(productFilter && p.name!==productFilter) return;
-      (p.top_reviews||[]).concat(p.bottom_reviews||[]).forEach(function(r){
-        var text=(r.text||'').toLowerCase();
+    // reviews.json(전체 리뷰)이 있으면 그것을 스캔 (top/bottom 샘플만 보면 대거 누락)
+    if(STATE.reviewsById){
+      Object.keys(STATE.reviewsById).forEach(function(id){
+        var rv=STATE.reviewsById[id];
+        if(productFilter && rv.product!==productFilter) return;
+        var text=(rv.text||'').toLowerCase();
         for(var i=0;i<expandedTokens.length;i++){
           if(text.indexOf(expandedTokens[i])>=0){
-            allReviews.push({name:p.name, r:r, matchedToken:expandedTokens[i]});
+            allReviews.push({name:rv.product||'(상품 미상)', r:{review_id:String(id), rating:rv.rating, date:rv.date, text:rv.text}, matchedToken:expandedTokens[i]});
             return;
           }
         }
       });
-    });
+    } else {
+      allProds.forEach(function(p){
+        if(productFilter && p.name!==productFilter) return;
+        (p.top_reviews||[]).concat(p.bottom_reviews||[]).forEach(function(r){
+          var text=(r.text||'').toLowerCase();
+          for(var i=0;i<expandedTokens.length;i++){
+            if(text.indexOf(expandedTokens[i])>=0){
+              allReviews.push({name:p.name, r:r, matchedToken:expandedTokens[i]});
+              return;
+            }
+          }
+        });
+      });
+    }
     var seen2={};
     allReviews=allReviews.filter(function(item){
       var k=item.r.review_id;
@@ -6268,20 +6322,22 @@ function pvjCompute(){
         var matched=txMatchTopic(tp, src, tax);
         var pos=0, neg=0;
         matched.forEach(function(r){ if((r.rating||0)>=4) pos++; else neg++; });
-        return {name:tp.name, icon:tp.icon||'🏷️', pats:(tp.keywords||[]).slice(), pos:pos, neg:neg, total:pos+neg};
+        return {name:tp.name, icon:tp.icon||'🏷️', pats:(tp.keywords||[]).slice(), pos:pos, neg:neg, total:pos+neg,
+                _ids:matched.map(function(r){return String(r.review_id);})};
       });
     } else {
       // 폴백: 내장 고정값
       items=col.items.map(function(it){
-        var pos=0, neg=0;
+        var pos=0, neg=0, ids=[];
         for(var i=0;i<src.length;i++){
           var r=src[i];
           if(!r.text) continue;
           if(pvjMatchText(r.text, it.pats)){
+            ids.push(String(r.review_id));
             if(r.rating>=4) pos++; else neg++;
           }
         }
-        return {name:it.name, icon:it.icon, pats:it.pats, pos:pos, neg:neg, total:pos+neg};
+        return {name:it.name, icon:it.icon, pats:it.pats, pos:pos, neg:neg, total:pos+neg, _ids:ids};
       });
     }
     return {key:col.key, icon:col.icon, label:col.label, desc:col.desc, accent:col.accent,
@@ -6359,8 +6415,16 @@ function pvjOpenItem(ci, ii){
   var col=PVJ_DATA && PVJ_DATA[ci]; if(!col) return;
   var it=col.items[ii]; if(!it || !it.total) return;
   var domType = it.neg>it.pos ? '부정' : '긍정';
-  var terms=it.pats.slice(0,8).join('|');
-  openKeywordReviewsModal(it.name, STATE.productFocus||null, domType, terms);
+  // 표시 카운트(pvjCompute)와 동일하게 매칭된 리뷰를 직접 전달 → 카운트·실제 목록 100% 일치
+  var byId=STATE.reviewsById||null;
+  var fallback=byId?null:txGetAllReviews();
+  var explicit=(it._ids||[]).map(function(id){
+    var rv=byId?byId[String(id)]:fallback.find(function(x){return String(x.review_id)===String(id);});
+    if(!rv) return null;
+    return {name:rv.product||'(상품 미상)', r:{review_id:String(id), rating:rv.rating, date:rv.date, text:rv.text}};
+  }).filter(function(x){return !!x;});
+  var terms=(it.pats||[]).join('|');
+  openKeywordReviewsModal(it.name, STATE.productFocus||null, domType, terms, explicit);
 }
 
 // ═══════════════════════════════════════════════
