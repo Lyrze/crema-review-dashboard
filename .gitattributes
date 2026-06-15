@@ -1,0 +1,6 @@
+# Windows 배치파일은 어떤 환경에서 클론하든 항상 CRLF로 체크아웃되도록 강제.
+# (cmd.exe 는 CRLF 만 올바르게 파싱 — LF면 명령이 붙거나 잘려 실패)
+*.bat text eol=crlf
+
+# 나머지 텍스트는 git 자동 판별 (기존 동작 유지)
+* text=auto
