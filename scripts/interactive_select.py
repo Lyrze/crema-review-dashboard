@@ -18,6 +18,14 @@ def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
+def ask(prompt=""):
+    # input() 프롬프트는 기본적으로 stdout 으로 나가 KEY=VALUE 출력을 오염시킨다.
+    # 프롬프트는 stderr(화면)로 보내고 stdin 만 읽어 stdout 을 깨끗하게 유지.
+    sys.stderr.write(prompt)
+    sys.stderr.flush()
+    return input()
+
+
 def scan_raw():
     items = []
     raw = "data/raw"
@@ -83,7 +91,7 @@ def main():
     # 번호 선택
     while True:
         try:
-            raw_input = input(f"  처리할 번호 입력 (1~{len(items)}): ")
+            raw_input = ask(f"  처리할 번호 입력 (1~{len(items)}): ")
             sel = int(raw_input.strip())
             if 1 <= sel <= len(items):
                 break
@@ -126,7 +134,7 @@ def main():
 
         while True:
             try:
-                raw_input = input(f"  모델 번호 선택 (0~{len(models)}, Enter=1번): ")
+                raw_input = ask(f"  모델 번호 선택 (0~{len(models)}, Enter=1번): ")
                 raw_input = raw_input.strip()
                 msel = 1 if raw_input == "" else int(raw_input)
                 if 0 <= msel <= len(models):
@@ -159,7 +167,7 @@ def main():
         eprint()
         while True:
             try:
-                raw_in = input("  선택 (1~2, Enter=1번 권장): ").strip()
+                raw_in = ask("  선택 (1~2, Enter=1번 권장): ").strip()
                 rsel = 1 if raw_in == "" else int(raw_in)
                 if rsel in (1, 2):
                     break
@@ -195,7 +203,7 @@ def main():
             eprint()
             while True:
                 try:
-                    raw_in = input("  선택 (1~2, Enter=1번 권장): ").strip()
+                    raw_in = ask("  선택 (1~2, Enter=1번 권장): ").strip()
                     vsel = 1 if raw_in == "" else int(raw_in)
                     if vsel in (1, 2):
                         break
