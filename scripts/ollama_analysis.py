@@ -638,200 +638,135 @@ class OllamaAnalyzer:
         samples: List[dict],
         mode: str = "batch",
     ) -> List[dict]:
-        """키워드에 매칭된 리뷰 샘플 중 실제로 그 키워드 주제를 다루는 것만 남긴다.
+        """키워드에 매칭된 리뷰를 3단계 게이트로 검증해 진짜 귀속분만 남긴다.
 
-        어휘(정규식) 매칭의 false positive(단어가 우연히 포함됐을 뿐 의미상 무관,
-        혹은 반대 맥락)를 LLM으로 걸러낸다.
+        ① 관련성: 그 주제를 실제로 다루는가 (우연한 단어·가정 표현·타제품 비교 제외)
+        ② 의도 분류: 칭찬/불만/개선요청/해당없음 → 키워드 카테고리와 일치하는 것만
+        ③ 반대신문: 통과분을 1건씩 근거 서술형 예/아니오로 재확인
+        각 단계 AI 호출 실패 시 해당 건 보존(드롭 안 함).
 
         Args:
             word: 키워드 (예: "강도 불량")
-            polarity: '긍정' | '부정' | '개선'
-            samples: [{"text": ..., ...}, ...] review_samples 형식
-            mode: 'batch'(여러 건 묶음, 빠름) | 'item'(1건씩, 정밀)
+            polarity: '긍정' | '부정' | '개선' (→ 칭찬/불만/개선요청)
+            samples: [{"text":..,"rating":..}, ...] review_samples 형식
+            mode: 'batch'(①②를 12건 묶음) | 'item'(①②도 1건씩)
 
         Returns:
-            검증을 통과한 samples 부분집합 (원본 dict 그대로 유지)
+            검증을 통과한 samples 부분집합 (원본 dict 그대로 유지, ai_intent 태그 추가)
         """
         if not samples:
             return []
 
-        type_desc = {
-            "긍정": "제품에 대해 긍정적으로 칭찬하는",
-            "부정": "제품에 대해 부정적으로 불만을 제기하는",
-            "개선": "제품에 대해 개선을 요청하는",
-        }.get(polarity, "관련된")
+        # 키워드 카테고리 ↔ 의도 라벨
+        want = {"긍정": "칭찬", "부정": "불만", "개선": "개선요청"}.get(polarity, "관련")
+        batch = 1 if mode == "item" else 12
 
-        def sent_ok(sent) -> bool:
-            """키워드 극성 ↔ 리뷰 감성 엄격 일치 — 같은 극성 판정만 귀속.
-
-            예: 부정 키워드 '소음'에 '조용해요/소음 걱정 없어요'(긍정·중립) 유입 차단.
-            '개선'은 부정·중립 허용(개선 요청은 만족 표현이 아님). None(미판정)은 보존.
-            """
-            if sent is None:
-                return True
-            if polarity == "긍정":
-                return sent == "긍정"
-            if polarity == "부정":
-                return sent == "부정"
-            return sent != "긍정"
-
-        if mode == "item":
-            kept: List[dict] = []
-            for sm in samples:
-                text = str(sm.get("text", "")).replace("\n", " ")[:300]
-                if not text.strip():
-                    continue
-                prompt = (
-                    f'키워드: "{word}"\n'
-                    f'다음 리뷰가 실제로 "{word}" 주제를 다루나요? '
-                    f"단어만 우연히 포함된 경우는 무관입니다.\n"
-                    f"리뷰: {text}\n\n"
-                    "다음 중 하나로만 답하세요: 무관 / 긍정 / 부정 / 중립\n"
-                    "(그 주제에 대한 평가 기준 — 불만·불편이면 부정, 만족하거나 "
-                    '"문제없다/조용하다/괜찮다"처럼 문제가 없다는 표현이면 긍정, 단순 언급이면 중립)'
-                )
-                try:
-                    raw = self.client.generate(
-                        model=self.model, prompt=prompt,
-                        system="당신은 한국어 리뷰 분류 검증 전문가입니다.",
-                        temperature=0.0,
-                    )
-                except RuntimeError as exc:
-                    logger.warning("재분류(item) 실패, 보존: %s", exc)
-                    kept.append(sm)
-                    continue
-                low = raw.strip()
-                # 무관 판정 우선 ("해당 없음"이 "해당"으로 오인되지 않도록)
-                if any(t in low for t in ("무관", "아니")) or "해당없" in low.replace(" ", "") or "no" in low.lower():
-                    continue
-                sent = "부정" if "부정" in low else "긍정" if "긍정" in low else "중립" if "중립" in low else None
-                if sent is None and any(t in low for t in ("예", "해당", "관련")):
-                    sent = "중립"
-                if sent and sent_ok(sent):
-                    sm["ai_sent"] = sent
-                    kept.append(sm)
-            return kept
-
-        # batch 모드 (기본): 12건씩 묶어 판별 (감성 동시 판정)
-        kept = []
-        BATCH = 12
         def _line(j, sm):
             rt = sm.get("rating")
             tag = f"(★{int(rt)}) " if isinstance(rt, (int, float)) and rt else ""
-            return f"[{j}] {tag}{str(sm.get('text','')).replace(chr(10),' ')[:220]}"
+            return f"[{j}] {tag}{str(sm.get('text','')).replace(chr(10),' ')[:240]}"
 
-        for i in range(0, len(samples), BATCH):
-            chunk = samples[i: i + BATCH]
-            list_text = "\n".join(_line(j, sm) for j, sm in enumerate(chunk))
+        def _gen(prompt, sysmsg):
+            return self.client.generate(model=self.model, prompt=prompt, system=sysmsg, temperature=0.0)
+
+        # ───── 단계 ① 관련성 게이트 ─────
+        # 우연한 단어 포함·가정 표현·다른 제품 비교를 제거
+        survivors: List[dict] = []
+        for i in range(0, len(samples), batch):
+            chunk = samples[i: i + batch]
+            lt = "\n".join(_line(j, sm) for j, sm in enumerate(chunk))
             prompt = (
-                f"당신은 한국어 리뷰 분류 검증 전문가입니다.\n"
-                f'키워드: "{word}" (이 키워드는 {type_desc} 주제입니다)\n\n'
-                f'아래 리뷰들 중에서 실제로 "{word}" 주제를 다루는 리뷰를 고르고, '
-                f"각 리뷰가 그 주제에 대해 갖는 감성(긍정/부정/중립)을 함께 판정하세요.\n"
-                f"단어가 우연히 포함됐을 뿐 의미상 무관한 리뷰는 제외하세요.\n\n"
-                f"감성 판정 기준 (그 주제에 대한 평가 기준, 별점·전체 분위기와 무관):\n"
-                f"- 그 주제에 불만·불편·문제를 말하면 → 부정\n"
-                f"- 그 주제가 만족스럽거나 문제없다고 말하면 → 긍정\n"
-                f'- 특히 "소음이 없어요", "조용해요", "걱정했는데 괜찮아요"처럼 '
-                f"문제가 없다는 표현은 반드시 긍정입니다\n"
-                f"- 별점은 참고일 뿐입니다: 별점이 높아도 그 주제에 명시적 불만이 있으면 부정, "
-                f"그 주제를 칭찬·만족하면 별점과 무관하게 긍정입니다\n"
-                f"- 단순 언급뿐 평가가 없으면 → 중립\n\n"
-                f"리뷰:\n{list_text}\n\n"
-                'JSON으로만 답하세요: {"matched":[{"no":0,"sent":"긍정"},{"no":2,"sent":"부정"}]}  '
-                '(없으면 {"matched":[]})'
+                f'주제: "{word}"\n\n'
+                f'아래 리뷰가 이 제품의 "{word}" 주제를 실제로 평가하거나 직접 다루는지 판정하세요.\n'
+                f"다음은 모두 '무관'입니다:\n"
+                f'- 단어만 우연히 포함 (예: "고장나면 또 살게요"는 고장을 실제 겪은 게 아님)\n'
+                f'- 가정·조건 표현 ("~했으면", "~라면", "~었으면")\n'
+                f"- 다른 제품·장소(마사지샵, 예전 제품 등) 이야기\n"
+                f"- 주제와 무관한 일반 후기\n\n"
+                f"리뷰:\n{lt}\n\n"
+                '관련 있는 번호만 JSON으로: {"relevant":[0,2]} (없으면 {"relevant":[]})'
             )
             try:
-                raw = self.client.generate(
-                    model=self.model, prompt=prompt,
-                    system="당신은 한국어 리뷰 분류 검증 전문가입니다. JSON으로만 응답하세요.",
-                    temperature=0.0,
-                )
-                parsed = extract_json_from_response(raw)
-                # dict({"matched":[...]}) 또는 배열만 온 경우 모두 수용
-                mlist = None
-                if isinstance(parsed, dict) and isinstance(parsed.get("matched"), list):
-                    mlist = parsed["matched"]
-                elif isinstance(parsed, list):
-                    mlist = parsed
-                picks: List[tuple] = []  # (idx, sent|None) — 구형 [0,2] 응답도 호환
-                if mlist is not None:
-                    for x in mlist:
-                        if isinstance(x, int) and 0 <= x < len(chunk):
-                            picks.append((x, None))
-                        elif isinstance(x, dict):
-                            no = x.get("no")
-                            if isinstance(no, int) and 0 <= no < len(chunk):
-                                s = str(x.get("sent", ""))
-                                sent = "부정" if "부" in s else "긍정" if "긍" in s else "중립"
-                                picks.append((no, sent))
-                seen_idx: set = set()
-                for j, sent in picks:
-                    if j in seen_idx:
-                        continue
-                    seen_idx.add(j)
-                    if sent_ok(sent):
-                        sm = chunk[j]
-                        if sent:
-                            sm["ai_sent"] = sent
-                        kept.append(sm)
+                parsed = extract_json_from_response(_gen(prompt, "당신은 한국어 리뷰 분석가입니다. JSON으로만 답하세요."))
+                rel = parsed.get("relevant") if isinstance(parsed, dict) else (parsed if isinstance(parsed, list) else None)
+                if rel is None:
+                    survivors.extend(chunk)  # 파싱 실패 → 보존(다음 단계서 거름)
+                    continue
+                idx = {int(x) for x in rel if isinstance(x, int) and 0 <= x < len(chunk)}
+                survivors.extend(chunk[j] for j in range(len(chunk)) if j in idx)
             except RuntimeError as exc:
-                logger.warning("재분류(batch) 실패, 청크 보존: %s", exc)
-                kept.extend(chunk)
+                logger.warning("재분류 ①관련성 실패, 보존: %s", exc)
+                survivors.extend(chunk)
 
-        # 2차 정밀 검증 — 별점과 키워드 극성이 상반된 '의심 귀속'만 1건씩 재확인
-        # (배치 판정에서 새는 케이스 차단: 예) 부정 키워드에 ★5 칭찬 리뷰)
-        def _suspicious(sm) -> bool:
-            rt = sm.get("rating")
-            if not isinstance(rt, (int, float)) or not rt:
-                return False
-            return rt <= 3 if polarity == "긍정" else rt >= 4
-
-        def _recheck(sm) -> bool:
-            """의심 귀속 정밀 재확인 — 근거 서술 후 예/아니오 (4지선다 감성보다 정확).
-
-            비교 대상 혼동("마사지샵 효과는 며칠"), 가정 표현("유선이었으면 불편"),
-            걱정-해소 화법("걱정했는데 조용") 같은 까다로운 케이스를 거른다.
-            """
-            text = str(sm.get("text", "")).replace("\n", " ")[:300]
-            if polarity == "긍정":
-                q = (
-                    f'질문: 이 리뷰 작성자가 **이 제품**의 "{word}" 항목에 대해 '
-                    f"만족이나 칭찬을 직접 표현했습니까?\n"
-                    f"- 다른 제품/장소에 대한 칭찬은 아니오\n"
-                    f"- 이 제품의 그 항목에 불만을 말하면 아니오\n"
-                )
-            else:
-                q = (
-                    f'질문: 이 리뷰 작성자가 **이 제품**의 "{word}" 문제로 '
-                    f"불만이나 불편을 직접 표현했습니까?\n"
-                    f"- 다른 제품/장소(마사지샵, 예전 제품 등)에 대한 불만은 아니오\n"
-                    f"- 이 제품을 칭찬하거나 문제없다고 하면 아니오\n"
-                    f'- "유선이었으면 불편했을 것" 같은 가정 표현은 실제 불만이 아니므로 아니오\n'
-                )
+        # ───── 단계 ② 의도 분류 ─────
+        # 칭찬/불만/개선요청/해당없음 → 키워드 카테고리와 일치하는 것만
+        stage2: List[dict] = []
+        for i in range(0, len(survivors), batch):
+            chunk = survivors[i: i + batch]
+            lt = "\n".join(_line(j, sm) for j, sm in enumerate(chunk))
             prompt = (
-                f"리뷰: {text}\n\n{q}\n"
-                '먼저 근거를 한 문장으로 쓰고, 마지막 줄에 "답: 예" 또는 "답: 아니오"로 끝내세요.'
+                f'주제: "{word}"\n\n'
+                f'아래 각 리뷰가 이 제품의 "{word}" 주제에 대해 어떤 의도인지 분류하세요:\n'
+                f"- 칭찬: 그 주제를 긍정적으로 평가하거나 만족함\n"
+                f"- 불만: 그 주제의 문제·불편·하자를 보고함\n"
+                f'- 개선요청: 변화를 요구("~했으면 좋겠다","~추가해주세요")하거나 부족·결핍을 지적함. '
+                f"단순 만족(\"좋아요\",\"조절돼서 좋아요\")은 개선요청이 아니라 칭찬입니다\n"
+                f"- 해당없음: 위 어디에도 해당하지 않음\n"
+                f"별점이 아니라 본문 내용으로 판정하세요.\n\n"
+                f"리뷰:\n{lt}\n\n"
+                'JSON으로만: {"items":[{"no":0,"intent":"칭찬"},{"no":1,"intent":"불만"}]}'
             )
             try:
-                raw = self.client.generate(
-                    model=self.model, prompt=prompt,
-                    system="당신은 한국어 리뷰 분석가입니다.", temperature=0.0,
-                )
-            except RuntimeError:
-                return True  # 판정 실패 시 보존
-            lines = raw.strip().splitlines()
-            last = lines[-1] if lines else ""
-            return ("예" in last) and ("아니" not in last)
+                parsed = extract_json_from_response(_gen(prompt, "당신은 한국어 리뷰 분류 전문가입니다. JSON으로만 답하세요."))
+                items = parsed.get("items") if isinstance(parsed, dict) else (parsed if isinstance(parsed, list) else None)
+                if items is None:
+                    stage2.extend(chunk)
+                    continue
+                intent_by = {}
+                for it in items:
+                    if isinstance(it, dict) and isinstance(it.get("no"), int):
+                        intent_by[it["no"]] = str(it.get("intent", "")).replace(" ", "")
+                for j, sm in enumerate(chunk):
+                    if want in intent_by.get(j, ""):
+                        sm["ai_intent"] = intent_by.get(j, "")
+                        stage2.append(sm)
+            except RuntimeError as exc:
+                logger.warning("재분류 ②의도 실패, 보존: %s", exc)
+                stage2.extend(chunk)
 
-        sus = [sm for sm in kept if _suspicious(sm)]
-        if sus:
-            before_n = len(kept)
-            keep_ids = {id(sm) for sm in sus if _recheck(sm)}
-            kept = [sm for sm in kept if not _suspicious(sm) or id(sm) in keep_ids]
-            if len(kept) != before_n:
-                logger.info("  2차 검증 '%s': 의심 %d건 중 %d건 제외", word, len(sus), before_n - len(kept))
-        return kept
+        # ───── 단계 ③ 반대신문 (1건씩 근거 서술 후 예/아니오) ─────
+        q_by_pol = {
+            "긍정": '이 리뷰 작성자가 이 제품의 "%s"을(를) 직접 만족·칭찬했습니까?\n'
+                    "- 다른 제품/장소 칭찬은 아니오\n- 그 항목에 불만을 말하면 아니오",
+            "부정": '이 리뷰 작성자가 이 제품의 "%s" 문제로 불만·불편을 직접 표현했습니까?\n'
+                    "- 다른 제품/장소(마사지샵, 예전 제품 등) 불만은 아니오\n"
+                    "- 칭찬하거나 문제없다고 하면 아니오\n"
+                    '- "유선이었으면 불편" 같은 가정 표현은 아니오',
+            "개선": '이 리뷰 작성자가 이 제품의 "%s"에 대해 변화·추가·보완을 요구하거나 부족함을 지적했습니까?\n'
+                    '- 단순 만족("좋아요","조절돼서 좋아요")은 아니오\n- 다른 제품 이야기는 아니오',
+        }
+        qtmpl = q_by_pol.get(polarity, q_by_pol["부정"])
+        final: List[dict] = []
+        for sm in stage2:
+            text = str(sm.get("text", "")).replace("\n", " ")[:300]
+            prompt = (
+                f"리뷰: {text}\n\n질문: {qtmpl % word}\n\n"
+                '먼저 근거를 한 문장으로 쓰고, 마지막 줄을 "답: 예" 또는 "답: 아니오"로 끝내세요.'
+            )
+            try:
+                raw = _gen(prompt, "당신은 한국어 리뷰 분석가입니다.")
+            except RuntimeError:
+                final.append(sm)  # 판정 실패 시 보존
+                continue
+            last = (raw.strip().splitlines() or [""])[-1]
+            if ("예" in last) and ("아니" not in last):
+                final.append(sm)
+
+        logger.info(
+            "  3단계 검증 '%s'(%s): %d → ①%d → ②%d → ③%d",
+            word, polarity, len(samples), len(survivors), len(stage2), len(final),
+        )
+        return final
 
     # ── Smart Brief ──
 
