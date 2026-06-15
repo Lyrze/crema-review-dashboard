@@ -34,9 +34,10 @@ crema-review-dashboard/
 │           └── ai_analysis.json             # Ollama AI 결과 (선택)
 ├── scripts/
 │   ├── process_data.py                      # 메인 파이프라인 (CLI: parse_args)
-│   ├── ollama_analysis.py                   # Ollama AI 모듈
+│   ├── ollama_analysis.py                   # Ollama AI 모듈 (verify_keyword_reviews 3단계 게이트)
+│   ├── reverify_suspect.py                  # 의심 키워드 멤버를 14b급으로 재검증 (거짓양성 제거)
 │   ├── anonymize_csv.py                     # PII 제거 익명화 스크립트
-│   ├── interactive_select.py                # update-data.bat 대화형 메뉴 (Python)
+│   ├── interactive_select.py                # update-data.bat 대화형 메뉴 (Python, [3.5/4] 정밀보정 포함)
 │   ├── scan_raw.py                          # data/raw 스캔 → KEY=VALUE 출력
 │   ├── scan_ollama.py                       # Ollama 모델 목록 → KEY=VALUE 출력
 │   └── show_result.py                       # 처리 결과 요약 출력
@@ -69,6 +70,23 @@ data = open('script.bat', 'rb').read()
 lf_only = data.count(b'\n') - data.count(b'\r\n')
 assert lf_only == 0, f"LF-only lines found: {lf_only}"
 ```
+
+---
+
+### 🔴 CRITICAL: Windows 배치파일 — 백슬래시+문자 이스케이프 손상 (bell 0x07 등)
+
+**발생**: `.bat` 내용을 이스케이프를 처리하는 도구/문자열로 저장하면 `scripts\anonymize` 의 `\a` 가 **bell(0x07)** 바이트로, `\reverify` 의 `\r` 이 CR 로 변환됨. → cmd가 `scriptsnonymize_csv.py`(붙은 경로)로 인식해 **조용히 실패**(non-fatal warning이라 눈치 못 챔).
+
+**증상**: 익명화/특정 python 호출이 "파일 없음"으로 건너뛰어짐. 화면상으론 정상처럼 보임.
+
+**규칙**:
+- `.bat` 는 **Python raw 문자열(r'''...''')로 작성**해 `open(p,'w',newline='\r\n')` 로 저장 (bash `python -c "..."` 인라인은 따옴표가 백슬래시를 먹으니 금지 — 반드시 `.py` 파일로 작성 후 실행).
+- 저장 후 **비정상 제어문자 검증** 필수:
+```python
+d=open('x.bat','rb').read()
+assert d.count(b'\x07')==0 and (d.count(b'\n')-d.count(b'\r\n'))==0
+```
+- Windows 리다이렉트는 `>nul` (`>/dev/null` 아님).
 
 ---
 
@@ -465,6 +483,16 @@ python scripts/process_data.py \
 # 출력 파일에 reviews.json 추가됨 (해당 월 전체 리뷰 인덱스)
 #   대시보드 인사이트 '전체 보기' + 키워드 모달 'AI 재분류(전체 리뷰)'가 이 파일을 사용
 #   {"count":N,"reviews":{review_id:{rating,date,product,text}}}  (익명화 본문, PII 미포함)
+
+# [3.5단계] 7b 재분류 후 의심 키워드만 14b급으로 정밀 재검증 (거짓양성 제거)
+#   현재 멤버만 verify_keyword_reviews 3단계 게이트로 재판정 → 제거만 발생(추가 X), 빠름
+#   update-data.bat [3.5/4] 에서 자동 호출됨 (14b 모델 감지 시)
+python scripts/reverify_suspect.py --brand 슬룸 --month 2026-04 --model qwen2.5:14b
+#   기본 대상: complaint,improvement (--polarities 로 변경, praise 포함 가능)
+
+# 3단계 게이트 = ①관련성 ②의도분류(칭찬/불만/개선요청) ③반대신문
+#   ollama_analysis.verify_keyword_reviews + 대시보드 aiVerifyKeywordCandidates 가 동일 로직
+#   "가성비 좋다→가격불만", "강도 높이면 시원→강도강화요청" 같은 긍정 누수를 ②에서 차단
 
 # 익명화
 python scripts/anonymize_csv.py \
