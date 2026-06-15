@@ -179,6 +179,41 @@ def main():
         else:
             eprint("  정밀 분류 건너뜀 — 대시보드에서 나중에 'AI 전체 재분류' 가능.")
 
+    # 3.5 AI 정밀 보정 (의심 키워드만 더 큰 모델로 재검증 — 긍정·희망 누수 제거)
+    #   7b 전체 재분류 후, 부정·개선 키워드의 현재 멤버만 14b급 모델로 재판정.
+    #   거짓양성만 제거(추가 X)하므로 빠르고 안전. reverify_suspect.py 가 수행.
+    reverify_flag = ""
+    if reclass_flag and models:
+        big = [m for m in models if any(t in m.lower() for t in ("14b", "32b", "70b", "72b"))]
+        if big:
+            eprint()
+            eprint("  [3.5/4] AI 정밀 보정 (의심 키워드를 더 큰 모델로 재검증)")
+            eprint("    7b가 놓치는 '가성비 좋다->불만' 같은 긍정 누수를 제거합니다.")
+            eprint()
+            eprint(f"    1. 포함 - {big[0]} 로 부정·개선 키워드 재검증 (권장, 약 5~15분)")
+            eprint("    2. 건너뛰기")
+            eprint()
+            while True:
+                try:
+                    raw_in = input("  선택 (1~2, Enter=1번 권장): ").strip()
+                    vsel = 1 if raw_in == "" else int(raw_in)
+                    if vsel in (1, 2):
+                        break
+                    eprint("  1 또는 2를 입력하세요.")
+                except ValueError:
+                    eprint("  1 또는 2를 입력하세요.")
+                except EOFError:
+                    vsel = 2
+                    break
+            if vsel == 1:
+                reverify_flag = f"--model {big[0]}"
+                eprint(f"  정밀 보정 모델: {big[0]}")
+            else:
+                eprint("  정밀 보정 건너뜀.")
+        else:
+            eprint()
+            eprint("  [3.5/4] 14b 이상 모델 없음 → 정밀 보정 생략 (7b 3단계 결과 사용)")
+
     anon_out = f"data/anonymized/{brand}/{month}/reviews_anon.csv"
 
     eprint()
@@ -192,6 +227,7 @@ def main():
     print(f"PREV_FLAG={prev_flag}")
     print(f"AI_FLAG={ai_flag}")
     print(f"RECLASS_FLAG={reclass_flag}")
+    print(f"REVERIFY_FLAG={reverify_flag}")
     print(f"ANON_OUT={anon_out}")
 
 

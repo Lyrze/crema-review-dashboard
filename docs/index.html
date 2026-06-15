@@ -4707,51 +4707,10 @@ async function krmReclassify(){
   var kept=[]; var processed=0; var total=cands.length;
 
   try{
-    if(KRM_RECLASS_MODE==='batch'){
-      // 배치: 8건씩 묶어 한 번에 판별
-      var BATCH=12;
-      for(var s=0;s<cands.length;s+=BATCH){
-        var chunk=cands.slice(s, s+BATCH);
-        var listText=chunk.map(function(it,i){ return '['+i+'] (★'+(it.r.rating||'?')+') '+(it.r.text||'').replace(/\s+/g,' ').slice(0,220); }).join('\n');
-        var prompt='당신은 한국어 리뷰 분류 전문가입니다.\n'+
-          '키워드: "'+kw+'" (이 키워드는 제품에 대해 '+typeLabel+' 주제입니다)\n\n'+
-          '아래 리뷰들 중에서 실제로 "'+kw+'" 주제를 다루는 리뷰를 고르고, 각 리뷰가 그 주제에 대해 갖는 감성(긍정/부정/중립)을 함께 판정하세요.\n'+
-          '현재 다른 분류에 있든 없든 상관없이, 의미상 이 키워드에 해당하면 포함하세요.\n'+
-          '단어가 우연히 포함됐을 뿐 의미상 무관한 리뷰는 제외하세요.\n\n'+
-          '감성 판정 기준 (그 주제에 대한 평가 기준, 별점·전체 분위기와 무관):\n'+
-          '- 그 주제에 불만·불편·문제를 말하면 → 부정\n'+
-          '- 그 주제가 만족스럽거나 문제없다고 말하면 → 긍정\n'+
-          '- 특히 "소음이 없어요", "조용해요", "걱정했는데 괜찮아요"처럼 문제가 없다는 표현은 반드시 긍정입니다\n'+
-          '- 별점은 참고일 뿐: 별점이 높아도 그 주제에 명시적 불만이 있으면 부정, 그 주제를 칭찬·만족하면 별점과 무관하게 긍정입니다\n'+
-          '- 단순 언급뿐 평가가 없으면 → 중립\n\n'+
-          '리뷰:\n'+listText+'\n\n'+
-          'JSON으로만 답하세요: {"matched":[{"no":0,"sent":"긍정"},{"no":2,"sent":"부정"}]}  (없으면 {"matched":[]})';
-        var resp=await ollamaGenerateOnce(prompt);
-        var matched=krmParseMatchedSent(resp, chunk.length);
-        matched.forEach(function(mx){
-          var it=chunk[mx.i];
-          // 키워드 극성과 반대 감성 리뷰는 제외 (예: 긍정 키워드에 부정 리뷰)
-          if(it && kwSentOk(ctx.type, mx.sent)){ it._sent=mx.sent; kept.push(it); }
-        });
-        processed+=chunk.length;
-        if(statusEl) statusEl.textContent=scopeNote+' 검토 '+processed+'/'+total+' (A 귀속 '+kept.length+')';
-      }
-    } else {
-      // 정밀: 1건씩 yes/no
-      for(var k=0;k<cands.length;k++){
-        var it=cands[k];
-        var p1='키워드: "'+kw+'"\n'+
-          '다음 리뷰가 실제로 "'+kw+'" 주제를 다루나요? 단어만 우연히 포함된 경우는 무관입니다.\n'+
-          '리뷰: '+(it.r.text||'').replace(/\s+/g,' ').slice(0,300)+'\n\n'+
-          '다음 중 하나로만 답하세요: 무관 / 긍정 / 부정 / 중립\n'+
-          '(그 주제에 대한 평가 기준 — 불만·불편이면 부정, 만족하거나 "문제없다/조용하다/괜찮다"처럼 문제가 없다는 표현이면 긍정, 단순 언급이면 중립)';
-        var r1=await ollamaGenerateOnce(p1);
-        var sent1=krmParseSingleSent(r1);
-        if(sent1 && kwSentOk(ctx.type, sent1)){ it._sent=sent1; kept.push(it); }
-        processed++;
-        if(statusEl) statusEl.textContent=scopeNote+' 정밀 검토 '+processed+'/'+total+' (A 귀속 '+kept.length+')';
-      }
-    }
+    FRC_STATE.cancel=false; // 3단계 공유 검증기 취소 플래그 초기화
+    kept = await aiVerifyKeywordCandidates(kw, ctx.type, cands, KRM_RECLASS_MODE, function(done, tot, stage){
+      if(statusEl) statusEl.textContent=scopeNote+' '+(stage||'검토')+' '+done+'/'+tot;
+    });
 
     var keptIds={}; kept.forEach(function(it){ keptIds[String(it.r.review_id)]=true; });
     var added=kept.filter(function(it){return it._isNew;}).length;
@@ -4848,6 +4807,17 @@ function krmParseMatchedSent(resp, n){
   }catch(e){}
   krmParseMatched(resp, n).forEach(function(i){ push(i, null); });
   return out;
+}
+
+// (3단계 게이트) 관련성 응답 파싱 — 파싱 실패 시 null(전체 보존 신호)
+function krmParseRelevant(resp, n){
+  if(resp){ try{ var m=resp.match(/\{[\s\S]*\}/); if(m){ var o=JSON.parse(m[0]); if(o&&Array.isArray(o.relevant)){ var out=[],seen={}; o.relevant.forEach(function(x){ var i=parseInt(x,10); if(Number.isInteger(i)&&i>=0&&i<n&&!seen[i]){seen[i]=1;out.push(i);} }); return out; } } }catch(e){} }
+  return null;
+}
+// (3단계 게이트) 의도 분류 응답 파싱 → {idx:intent}. 파싱 실패 시 null(전체 보존 신호)
+function krmParseIntents(resp, n){
+  if(resp){ try{ var m=resp.match(/\{[\s\S]*\}/); if(m){ var o=JSON.parse(m[0]); var arr=(o&&Array.isArray(o.items))?o.items:(Array.isArray(o)?o:null); if(arr){ var map={}; arr.forEach(function(x){ if(x&&Number.isInteger(x.no)){ map[x.no]=String(x.intent||'').replace(/\s+/g,''); } }); return map; } } }catch(e){} }
+  return null;
 }
 
 // 키워드 극성 ↔ 리뷰 감성 엄격 일치 — 같은 극성 판정만 귀속
@@ -4962,33 +4932,58 @@ function buildKeywordCandidatesFull(kwObj){
 
 // 후보를 AI로 판별해 귀속 항목만 반환 (배치/정밀)
 async function aiVerifyKeywordCandidates(word, typeKr, cands, mode, onProgress){
-  var typeDesc=typeKr==='긍정'?'긍정적으로 칭찬하는':typeKr==='부정'?'부정적으로 불만을 제기하는':'개선을 요청하는';
+  // 3단계 게이트: (1)관련성 (2)의도분류 (3)반대신문 — 파이프라인 verify_keyword_reviews 와 동일
+  var want=(typeKr==='긍정')?'칭찬':(typeKr==='부정')?'불만':'개선요청';
+  var batch=(mode==='item')?1:12;
+  var total=cands.length;
+  function lineOf(it,i){ return '['+i+'] (★'+(it.r.rating||'?')+') '+(it.r.text||'').replace(/\s+/g,' ').slice(0,240); }
+
+  // (1) 관련성 게이트 — 우연한 단어·가정 표현·타제품 비교 제거
+  var survivors=[];
+  for(var s=0;s<cands.length;s+=batch){
+    if(FRC_STATE.cancel) break;
+    var c1=cands.slice(s,s+batch);
+    var p1='주제: "'+word+'"\n\n아래 리뷰가 이 제품의 "'+word+'" 주제를 실제로 평가하거나 직접 다루는지 판정하세요.\n다음은 모두 \'무관\'입니다:\n- 단어만 우연히 포함 (예: "고장나면 또 살게요"는 고장을 직접 겪은 게 아님)\n- 가정·조건 표현 ("~했으면","~라면","~었으면")\n- 다른 제품·장소(마사지샵, 예전 제품 등) 이야기\n- 주제와 무관한 일반 후기\n\n리뷰:\n'+c1.map(lineOf).join('\n')+'\n\n관련 있는 번호만 JSON으로: {"relevant":[0,2]} (없으면 {"relevant":[]})';
+    var rel;
+    try{ rel=krmParseRelevant(await ollamaGenerateOnce(p1), c1.length); }
+    catch(e){ rel=null; }
+    if(rel===null){ for(var ri=0;ri<c1.length;ri++) survivors.push(c1[ri]); }
+    else { rel.forEach(function(i){ if(c1[i]) survivors.push(c1[i]); }); }
+    if(onProgress) onProgress(Math.min(s+batch,total), total, '①관련성');
+  }
+
+  // (2) 의도 분류 — 칭찬/불만/개선요청/해당없음 중 키워드 카테고리와 일치하는 것만
+  var stage2=[];
+  for(var s2=0;s2<survivors.length;s2+=batch){
+    if(FRC_STATE.cancel) break;
+    var c2=survivors.slice(s2,s2+batch);
+    var p2='주제: "'+word+'"\n\n아래 각 리뷰가 이 제품의 "'+word+'" 주제에 대해 어떤 의도인지 분류하세요:\n- 칭찬: 그 주제를 긍정적으로 평가하거나 만족함\n- 불만: 그 주제의 문제·불편·하자를 보고함\n- 개선요청: 변화를 요구("~했으면 좋겠다","~추가해주세요")하거나 부족·결핍을 지적함. 단순 만족("좋아요","조절돼서 좋아요")은 개선요청이 아니라 칭찬입니다\n- 해당없음: 위 어디에도 해당하지 않음\n별점이 아니라 본문 내용으로 판정하세요.\n\n리뷰:\n'+c2.map(lineOf).join('\n')+'\n\nJSON으로만: {"items":[{"no":0,"intent":"칭찬"}]}';
+    var intents;
+    try{ intents=krmParseIntents(await ollamaGenerateOnce(p2), c2.length); }
+    catch(e){ intents=null; }
+    if(intents===null){ c2.forEach(function(it){ stage2.push(it); }); }
+    else { c2.forEach(function(it,i){ var iv=intents[i]||''; if(iv.indexOf(want)>=0){ it._sent=typeKr; it._aiIntent=iv; stage2.push(it); } }); }
+    if(onProgress) onProgress(Math.min(s2+batch,survivors.length), survivors.length, '②의도');
+  }
+
+  // (3) 반대신문 — 1건씩 근거 서술 후 예/아니오
+  var q=(typeKr==='긍정')?'이 리뷰 작성자가 이 제품의 "'+word+'"을(를) 직접 만족·칭찬했습니까?\n- 다른 제품/장소 칭찬은 아니오\n- 그 항목에 불만을 말하면 아니오'
+       :(typeKr==='부정')?'이 리뷰 작성자가 이 제품의 "'+word+'" 문제로 불만·불편을 직접 표현했습니까?\n- 다른 제품/장소(마사지샵, 예전 제품 등) 불만은 아니오\n- 칭찬하거나 문제없다고 하면 아니오\n- "유선이었으면 불편" 같은 가정 표현은 아니오'
+       :'이 리뷰 작성자가 이 제품의 "'+word+'"에 대해 변화·추가·보완을 요구하거나 부족함을 지적했습니까?\n- 단순 만족("좋아요","조절돼서 좋아요")은 아니오\n- 다른 제품 이야기는 아니오';
   var kept=[];
-  if(mode==='item'){
-    for(var k=0;k<cands.length;k++){
-      if(FRC_STATE.cancel) break;
-      var it=cands[k];
-      var p='키워드: "'+word+'"\n다음 리뷰가 실제로 "'+word+'" 주제를 다루나요? 단어만 우연히 포함된 경우는 무관입니다.\n리뷰: '+(it.r.text||'').replace(/\s+/g,' ').slice(0,300)+'\n\n다음 중 하나로만 답하세요: 무관 / 긍정 / 부정 / 중립\n(그 주제에 대한 평가 기준 — 불만·불편이면 부정, 만족하거나 "문제없다/조용하다/괜찮다"처럼 문제가 없다는 표현이면 긍정, 단순 언급이면 중립)';
-      var r=await ollamaGenerateOnce(p);
-      var sentI=krmParseSingleSent(r);
-      if(sentI && kwSentOk(typeKr, sentI)){ it._sent=sentI; kept.push(it); }
-      if(onProgress) onProgress(k+1, cands.length);
-    }
-  } else {
-    var BATCH=12;
-    for(var s=0;s<cands.length;s+=BATCH){
-      if(FRC_STATE.cancel) break;
-      var chunk=cands.slice(s,s+BATCH);
-      var listText=chunk.map(function(it,i){return '['+i+'] (★'+(it.r.rating||'?')+') '+(it.r.text||'').replace(/\s+/g,' ').slice(0,220);}).join('\n');
-      var prompt='당신은 한국어 리뷰 분류 전문가입니다.\n키워드: "'+word+'" (이 키워드는 제품에 대해 '+typeDesc+' 주제입니다)\n\n아래 리뷰들 중에서 실제로 "'+word+'" 주제를 다루는 리뷰를 고르고, 각 리뷰가 그 주제에 대해 갖는 감성(긍정/부정/중립)을 함께 판정하세요.\n현재 다른 분류에 있든 없든 상관없이, 의미상 이 키워드에 해당하면 포함하세요.\n단어가 우연히 포함됐을 뿐 의미상 무관한 리뷰는 제외하세요.\n\n감성 판정 기준 (그 주제에 대한 평가 기준, 별점·전체 분위기와 무관):\n- 그 주제에 불만·불편·문제를 말하면 → 부정\n- 그 주제가 만족스럽거나 문제없다고 말하면 → 긍정\n- 특히 "소음이 없어요", "조용해요", "걱정했는데 괜찮아요"처럼 문제가 없다는 표현은 반드시 긍정입니다\n- 별점은 참고일 뿐: 별점이 높아도 그 주제에 명시적 불만이 있으면 부정, 그 주제를 칭찬·만족하면 별점과 무관하게 긍정입니다\n- 단순 언급뿐 평가가 없으면 → 중립\n\n리뷰:\n'+listText+'\n\nJSON으로만 답하세요: {"matched":[{"no":0,"sent":"긍정"},{"no":2,"sent":"부정"}]} (없으면 {"matched":[]})';
-      var resp=await ollamaGenerateOnce(prompt);
-      var matchedS=krmParseMatchedSent(resp, chunk.length);
-      matchedS.forEach(function(mx){
-        var it=chunk[mx.i];
-        if(it && kwSentOk(typeKr, mx.sent)){ it._sent=mx.sent; kept.push(it); }
-      });
-      if(onProgress) onProgress(Math.min(s+BATCH,cands.length), cands.length);
-    }
+  for(var k=0;k<stage2.length;k++){
+    if(FRC_STATE.cancel) break;
+    var it=stage2[k];
+    var p3='리뷰: '+(it.r.text||'').replace(/\s+/g,' ').slice(0,300)+'\n\n질문: '+q+'\n\n먼저 근거를 한 문장으로 쓰고, 마지막 줄을 "답: 예" 또는 "답: 아니오"로 끝내세요.';
+    var ok=true;
+    try{
+      var r3=await ollamaGenerateOnce(p3);
+      var ls=String(r3).trim().split(/\r?\n/);
+      var last=ls[ls.length-1]||'';
+      ok=(last.indexOf('예')>=0 && last.indexOf('아니')<0);
+    }catch(e){ ok=true; }
+    if(ok) kept.push(it);
+    if(onProgress) onProgress(k+1, stage2.length, '③반대신문');
   }
   return kept;
 }
