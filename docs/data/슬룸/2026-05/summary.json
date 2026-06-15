@@ -1,0 +1,191 @@
+{
+  "brand": "슬룸",
+  "month": "2026-05",
+  "generated_at": "2026-06-15T18:02:22.763734",
+  "kpis": {
+    "total_reviews": 2182,
+    "avg_rating": 4.65,
+    "rating_distribution": {
+      "1": 24,
+      "2": 9,
+      "3": 81,
+      "4": 470,
+      "5": 1598
+    },
+    "photo_review_count": 199,
+    "photo_review_rate": 9.1,
+    "positive_count": 1918,
+    "neutral_count": 185,
+    "negative_count": 79,
+    "positive_rate": 87.9,
+    "negative_rate": 3.62,
+    "mom_review_change": 184,
+    "mom_review_change_pct": 9.2,
+    "mom_rating_change": 0.02
+  },
+  "timeline": [
+    {
+      "date": "2026-05-01",
+      "count": 180,
+      "avg_rating": 4.59
+    },
+    {
+      "date": "2026-05-02",
+      "count": 174,
+      "avg_rating": 4.76
+    },
+    {
+      "date": "2026-05-03",
+      "count": 181,
+      "avg_rating": 4.85
+    },
+    {
+      "date": "2026-05-04",
+      "count": 158,
+      "avg_rating": 4.59
+    },
+    {
+      "date": "2026-05-05",
+      "count": 163,
+      "avg_rating": 4.61
+    },
+    {
+      "date": "2026-05-06",
+      "count": 167,
+      "avg_rating": 4.57
+    },
+    {
+      "date": "2026-05-07",
+      "count": 28,
+      "avg_rating": 4.71
+    },
+    {
+      "date": "2026-05-08",
+      "count": 28,
+      "avg_rating": 4.68
+    },
+    {
+      "date": "2026-05-09",
+      "count": 17,
+      "avg_rating": 4.94
+    },
+    {
+      "date": "2026-05-10",
+      "count": 23,
+      "avg_rating": 4.48
+    },
+    {
+      "date": "2026-05-11",
+      "count": 93,
+      "avg_rating": 4.53
+    },
+    {
+      "date": "2026-05-12",
+      "count": 52,
+      "avg_rating": 4.73
+    },
+    {
+      "date": "2026-05-13",
+      "count": 39,
+      "avg_rating": 4.69
+    },
+    {
+      "date": "2026-05-14",
+      "count": 68,
+      "avg_rating": 4.69
+    },
+    {
+      "date": "2026-05-15",
+      "count": 57,
+      "avg_rating": 4.4
+    },
+    {
+      "date": "2026-05-16",
+      "count": 59,
+      "avg_rating": 4.58
+    },
+    {
+      "date": "2026-05-17",
+      "count": 36,
+      "avg_rating": 4.39
+    },
+    {
+      "date": "2026-05-18",
+      "count": 50,
+      "avg_rating": 4.82
+    },
+    {
+      "date": "2026-05-19",
+      "count": 43,
+      "avg_rating": 4.49
+    },
+    {
+      "date": "2026-05-20",
+      "count": 25,
+      "avg_rating": 4.84
+    },
+    {
+      "date": "2026-05-21",
+      "count": 59,
+      "avg_rating": 4.68
+    },
+    {
+      "date": "2026-05-22",
+      "count": 57,
+      "avg_rating": 4.6
+    },
+    {
+      "date": "2026-05-23",
+      "count": 23,
+      "avg_rating": 4.87
+    },
+    {
+      "date": "2026-05-24",
+      "count": 52,
+      "avg_rating": 4.69
+    },
+    {
+      "date": "2026-05-25",
+      "count": 49,
+      "avg_rating": 4.59
+    },
+    {
+      "date": "2026-05-26",
+      "count": 74,
+      "avg_rating": 4.73
+    },
+    {
+      "date": "2026-05-27",
+      "count": 43,
+      "avg_rating": 4.7
+    },
+    {
+      "date": "2026-05-28",
+      "count": 63,
+      "avg_rating": 4.73
+    },
+    {
+      "date": "2026-05-29",
+      "count": 47,
+      "avg_rating": 4.83
+    },
+    {
+      "date": "2026-05-30",
+      "count": 40,
+      "avg_rating": 4.35
+    },
+    {
+      "date": "2026-05-31",
+      "count": 34,
+      "avg_rating": 4.71
+    }
+  ],
+  "review_path_distribution": {
+    "기존리뷰": 2089,
+    "반응형(내리뷰)": 39,
+    "모바일": 33,
+    "모바일(팝업)": 17,
+    "PC(팝업)": 2,
+    "모바일(상품리뷰)": 2
+  }
+}
