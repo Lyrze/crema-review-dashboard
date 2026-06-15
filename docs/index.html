@@ -4264,7 +4264,8 @@ function openKeywordReviewsModal(keyword, productFilter, type, searchTerm){
     // 첫 호출 시 모달 동적 생성
     modal=document.createElement('div');
     modal.id='keyword-reviews-modal';
-    modal.style.cssText='display:none;position:fixed;inset:0;z-index:850;background:rgba(0,0,0,.55);align-items:flex-start;justify-content:center;padding-top:60px;';
+    // z-index 870: 인사이트 모달(kpi 855 · sc 860 · insight 800)에서 키워드 클릭 시 그 위에 떠야 함
+    modal.style.cssText='display:none;position:fixed;inset:0;z-index:870;background:rgba(0,0,0,.55);align-items:flex-start;justify-content:center;padding-top:60px;';
     modal.onclick=function(e){ if(e.target===modal) closeKeywordReviewsModal(); };
     modal.innerHTML='<div style="background:var(--card);border-radius:14px;width:100%;max-width:760px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.22);">'+
       '<div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">'+
