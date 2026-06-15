@@ -13,6 +13,16 @@ import sys
 import json
 import urllib.request
 
+# update-data.bat 는 chcp 65001(UTF-8) 로 KEY=VALUE 임시파일을 파싱한다.
+# 그런데 stdout 이 파일로 리다이렉트되면 Python 은 locale(cp949)로 쓰기 때문에
+# 한글 BRAND/경로 줄이 깨져 for /f 가 그 줄을 건너뛴다(→ "선택 값 없음").
+# stdout/stderr 을 UTF-8 로 강제해 배치 파싱과 인코딩을 일치시킨다.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
