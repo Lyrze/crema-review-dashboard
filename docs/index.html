@@ -2495,7 +2495,7 @@ function onMonthChange(v){
 }
 async function reload(){ await loadData(STATE.brand,STATE.month); render(); }
 
-function render(){ renderHeader(); renderExec(); renderSKUScorecards(); renderKPI(); renderTimeline(); renderSKUTable(); renderSKUCombo(); renderChangeTables(); renderVOC(); updateProductFocusBar(); updateCustomAIModelLabel(); populateCompareMonths(); updateCompareBanner(); renderPVOCKanban(); syncChipBarFromState(); refreshOpenInsightModal(); setTimeout(enhanceCardActions,50); }
+function render(){ if(typeof COMPARE_STATE!=='undefined'){ if(COMPARE_STATE.active) applyCompareBaseline(); else restoreCompareBaseline(); } renderHeader(); renderExec(); renderSKUScorecards(); renderKPI(); renderTimeline(); renderSKUTable(); renderSKUCombo(); renderChangeTables(); renderVOC(); updateProductFocusBar(); updateCustomAIModelLabel(); populateCompareMonths(); updateCompareBanner(); renderPVOCKanban(); syncChipBarFromState(); refreshOpenInsightModal(); setTimeout(enhanceCardActions,50); }
 
 // View Insight 모달이 열려 있으면 인사이트 카드 숫자도 즉시 갱신
 function refreshOpenInsightModal(){
@@ -5282,6 +5282,38 @@ function onSKUSearch(){
 // ── 두 달 비교 모드 ──
 var COMPARE_STATE={active:false,month:null,data:null};
 
+// 비교 모드 ON 시: 선택한 비교월 데이터를 현재 products 의 prev_* + summary MoM 으로 주입.
+// → prev_* 를 읽는 모든 MoM 섹션(KPI·스코어카드·변화테이블·콤보차트)이 비교월 기준으로 갱신됨.
+// 원본 값은 각 객체에 _origPrev*/_origMom* 로 1회 백업 → 복원 가능.
+function applyCompareBaseline(){
+  if(!COMPARE_STATE.active || !COMPARE_STATE.data) return;
+  var prods=STATE.products; if(!prods) return;
+  var cmpMap={};
+  (COMPARE_STATE.data.products||[]).forEach(function(p){ cmpMap[p.name]={rc:p.review_count, ar:p.avg_rating}; });
+  prods.forEach(function(p){
+    if(p._origPrevRC===undefined){ p._origPrevRC=(p.prev_review_count===undefined?null:p.prev_review_count); p._origPrevAR=(p.prev_avg_rating===undefined?null:p.prev_avg_rating); }
+    var c=cmpMap[p.name];
+    p.prev_review_count = c?c.rc:null;
+    p.prev_avg_rating = c?c.ar:null;
+  });
+  var curK=(STATE.summary||{}).kpis;
+  var cmpK=COMPARE_STATE.data.summary&&COMPARE_STATE.data.summary.kpis;
+  if(curK && cmpK){
+    if(curK._origMomRC===undefined){ curK._origMomRC=curK.mom_review_change; curK._origMomRCP=curK.mom_review_change_pct; curK._origMomRT=curK.mom_rating_change; }
+    curK.mom_review_change=curK.total_reviews-cmpK.total_reviews;
+    curK.mom_review_change_pct=cmpK.total_reviews>0?Math.round((curK.mom_review_change/cmpK.total_reviews)*1000)/10:0;
+    curK.mom_rating_change=Math.round((curK.avg_rating-cmpK.avg_rating)*100)/100;
+  }
+}
+function restoreCompareBaseline(){
+  var prods=STATE.products;
+  if(prods) prods.forEach(function(p){
+    if(p._origPrevRC!==undefined){ p.prev_review_count=p._origPrevRC; p.prev_avg_rating=p._origPrevAR; delete p._origPrevRC; delete p._origPrevAR; }
+  });
+  var curK=(STATE.summary||{}).kpis;
+  if(curK && curK._origMomRC!==undefined){ curK.mom_review_change=curK._origMomRC; curK.mom_review_change_pct=curK._origMomRCP; curK.mom_rating_change=curK._origMomRT; delete curK._origMomRC; delete curK._origMomRCP; delete curK._origMomRT; }
+}
+
 function updateCompareBanner(){
   var banner=$('compare-banner'); if(!banner) return;
   if(!COMPARE_STATE.active){banner.style.display='none';return;}
@@ -5316,7 +5348,7 @@ function toggleCompareMode(){
     },100);
   }
   if(COMPARE_STATE.active&&COMPARE_STATE.month) loadCompareData(COMPARE_STATE.month);
-  updateCompareBanner(); renderKPI(); renderSKUTable();
+  render();
 }
 
 function showCompareMonthPop(anchorEl){
@@ -5349,8 +5381,8 @@ async function loadCompareData(month){
   try{
     var sum=await fetchJSON(base+'/data/'+encodeURIComponent(brand)+'/'+month+'/summary.json');
     var prods=await fetchJSON(base+'/data/'+encodeURIComponent(brand)+'/'+month+'/products.json');
-    COMPARE_STATE.data={summary:sum,products:prods,month:month};
-    updateCompareBanner(); renderKPI(); renderSKUTable();
+    COMPARE_STATE.data={summary:sum,products:(prods&&prods.products?prods.products:prods),month:month};
+    render();
   }catch(e){ COMPARE_STATE.data=null; updateCompareBanner(); }
 }
 
