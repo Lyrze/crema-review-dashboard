@@ -724,7 +724,7 @@
     body.taxonomy-mode .section, body.taxonomy-mode .page-header { display:none; }
     body.taxonomy-mode .sync-filter-bar { display:none; }
     body.taxonomy-mode .product-focus-bar { display:none; }
-    body.taxonomy-mode #compare-banner { display:none; }
+    body.taxonomy-mode #compare-banner { display:none !important; }
     .tx-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px; gap:16px; flex-wrap:wrap; }
     .tx-title { font-size:22px; font-weight:800; color:var(--text); letter-spacing:-.4px; display:flex; align-items:center; gap:10px; }
     .tx-subtitle { font-size:12.5px; color:var(--text-secondary); margin-top:5px; }
@@ -825,7 +825,7 @@
     #sku-compare-page.active { display:block; }
     body.compare-sku-mode .section, body.compare-sku-mode .page-header { display:none; }
     body.compare-sku-mode .sync-filter-bar { display:none; }
-    body.compare-sku-mode #compare-banner { display:none; }
+    body.compare-sku-mode #compare-banner { display:none !important; }
     body.compare-sku-mode #taxonomy-page { display:none; }
     body.compare-sku-mode #taxonomy-detail { display:none; }
     .sc-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px; gap:16px; flex-wrap:wrap; }
@@ -3195,6 +3195,8 @@ function kwCloud(cid,kws,cls){
 }
 
 function updateActiveNav(){
+  // 특수 페이지(SKU 1vs1·Taxonomy)에선 스크롤 스파이 비활성 — nav active 를 덮어쓰지 않음
+  if(document.body.classList.contains('compare-sku-mode')||document.body.classList.contains('taxonomy-mode')) return;
   var secs=document.querySelectorAll('section[id]');
   var links=document.querySelectorAll('nav a');
   var sy=window.scrollY+120; var cur='';
@@ -5334,20 +5336,23 @@ function updateCompareBanner(){
 }
 
 function toggleCompareMode(){
-  COMPARE_STATE.active=!COMPARE_STATE.active;
   var chip=$('chip-compare');
-  if(chip){
-    chip.classList.toggle('active',COMPARE_STATE.active);
-    chip.innerHTML=COMPARE_STATE.active?'📊 비교 ON':'📊 비교 모드';
+  if(!COMPARE_STATE.active){
+    // 켜기 → 월 선택 팝업
+    COMPARE_STATE.active=true;
+    if(chip){ chip.classList.add('active'); chip.innerHTML='📊 비교 ON'; }
+    if(COMPARE_STATE.month) loadCompareData(COMPARE_STATE.month); else render();
+    setTimeout(function(){ var c=$('chip-compare'); if(c) showCompareMonthPop(c); },80);
+  } else {
+    // 이미 켜짐 → 월 변경/끄기 팝업 재오픈 (선택해도 고정되지 않도록)
+    showCompareMonthPop(chip);
   }
-  // 활성화 시 비교 월 선택 팝업 자동 띄움
-  if(COMPARE_STATE.active && !COMPARE_STATE.month){
-    setTimeout(function(){
-      var cmpChip=$('chip-compare');
-      if(cmpChip) showCompareMonthPop(cmpChip);
-    },100);
-  }
-  if(COMPARE_STATE.active&&COMPARE_STATE.month) loadCompareData(COMPARE_STATE.month);
+}
+
+function disableCompareMode(){
+  COMPARE_STATE.active=false;
+  var chip=$('chip-compare');
+  if(chip){ chip.classList.remove('active'); chip.innerHTML='📊 비교 모드'; }
   render();
 }
 
@@ -5364,8 +5369,12 @@ function showCompareMonthPop(anchorEl){
   var html='<div style="font-size:10.5px;font-weight:700;color:var(--text-secondary);padding:6px 10px 4px;text-transform:uppercase;letter-spacing:.5px;">비교할 기간 선택</div>';
   html+=months.map(function(m){
     var sel=m===COMPARE_STATE.month?' selected':'';
-    return '<button class="chip-pop-item'+sel+'" onclick="onCompareMonthChange(\''+m+'\');closeChipPop();">'+m+'</button>';
+    var mark=m===COMPARE_STATE.month?'✓ ':'';
+    return '<button class="chip-pop-item'+sel+'" onclick="onCompareMonthChange(\''+m+'\');closeChipPop();">'+mark+m+'</button>';
   }).join('');
+  if(COMPARE_STATE.active){
+    html+='<button class="chip-pop-item" onclick="disableCompareMode();closeChipPop();" style="color:var(--negative);border-top:1px solid var(--border);margin-top:4px;">✕ 비교 모드 끄기</button>';
+  }
   showChipPop(anchorEl, html);
 }
 
@@ -7127,13 +7136,22 @@ async function scGenerateBrief(force){
 // ═══════════════════════════════════════════════
 // 상품의 저장된 리뷰 수집 (sentiment: 'positive'|'negative'|'neutral'|'' , rating: 1~5 또는 null)
 function scGetProductReviews(productName, sentiment, rating){
-  var prods=STATE.products||REAL_DATA.products;
-  var p=prods.find(function(x){return x.name===productName;});
-  if(!p) return [];
   var rv=[];
-  (p.top_reviews||[]).concat(p.bottom_reviews||[]).forEach(function(r){ rv.push({name:productName, r:r}); });
-  var seen={};
-  rv=rv.filter(function(it){ var k=it.r.review_id; if(seen[k]) return false; seen[k]=true; return true; });
+  // reviews.json(전체 리뷰)이 있으면 해당 상품 전체를 사용 (top/bottom 샘플만 보면 대거 누락)
+  if(STATE.reviewsById){
+    Object.keys(STATE.reviewsById).forEach(function(id){
+      var r=STATE.reviewsById[id];
+      if(r.product!==productName) return;
+      rv.push({name:productName, r:{review_id:String(id), rating:r.rating, date:r.date, text:r.text}});
+    });
+  } else {
+    var prods=STATE.products||REAL_DATA.products;
+    var p=prods.find(function(x){return x.name===productName;});
+    if(!p) return [];
+    (p.top_reviews||[]).concat(p.bottom_reviews||[]).forEach(function(r){ rv.push({name:productName, r:r}); });
+    var seen={};
+    rv=rv.filter(function(it){ var k=it.r.review_id; if(seen[k]) return false; seen[k]=true; return true; });
+  }
   if(sentiment==='positive') rv=rv.filter(function(it){return it.r.rating>=4;});
   else if(sentiment==='negative') rv=rv.filter(function(it){return it.r.rating<=2;});
   else if(sentiment==='neutral') rv=rv.filter(function(it){return it.r.rating===3;});
@@ -7152,27 +7170,42 @@ function scGetKeywordReviews(productName, word, category){
   if(category==='positive') pools=bi.praise||[];
   else if(category==='negative') pools=(bi.complaint||[]).concat(bi.improvement||[]);
   else pools=(bi.praise||[]).concat(bi.complaint||[]).concat(bi.improvement||[]);
-  var rv=[];
-  pools.forEach(function(k){
-    if(!k||k.word!==word) return;
-    (k.review_samples||[]).forEach(function(s){
+  var rv=[]; var seen={};
+  var kwObj=pools.find(function(k){return k&&k.word===word;});
+  // 0순위: all_review_ids + reviews.json → 해당 상품 매칭 리뷰 전체 (카운트와 일치)
+  if(kwObj && kwObj.all_review_ids && STATE.reviewsById){
+    kwObj.all_review_ids.forEach(function(id){
+      var r=STATE.reviewsById[String(id)];
+      if(!r || r.product!==productName) return;
+      if(seen[id]) return; seen[id]=true;
+      rv.push({name:productName, r:{review_id:String(id), rating:r.rating, date:r.date, text:r.text}});
+    });
+  }
+  // 1순위 폴백: review_samples (reviews.json 없을 때)
+  if(rv.length===0 && kwObj && kwObj.review_samples){
+    kwObj.review_samples.forEach(function(s){
       if(s.product!==productName) return;
+      if(seen[s.review_id]) return; seen[s.review_id]=true;
       rv.push({name:s.product, r:{review_id:s.review_id, rating:s.rating, date:s.date, text:s.text}});
     });
-  });
-  var seen={};
-  rv=rv.filter(function(it){ var key=it.r.review_id; if(seen[key]) return false; seen[key]=true; return true; });
-  // 폴백: 해당 상품 리뷰 본문에서 키워드 첫 토큰 검색
+  }
+  // 2순위 폴백: 본문 토큰 검색 (reviews.json 전체 → 없으면 top/bottom)
   if(rv.length===0){
     var tok=word.split(/[\s\/]+/)[0].toLowerCase();
-    var prods=STATE.products||REAL_DATA.products;
-    var p=prods.find(function(x){return x.name===productName;});
-    if(p && tok.length>=2){
-      (p.top_reviews||[]).concat(p.bottom_reviews||[]).forEach(function(r){
-        if((r.text||'').toLowerCase().indexOf(tok)>=0) rv.push({name:productName, r:r});
-      });
-      var seen2={};
-      rv=rv.filter(function(it){ var key=it.r.review_id; if(seen2[key]) return false; seen2[key]=true; return true; });
+    if(tok.length>=2){
+      if(STATE.reviewsById){
+        Object.keys(STATE.reviewsById).forEach(function(id){
+          var r=STATE.reviewsById[id];
+          if(r.product!==productName) return;
+          if((r.text||'').toLowerCase().indexOf(tok)>=0){ if(seen[id])return; seen[id]=true; rv.push({name:productName, r:{review_id:String(id), rating:r.rating, date:r.date, text:r.text}}); }
+        });
+      } else {
+        var prods=STATE.products||REAL_DATA.products;
+        var p=prods.find(function(x){return x.name===productName;});
+        if(p) (p.top_reviews||[]).concat(p.bottom_reviews||[]).forEach(function(r){
+          if((r.text||'').toLowerCase().indexOf(tok)>=0){ if(seen[r.review_id])return; seen[r.review_id]=true; rv.push({name:productName, r:r}); }
+        });
+      }
     }
   }
   return rv;
