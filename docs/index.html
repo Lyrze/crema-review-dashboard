@@ -8062,6 +8062,20 @@ function txBackToList(){
   txRenderGrid();
 }
 
+// 한글 IME 끊김 방지 — 검색 입력은 디바운스 후에만 재렌더(입력창 DOM 교체)하고
+// 재렌더 뒤 같은 검색창으로 포커스·커서 복원. 매 keystroke 재렌더 시 조합 중인 한글이
+// 첫 자음에서 끊기던 문제 해결.
+var TX_SEARCH_TIMER=null;
+function txSearchInput(field, val){
+  TX_STATE[field]=val;
+  if(TX_SEARCH_TIMER) clearTimeout(TX_SEARCH_TIMER);
+  TX_SEARCH_TIMER=setTimeout(function(){
+    txRenderDetail();
+    var el=document.querySelector('[data-txsearch="'+field+'"]');
+    if(el){ el.focus(); try{ var n=el.value.length; el.setSelectionRange(n,n); }catch(e){} }
+  }, 250);
+}
+
 function txRenderDetail(){
   var t=TAXONOMIES.find(function(x){return x.id===TX_STATE.activeTaxonomyId;});
   if(!t) return;
@@ -8105,7 +8119,7 @@ function txRenderDetail(){
         '<span class="txd-topics-label">Topics ('+(t.topics||[]).length+')</span>'+
         '<button onclick="txAddTopic()" style="border:none;background:transparent;cursor:pointer;font-size:14px;color:var(--text-secondary);padding:2px 6px;border-radius:4px;" title="Topic 추가">+</button>'+
       '</div>'+
-      '<input type="text" class="txd-topic-search" placeholder="🔍 Topic 검색..." value="'+escapeHtml(TX_STATE.topicSearch||'')+'" oninput="TX_STATE.topicSearch=this.value;txRenderDetail();" />'+
+      '<input type="text" class="txd-topic-search" data-txsearch="topicSearch" placeholder="🔍 Topic 검색..." value="'+escapeHtml(TX_STATE.topicSearch||'')+'" oninput="txSearchInput(\'topicSearch\',this.value)" />'+
       '<div class="txd-topic-tree">'+
         '<div class="txd-topic-item'+(!TX_STATE.activeTopicId?' active':'')+'" onclick="txSelectTopic(null);" style="font-weight:700;">'+
           '<span class="ic-tag">📂</span>'+
@@ -8314,7 +8328,7 @@ function txRenderUnclassified(taxonomy){
       '<option value="rating-asc"'+(TX_STATE.sortBy==='rating-asc'?' selected':'')+'>별점 낮은순</option>'+
       '<option value="rating-desc"'+(TX_STATE.sortBy==='rating-desc'?' selected':'')+'>별점 높은순</option>'+
     '</select>'+
-    '<input type="text" placeholder="🔍 본문에서 검색..." value="'+escapeHtml(TX_STATE.fbSearch||'')+'" oninput="TX_STATE.fbSearch=this.value;txRenderDetail();" />'+
+    '<input type="text" data-txsearch="fbSearch" placeholder="🔍 본문에서 검색..." value="'+escapeHtml(TX_STATE.fbSearch||'')+'" oninput="txSearchInput(\'fbSearch\',this.value)" />'+
   '</div>'+
   (unclassified.length===0?
     '<div class="txd-empty">'+
@@ -8395,7 +8409,7 @@ function txRenderTopicDetail(taxonomy){
       '<option value="rating-asc"'+(TX_STATE.sortBy==='rating-asc'?' selected':'')+'>별점 낮은순</option>'+
       '<option value="rating-desc"'+(TX_STATE.sortBy==='rating-desc'?' selected':'')+'>별점 높은순</option>'+
     '</select>'+
-    '<input type="text" placeholder="🔍 본문에서 검색..." value="'+escapeHtml(TX_STATE.fbSearch||'')+'" oninput="TX_STATE.fbSearch=this.value;txRenderDetail();" />'+
+    '<input type="text" data-txsearch="fbSearch" placeholder="🔍 본문에서 검색..." value="'+escapeHtml(TX_STATE.fbSearch||'')+'" oninput="txSearchInput(\'fbSearch\',this.value)" />'+
     '<button onclick="txExportTopicCSV(\''+topic.id.replace(/\'/g,"\\\'")+'\')" style="margin-left:auto;padding:7px 12px;border:1px solid var(--border);background:var(--bg);border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit;">↓ CSV</button>'+
   '</div>'+
   (matched.length===0?
