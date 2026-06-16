@@ -7715,8 +7715,17 @@ async function txGithubLoad(idx){
 
 // ── 매칭 엔진 — 키워드 → 리뷰 매칭 ──
 function txGetAllReviews(){
-  // 모든 상품의 top + bottom reviews 통합
   var reviews=[];
+  // 전체 리뷰(reviews.json)이 있으면 그것을 사용 — top/bottom 샘플만 보면
+  // Topic 매칭 수가 PVOC 칸반·대시보드(전체 리뷰 기준)와 어긋나고 미분류가 왜곡됨.
+  if(STATE.reviewsById){
+    Object.keys(STATE.reviewsById).forEach(function(id){
+      var r=STATE.reviewsById[id];
+      reviews.push({review_id:String(id), rating:r.rating, date:r.date, text:r.text, product:r.product, sentiment:((r.rating||0)>=4?'pos':'neg')});
+    });
+    return reviews;
+  }
+  // 폴백: reviews.json 없을 때만 top/bottom 샘플
   var prods=STATE.products||REAL_DATA.products;
   prods.forEach(function(p){
     (p.top_reviews||[]).forEach(function(r){
@@ -7726,7 +7735,6 @@ function txGetAllReviews(){
       reviews.push({review_id:r.review_id, rating:r.rating, date:r.date, text:r.text, product:p.name, sentiment:'neg'});
     });
   });
-  // 중복 제거
   var seen={};
   return reviews.filter(function(r){ if(seen[r.review_id]) return false; seen[r.review_id]=true; return true; });
 }
@@ -8287,6 +8295,7 @@ function txRenderUnclassified(taxonomy){
       '<div class="txd-main-title">📭 미분류 리뷰<span class="txd-main-tag" style="background:rgba(245,158,11,.12);color:#d97706;">수동 분류 필요</span></div>'+
       '<div style="font-size:11.5px;color:var(--text-secondary);margin-top:4px;">'+
         '어떤 Topic의 키워드 규칙에도 매칭되지 않은 리뷰입니다. 체크박스로 선택 후 Topic에 직접 분류하세요.'+
+        (taxonomy.pvoc ? '<br><span style="color:#d97706;">💡 이 분류는 <b>구매여정(구매 전·동기·후) 관점</b>이라, 제품 자체 후기(효과·소음·사용감 등)는 대부분 미분류로 남는 것이 정상입니다 — 고장이 아닙니다. 제품 키워드 분류는 섹션 ⑥ 상품 VOC·⑦ 구매경험 VOC를 참고하세요.</span>' : '')+
       '</div>'+
     '</div>'+
   '</div>'+
