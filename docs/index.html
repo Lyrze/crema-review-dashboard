@@ -884,8 +884,8 @@
     .sc-clickhint { font-size:10.5px; color:var(--text-secondary); font-weight:600; }
     /* 키워드 차트 지표 토글 (언급률 / 건수) */
     .sc-kwmetric { display:inline-flex; gap:2px; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:2px; }
-    .sc-kwmetric-btn { padding:3px 10px; border:none; background:transparent; border-radius:6px; font-size:10.5px; font-weight:700; color:var(--text-secondary); cursor:pointer; font-family:inherit; transition:background .12s,color .12s; }
-    .sc-kwmetric-btn.active { background:var(--accent); color:#fff; }
+    .sc-kwmetric-btn, .sc-kwtopn-btn { padding:3px 10px; border:none; background:transparent; border-radius:6px; font-size:10.5px; font-weight:700; color:var(--text-secondary); cursor:pointer; font-family:inherit; transition:background .12s,color .12s; }
+    .sc-kwmetric-btn.active, .sc-kwtopn-btn.active { background:var(--accent); color:#fff; }
     @media (max-width:900px){
       .sc-kpi-grid { grid-template-columns:repeat(2,1fr); }
       .sc-charts-row { grid-template-columns:1fr; }
@@ -1053,7 +1053,7 @@
     <div class="sc-header">
       <div>
         <div class="sc-title">🆚 SKU 1 vs 1 분석</div>
-        <div class="sc-subtitle">두 SKU를 정밀하게 비교 분석합니다. 리뷰 수, 별점, 긍부정 비율, 키워드 TOP 30 등 · 📌 KPI 행·차트 막대 클릭 시 리뷰 인사이트 확인</div>
+        <div class="sc-subtitle">두 SKU를 정밀하게 비교 분석합니다. 리뷰 수, 별점, 긍부정 비율, 키워드 TOP 등 · 📌 KPI 행·차트 막대 클릭 시 리뷰 인사이트 확인</div>
       </div>
     </div>
     <!-- 상품 선택 바 -->
@@ -1134,11 +1134,15 @@
     <!-- 5: 전체 키워드 TOP 30 (긍+부정 통합) -->
     <div class="sc-chart-card" style="margin-bottom:14px;">
       <div class="sc-chart-head">
-        <div><div class="sc-chart-title">5️⃣ 전체 키워드 TOP 30 (긍 + 부정)</div><div class="sc-chart-sub">◀ 왼쪽 SKU1 / SKU2 오른쪽 ▶ · 모수 차이 보정을 위해 <strong>언급률(리뷰 100건당)</strong> 기준 권장</div></div>
+        <div><div class="sc-chart-title">5️⃣ 전체 키워드 TOP (긍 + 부정)</div><div class="sc-chart-sub">◀ 왼쪽 SKU1 / SKU2 오른쪽 ▶ · 모수 차이 보정을 위해 <strong>언급률(리뷰 100건당)</strong> 기준 권장</div></div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
           <div class="sc-kwmetric">
             <button class="sc-kwmetric-btn active" data-metric="rate" onclick="scSetKwMetric('rate')" title="리뷰 100건당 언급 — 모수 차이 보정">언급률</button>
             <button class="sc-kwmetric-btn" data-metric="count" onclick="scSetKwMetric('count')" title="원시 매칭 건수">건수</button>
+          </div>
+          <div class="sc-kwmetric" title="표시 개수">
+            <button class="sc-kwtopn-btn active" data-topn="15" onclick="scSetKwTopN(15)">15개</button>
+            <button class="sc-kwtopn-btn" data-topn="30" onclick="scSetKwTopN(30)">30개</button>
           </div>
           <div style="display:flex;gap:6px;">
             <span class="sc-chart-pill sku1" id="sc-pill-all-1">SKU 1</span>
@@ -1153,11 +1157,15 @@
     <div class="sc-charts-row">
       <div class="sc-chart-card">
         <div class="sc-chart-head">
-          <div><div class="sc-chart-title">6️⃣ 긍정 키워드 TOP 30</div><div class="sc-chart-sub">◀ SKU1 / SKU2 ▶ · 언급률(100건당) 기준 비교</div></div>
+          <div><div class="sc-chart-title">6️⃣ 긍정 키워드 TOP</div><div class="sc-chart-sub">◀ SKU1 / SKU2 ▶ · 언급률(100건당) 기준 비교</div></div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
             <div class="sc-kwmetric">
               <button class="sc-kwmetric-btn active" data-metric="rate" onclick="scSetKwMetric('rate')">언급률</button>
               <button class="sc-kwmetric-btn" data-metric="count" onclick="scSetKwMetric('count')">건수</button>
+            </div>
+            <div class="sc-kwmetric" title="표시 개수">
+              <button class="sc-kwtopn-btn active" data-topn="15" onclick="scSetKwTopN(15)">15개</button>
+              <button class="sc-kwtopn-btn" data-topn="30" onclick="scSetKwTopN(30)">30개</button>
             </div>
             <div style="display:flex;gap:6px;">
               <span class="sc-chart-pill sku1" id="sc-pill-pos-1">SKU 1</span>
@@ -1169,11 +1177,15 @@
       </div>
       <div class="sc-chart-card">
         <div class="sc-chart-head">
-          <div><div class="sc-chart-title">7️⃣ 부정 키워드 TOP 30</div><div class="sc-chart-sub">◀ SKU1 / SKU2 ▶ · 언급률(100건당) 기준 비교</div></div>
+          <div><div class="sc-chart-title">7️⃣ 부정 키워드 TOP</div><div class="sc-chart-sub">◀ SKU1 / SKU2 ▶ · 언급률(100건당) 기준 비교</div></div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
             <div class="sc-kwmetric">
               <button class="sc-kwmetric-btn active" data-metric="rate" onclick="scSetKwMetric('rate')">언급률</button>
               <button class="sc-kwmetric-btn" data-metric="count" onclick="scSetKwMetric('count')">건수</button>
+            </div>
+            <div class="sc-kwmetric" title="표시 개수">
+              <button class="sc-kwtopn-btn active" data-topn="15" onclick="scSetKwTopN(15)">15개</button>
+              <button class="sc-kwtopn-btn" data-topn="30" onclick="scSetKwTopN(30)">30개</button>
             </div>
             <div style="display:flex;gap:6px;">
               <span class="sc-chart-pill sku1" id="sc-pill-neg-1">SKU 1</span>
@@ -6615,8 +6627,9 @@ function toggleCardMenu(btn){
 // ───────────────────────────────────────────────
 //  SKU 1 vs 1 정밀 비교 분석
 // ───────────────────────────────────────────────
-var SC_STATE = { sku1:null, sku2:null, charts:{}, kwMetric:'rate' };
+var SC_STATE = { sku1:null, sku2:null, charts:{}, kwMetric:'rate', kwTopN:15 };
 try{ var _km=localStorage.getItem('sc_kw_metric'); if(_km==='rate'||_km==='count') SC_STATE.kwMetric=_km; }catch(e){}
+try{ var _kn=parseInt(localStorage.getItem('sc_kw_topn'),10); if(_kn===15||_kn===30) SC_STATE.kwTopN=_kn; }catch(e){}
 var SC_COLOR_1 = 'rgba(91, 94, 244, 0.85)';
 var SC_COLOR_2 = 'rgba(22, 163, 74, 0.85)';
 var SC_COLOR_1_LIGHT = 'rgba(91, 94, 244, 0.5)';
@@ -6805,6 +6818,24 @@ function scSetKwMetric(m){
   }
 }
 
+// 키워드 차트 표시 개수 전환 (15 ↔ 30) — 3개 차트 동시 갱신
+function scSetKwTopN(n){
+  if(n!==15 && n!==30) return;
+  SC_STATE.kwTopN=n;
+  try{ localStorage.setItem('sc_kw_topn', String(n)); }catch(e){}
+  document.querySelectorAll('.sc-kwtopn-btn').forEach(function(b){
+    b.classList.toggle('active', parseInt(b.getAttribute('data-topn'),10)===n);
+  });
+  var prods=STATE.products||REAL_DATA.products;
+  var p1=prods.find(function(p){return p.name===SC_STATE.sku1;});
+  var p2=prods.find(function(p){return p.name===SC_STATE.sku2;});
+  if(p1&&p2){
+    scRenderKeywordChart('sc-chart-kw-all', p1, p2, 'all');
+    scRenderKeywordChart('sc-chart-kw-pos', p1, p2, 'positive');
+    scRenderKeywordChart('sc-chart-kw-neg', p1, p2, 'negative');
+  }
+}
+
 function scRenderKPIs(p1, p2){
   var dot1='<span class="sc-color-dot sc-bg-sku1" style="width:8px;height:8px;display:inline-block;border-radius:50%;"></span>';
   var dot2='<span class="sc-color-dot sc-bg-sku2" style="width:8px;height:8px;display:inline-block;border-radius:50%;"></span>';
@@ -6958,7 +6989,11 @@ function scRenderKeywordChart(canvasId, p1, p2, category){
   var ctx=$(canvasId);
   if(!ctx) return;
   scDestroyChart(canvasId);
-  var compareData=scBuildCompareKeywords(p1.name, p2.name, category, 30);
+  var topN=SC_STATE.kwTopN||15;
+  var compareData=scBuildCompareKeywords(p1.name, p2.name, category, topN);
+  // 동적 높이: 키워드 1개당 ~30px 확보 → 라벨 시인성 (적으면 크게, 많으면 스크롤)
+  var wrap=ctx.parentElement;
+  if(wrap) wrap.style.height=Math.max(300, compareData.length*30+92)+'px';
   if(compareData.length===0){
     var c=ctx.getContext('2d');
     c.clearRect(0,0,ctx.width,ctx.height);
@@ -6994,7 +7029,7 @@ function scRenderKeywordChart(canvasId, p1, p2, category){
           var absv=Math.abs(raw);
           var txt = metric==='rate' ? (absv<10?absv.toFixed(1):Math.round(absv).toString()) : String(absv);
           cx.save();
-          cx.font='700 9.5px Inter, system-ui, sans-serif';
+          cx.font='700 11px Inter, system-ui, sans-serif';
           cx.fillStyle=ds._labelColor||'#888';
           cx.textBaseline='middle';
           var isLeft = raw<0;
@@ -7011,8 +7046,8 @@ function scRenderKeywordChart(canvasId, p1, p2, category){
     data:{
       labels:labels,
       datasets:[
-        {label:fmtS(p1.name)+' ◀',data:left,backgroundColor:SC_COLOR_1,borderRadius:3,maxBarThickness:13,_labelColor:'#5b5ef4'},
-        {label:'▶ '+fmtS(p2.name),data:v2,backgroundColor:SC_COLOR_2,borderRadius:3,maxBarThickness:13,_labelColor:'#16a34a'}
+        {label:fmtS(p1.name)+' ◀',data:left,backgroundColor:SC_COLOR_1,borderRadius:3,maxBarThickness:18,_labelColor:'#5b5ef4'},
+        {label:'▶ '+fmtS(p2.name),data:v2,backgroundColor:SC_COLOR_2,borderRadius:3,maxBarThickness:18,_labelColor:'#16a34a'}
       ]
     },
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
@@ -7047,7 +7082,7 @@ function scRenderKeywordChart(canvasId, p1, p2, category){
         x:{stacked:true,beginAtZero:true,grid:{color:'rgba(0,0,0,.04)'},
            title:{display:true,text:(metric==='rate'?'◀ 리뷰 100건당 언급 ▶':'◀ 매칭 건수 ▶'),font:{size:10,weight:'700'},color:'#888'},
            ticks:{font:{size:9},callback:function(v){return Math.abs(v);}}},
-        y:{stacked:true,ticks:{font:{size:10},autoSkip:false},grid:{display:false}}
+        y:{stacked:true,ticks:{font:{size:12,weight:'600'},autoSkip:false},grid:{display:false}}
       }},
     plugins:[labelPlugin]
   });
