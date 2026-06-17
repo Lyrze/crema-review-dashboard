@@ -970,6 +970,7 @@
     <div class="nav-group">VOC 분석</div>
     <a href="#sec-voc" onclick="goToSection(this,'#sec-voc',event)"><span class="icon">💬</span> 상품 VOC</a>
     <a href="#sec-pvoc" onclick="goToSection(this,'#sec-pvoc',event)"><span class="icon">🛒</span> 구매경험 VOC</a>
+    <a href="#sec-prodvoc" onclick="goToSection(this,'#sec-prodvoc',event)"><span class="icon">🧩</span> 제품 경험</a>
     <div class="nav-divider"></div>
     <div class="nav-group">분류 / 분석</div>
     <a href="#" onclick="event.preventDefault();showTaxonomyPage();" id="nav-taxonomy"><span class="icon">📂</span> Taxonomy</a>
@@ -1572,11 +1573,23 @@
     <div class="section-desc" id="pvj-method-note">* 고정 기준 키워드로 리뷰 본문을 분류한 결과입니다 (★4 이상 = 긍정 · ★3 이하 = 부정). 항목 클릭 시 관련 리뷰를 확인할 수 있고, 기준 키워드 확장은 Taxonomy에서 가능합니다.</div>
   </section>
 
-  <!-- ⑧ 커스텀 차트 (구 ⑨, AI 커스텀 질문은 Hey Sloom 패널로 통합됨) -->
+  <!-- ⑧ 제품 경험 (제품 자체 후기 속성 분류) -->
+  <section class="section animate delay-5" id="sec-prodvoc" aria-label="제품 경험">
+    <div class="section-header">
+      <div>
+        <div class="section-title"><span class="drag-handle" title="드래그해서 이동">⠿</span><span class="sec-num">8</span>제품 경험</div>
+        <div class="section-subtitle">효과·강도·온열·소음·디자인 등 <strong>제품 자체 후기</strong>를 속성별로 분류 · 막대 클릭 시 리뷰 확인 · 키워드 편집은 Taxonomy(🧩 제품 경험)에서</div>
+      </div>
+    </div>
+    <div id="prod-voc"><!-- JS로 동적 생성 --></div>
+    <div class="section-desc">* 고정 키워드로 제품 후기를 속성별 분류한 결과입니다 (★4 이상 = 긍정 · ★3 이하 = 부정). 기준 키워드 확장·수정은 Taxonomy의 <strong>🧩 제품 경험</strong> 분류에서 가능합니다.</div>
+  </section>
+
+  <!-- ⑨ 커스텀 차트 (AI 커스텀 질문은 Hey Sloom 패널로 통합됨) -->
   <section class="section animate delay-5" id="sec-custom-chart" aria-label="커스텀 차트">
     <div class="section-header">
       <div>
-        <div class="section-title"><span class="drag-handle" title="드래그해서 이동">⠿</span><span class="sec-num">8</span>커스텀 차트</div>
+        <div class="section-title"><span class="drag-handle" title="드래그해서 이동">⠿</span><span class="sec-num">9</span>커스텀 차트</div>
         <div class="section-subtitle">우하단 <strong>+</strong> 버튼으로 차트를 추가하세요</div>
       </div>
     </div>
@@ -2456,7 +2469,7 @@ function onMonthChange(v){
 }
 async function reload(){ await loadData(STATE.brand,STATE.month); render(); }
 
-function render(){ if(typeof COMPARE_STATE!=='undefined'){ if(COMPARE_STATE.active) applyCompareBaseline(); else restoreCompareBaseline(); } renderHeader(); renderExec(); renderSKUScorecards(); renderKPI(); renderTimeline(); renderSKUTable(); renderSKUCombo(); renderChangeTables(); renderVOC(); updateProductFocusBar(); updateCustomAIModelLabel(); populateCompareMonths(); updateCompareBanner(); renderPVOCKanban(); syncChipBarFromState(); refreshOpenInsightModal(); setTimeout(enhanceCardActions,50); }
+function render(){ if(typeof COMPARE_STATE!=='undefined'){ if(COMPARE_STATE.active) applyCompareBaseline(); else restoreCompareBaseline(); } renderHeader(); renderExec(); renderSKUScorecards(); renderKPI(); renderTimeline(); renderSKUTable(); renderSKUCombo(); renderChangeTables(); renderVOC(); updateProductFocusBar(); updateCustomAIModelLabel(); populateCompareMonths(); updateCompareBanner(); renderPVOCKanban(); renderProductVOC(); syncChipBarFromState(); refreshOpenInsightModal(); setTimeout(enhanceCardActions,50); }
 
 // View Insight 모달이 열려 있으면 인사이트 카드 숫자도 즉시 갱신
 function refreshOpenInsightModal(){
@@ -6504,6 +6517,70 @@ function pvjOpenItem(ci, ii){
   openKeywordReviewsModal(it.name, STATE.productFocus||null, domType, terms, explicit);
 }
 
+// ── 제품 경험 VOC (메인 대시보드 ⑧) — 'tx-product' 분류를 속성별 막대로 표시 ──
+var PRODVOC_DATA=null;
+function renderProductVOC(){
+  var container=$('prod-voc'); if(!container) return;
+  var tax=(typeof TAXONOMIES!=='undefined')?TAXONOMIES.find(function(t){return t.id==='tx-product';}):null;
+  if(!tax || !(tax.topics||[]).length){
+    container.innerHTML='<div style="padding:24px;text-align:center;color:var(--text-secondary);font-size:12.5px;">제품 경험 분류가 아직 없습니다. Taxonomy 페이지를 한 번 열면 자동 생성됩니다.</div>';
+    return;
+  }
+  // 대상 리뷰 (productFocus 존중)
+  var src=[];
+  if(STATE.reviewsById){
+    Object.keys(STATE.reviewsById).forEach(function(id){
+      var rv=STATE.reviewsById[id];
+      if(STATE.productFocus && rv.product!==STATE.productFocus) return;
+      src.push({review_id:String(id), rating:rv.rating||0, text:(rv.text||'').toLowerCase()});
+    });
+  } else {
+    txGetAllReviews().forEach(function(r){
+      if(STATE.productFocus && r.product!==STATE.productFocus) return;
+      src.push({review_id:String(r.review_id), rating:r.rating||0, text:(r.text||'').toLowerCase()});
+    });
+  }
+  var items=(tax.topics||[]).map(function(tp){
+    var matched=txMatchTopic(tp, src, tax);
+    var pos=0,neg=0; matched.forEach(function(r){ if((r.rating||0)>=4) pos++; else neg++; });
+    return {name:tp.name, icon:tp.icon||'🏷️', pats:(tp.keywords||[]).slice(), pos:pos, neg:neg, total:pos+neg,
+            _ids:matched.map(function(r){return String(r.review_id);})};
+  }).filter(function(it){return it.total>0;}).sort(function(a,b){return b.total-a.total;});
+  PRODVOC_DATA=items;
+  if(items.length===0){
+    container.innerHTML='<div style="padding:24px;text-align:center;color:var(--text-secondary);font-size:12.5px;">해당 조건의 제품 후기 언급이 없습니다.</div>';
+    return;
+  }
+  var rows=items.map(function(it, ii){
+    var pr=it.total?Math.round(it.pos/it.total*100):0;
+    var nr=it.total?100-pr:0;
+    var alert=(it.total>=5 && nr>=50);
+    var cap = alert ? '부정 비중 높음 — 확인 권장' : nr>=30 ? '긍·부정 혼재' : '긍정 신호';
+    return '<div class="pvj-item'+(alert?' alert':'')+'" onclick="prodVocOpen('+ii+')" title="클릭하여 관련 리뷰 보기">'+
+      '<div class="pvj-i-head"><span>'+it.icon+' '+escapeHtml(it.name)+'</span>'+
+      '<span class="pvj-i-cnt">👍 <b style="color:#16a34a;">'+it.pos+'</b> | 👎 <b style="color:#dc2626;">'+it.neg+'</b> &nbsp;'+it.total+'건'+(alert?' <span class="pvj-badge">주의</span>':'')+'</span></div>'+
+      '<div class="pvj-bar"><div class="pos" style="width:'+pr+'%;"></div><div class="neg" style="width:'+nr+'%;"></div></div>'+
+      '<div class="pvj-rates"><span class="p">긍정 '+pr+'%</span><span class="n">부정 '+nr+'%</span></div>'+
+      '<div class="pvj-cap">'+cap+'</div></div>';
+  }).join('');
+  var totAll=items.reduce(function(s,x){return s+x.total;},0);
+  container.innerHTML='<div style="font-size:11.5px;color:var(--text-secondary);margin-bottom:8px;">총 '+fmt(totAll)+'건 언급 · 언급 많은 순'+(STATE.productFocus?' · '+escapeHtml(fmtS(STATE.productFocus)||STATE.productFocus):'')+
+    ' <span onclick="showTaxonomyPage();setTimeout(function(){txOpenTaxonomy(\'tx-product\');},60);" style="float:right;font-weight:700;color:var(--accent);cursor:pointer;" title="Taxonomy에서 키워드 편집">✎ 분류 편집</span></div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;">'+rows+'</div>';
+}
+function prodVocOpen(ii){
+  var it=PRODVOC_DATA && PRODVOC_DATA[ii]; if(!it || !it.total) return;
+  var domType = it.neg>it.pos ? '부정' : '긍정';
+  var byId=STATE.reviewsById||null;
+  var fallback=byId?null:txGetAllReviews();
+  var explicit=(it._ids||[]).map(function(id){
+    var rv=byId?byId[String(id)]:fallback.find(function(x){return String(x.review_id)===String(id);});
+    if(!rv) return null;
+    return {name:rv.product||'(상품 미상)', r:{review_id:String(id), rating:rv.rating, date:rv.date, text:rv.text}};
+  }).filter(function(x){return !!x;});
+  openKeywordReviewsModal(it.name, STATE.productFocus||null, domType, (it.pats||[]).join('|'), explicit);
+}
+
 // ═══════════════════════════════════════════════
 //  주요 SKU 스코어카드 — 빠른 의사결정 인사이트
 // ═══════════════════════════════════════════════
@@ -8010,14 +8087,26 @@ function enhanceKeywordsArrayWithTaxonomy(keywords){
   return keywords.map(enhanceKeywordWithTaxonomy);
 }
 
-// 미분류 리뷰 — 어느 토픽에도 매칭되지 않는 리뷰
-function txGetUnclassified(taxonomy, allReviews){
+// 전역 분류 집합 — 모든 (비시스템) Taxonomy 의 어느 Topic 에든 매칭된 리뷰 ID.
+//   한 리뷰가 어떤 분류에 배정되면, 다른 분류의 '미분류'에는 더 이상 잡히지 않게 하기 위함(중복 허수 제거).
+function txGetAllClassifiedIds(allReviews){
   if(!allReviews) allReviews=txGetAllReviews();
   var classified=new Set();
-  (taxonomy.topics||[]).forEach(function(t){
-    txMatchTopic(t, allReviews, taxonomy).forEach(function(r){classified.add(r.review_id);});
+  (typeof TAXONOMIES!=='undefined'?TAXONOMIES:[]).forEach(function(tax){
+    if(tax.system) return;
+    (tax.topics||[]).forEach(function(t){
+      txMatchTopic(t, allReviews, tax).forEach(function(r){classified.add(String(r.review_id));});
+    });
   });
-  return allReviews.filter(function(r){return !classified.has(r.review_id);});
+  return classified;
+}
+
+// 미분류 리뷰 — '어느 분류에도' 배정되지 않은 리뷰(전역 기준).
+//   taxonomy 인자는 호환을 위해 유지하지만, 분류 판정은 전 분류 통합으로 한다.
+function txGetUnclassified(taxonomy, allReviews){
+  if(!allReviews) allReviews=txGetAllReviews();
+  var classified=txGetAllClassifiedIds(allReviews);
+  return allReviews.filter(function(r){return !classified.has(String(r.review_id));});
 }
 
 // 수동 분류 적용
@@ -8417,8 +8506,7 @@ function txRenderUnclassified(taxonomy){
     '<div>'+
       '<div class="txd-main-title">📭 미분류 리뷰<span class="txd-main-tag" style="background:rgba(245,158,11,.12);color:#d97706;">수동 분류 필요</span></div>'+
       '<div style="font-size:11.5px;color:var(--text-secondary);margin-top:4px;">'+
-        '어떤 Topic의 키워드 규칙에도 매칭되지 않은 리뷰입니다. 체크박스로 선택 후 Topic에 직접 분류하세요.'+
-        (taxonomy.pvoc ? '<br><span style="color:#d97706;">💡 이 분류는 <b>구매여정(구매 전·동기·후) 관점</b>이라, 제품 자체 후기(효과·소음·사용감 등)는 대부분 미분류로 남는 것이 정상입니다 — 고장이 아닙니다. 제품 키워드 분류는 섹션 ⑥ 상품 VOC·⑦ 구매경험 VOC를 참고하세요.</span>' : '')+
+        '<b>모든 분류(Taxonomy)를 통틀어</b> 어느 Topic에도 매칭되지 않은 리뷰입니다. 다른 분류에 이미 배정된 리뷰는 여기서 제외되므로, 분류마다 중복으로 세지 않습니다. 체크박스로 선택 후 Topic에 직접 분류하세요.'+
       '</div>'+
     '</div>'+
   '</div>'+
@@ -8500,6 +8588,7 @@ function txRenderTopicDetail(taxonomy){
     '</div>'+
     '<div class="txd-main-actions">'+
       '<button onclick="txEditTopic(\''+topic.id.replace(/\'/g,"\\\'")+'\')">✎ 규칙 편집</button>'+
+      '<button onclick="txLearnKeywords(\''+topic.id.replace(/\'/g,"\\\'")+'\')" title="이 Topic에 수동 분류한 리뷰에서 키워드를 학습해 규칙에 추가합니다. 추가한 키워드는 다음 달 업로드부터 자동 분류에 반영됩니다.">✦ 키워드 학습</button>'+
       '<button onclick="txOpenTopicInsights(\''+topic.id.replace(/\'/g,"\\\'")+'\')" class="primary">📊 View insights</button>'+
     '</div>'+
   '</div>'+
@@ -8530,6 +8619,85 @@ function txRenderTopicDetail(taxonomy){
     '</div>':
     '<div class="txd-fb-list">'+listHtml+(matched.length>50?'<div style="text-align:center;padding:14px;color:var(--text-secondary);font-size:11px;">'+(matched.length-50)+'건 더 있음 — CSV로 내보내기 또는 검색으로 좁히기</div>':'')+'</div>'
   );
+}
+
+// ── 키워드 학습 — 수동 분류한 리뷰에서 대표 키워드를 추출해 Topic 규칙에 제안 ──
+//   원리: 분류는 '키워드 매칭'이라 월(月) 독립적 → 학습한 키워드는 다음 달 데이터 업로드부터 자동 분류에 반영된다.
+//   1순위 AI(Ollama) 추출, 오프라인이면 빈도기반(한글 n-gram) 폴백. 제안은 편집 모달에 채워 사람이 확인 후 저장.
+var TX_KO_STOP=['그리고','하지만','너무','정말','진짜','조금','약간','구매','제품','사용','상품','배송','구입','후기','리뷰','생각','때문','정도','그냥','아주','매우','완전','계속','이것','저것','그것','여기','거기','경우','부분','느낌','같아요','같습니다','있어요','있습니다','없어요','합니다','해요','네요','어요','구요','구매했','샀어요','했어요','좋아요','좋았','좋고','좋네','만족','감사'];
+async function txLearnKeywords(topicId){
+  var t=TAXONOMIES.find(function(x){return x.id===TX_STATE.activeTaxonomyId;});
+  if(!t) return;
+  var tp=(t.topics||[]).find(function(x){return x.id===topicId;});
+  if(!tp){ alert('Topic을 찾을 수 없습니다.'); return; }
+  var manual=t.manualClassifications||{};
+  var allReviews=txGetAllReviews();
+  var curKws=(tp.keywords||[]).map(function(k){return String(k).toLowerCase();});
+  // 수동 포함(include)된 리뷰 수집 — 현재 키워드로 안 잡히는 '신규 학습감'을 앞쪽에 배치
+  var examples=[];
+  allReviews.forEach(function(r){
+    var cls=manual[String(r.review_id)];
+    if(cls && cls.include && cls.include.indexOf(topicId)>=0){
+      var lt=(r.text||'').toLowerCase();
+      var novel=!curKws.some(function(k){return k && lt.indexOf(k)>=0;});
+      examples.push({text:r.text||'', novel:novel});
+    }
+  });
+  if(examples.length===0){
+    alert('이 Topic에 수동으로 분류(포함)한 리뷰가 아직 없습니다.\n\n먼저 미분류 보기 등에서 이 Topic에 리뷰를 배정해 주세요. 그 리뷰들을 바탕으로 키워드를 학습합니다.');
+    return;
+  }
+  examples.sort(function(a,b){return (b.novel?1:0)-(a.novel?1:0);});
+  var sampleTexts=examples.slice(0,40).map(function(e){return e.text;});
+  showToast('✦ 키워드 학습 중... ('+examples.length+'건 분석)');
+  var suggestions=[];
+  var online=$('ollama-dot') && $('ollama-dot').className.indexOf('online')>=0;
+  if(online){
+    try{
+      var prompt='아래는 "'+tp.name+'" 주제로 분류된 리뷰들이다. 이 주제를 자동 분류하기 위한 대표 키워드(한국어 단어/짧은 구) 5~10개를 뽑아라.\n'+
+        '- 이미 있는 키워드는 제외: '+(curKws.join(', ')||'(없음)')+'\n'+
+        '- 너무 일반적인 단어(좋아요/만족/배송 등)는 제외하고, 이 주제에 특징적인 단어만.\n\n'+
+        '[리뷰]\n'+sampleTexts.map(function(s,i){return (i+1)+'. '+String(s).slice(0,160);}).join('\n')+'\n\n'+
+        'JSON 배열로만 출력: ["키워드1","키워드2"]';
+      var resp=await fetch(getOllamaUrl()+'/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:STATE.ollamaModel||'exaone3.5:7.8b',prompt:prompt,stream:false,options:{temperature:0.0}}),
+        signal:AbortSignal.timeout(120000)});
+      var data=await resp.json();
+      var mm=(data.response||'').match(/\[[\s\S]*\]/);
+      if(mm){ var arr=JSON.parse(mm[0]); if(Array.isArray(arr)) suggestions=arr.map(function(x){return String(x).trim();}).filter(Boolean); }
+    }catch(e){ /* 폴백으로 진행 */ }
+  }
+  // 폴백: 빈도기반 한글 n-gram (오프라인/AI 실패 시)
+  if(suggestions.length===0){
+    var freq={};
+    sampleTexts.forEach(function(s){
+      var toks=(String(s).toLowerCase().match(/[가-힣]{2,6}/g)||[]);
+      var seen={};
+      toks.forEach(function(tok){
+        [tok, tok.slice(0,-1)].forEach(function(w){
+          if(w.length<2) return;
+          if(TX_KO_STOP.indexOf(w)>=0) return;
+          if(seen[w]) return; seen[w]=1;
+          freq[w]=(freq[w]||0)+1;
+        });
+      });
+    });
+    suggestions=Object.keys(freq).sort(function(a,b){return freq[b]-freq[a];})
+      .filter(function(w){return freq[w]>=2;}).slice(0,12);
+  }
+  // 기존 키워드/중복 제거
+  var uniq=[];
+  suggestions.forEach(function(s){ var ls=String(s).toLowerCase(); if(ls && curKws.indexOf(ls)<0 && uniq.indexOf(s)<0) uniq.push(s); });
+  suggestions=uniq.slice(0,12);
+  if(suggestions.length===0){
+    alert('새로 제안할 키워드를 찾지 못했습니다.\n(이미 키워드가 충분하거나 표본이 적습니다)');
+    return;
+  }
+  // 편집 모달에 기존+제안 키워드를 채워 사람이 확인·정리 후 저장
+  txEditTopic(topicId);
+  var ta=$('tx-rule-keywords');
+  if(ta){ ta.value=(tp.keywords||[]).slice().concat(suggestions).join(', '); }
+  showToast('✦ 키워드 '+suggestions.length+'개 제안 — 확인 후 저장하세요: '+suggestions.join(', '));
 }
 
 // ── Topic 추가/편집 ──
@@ -8583,6 +8751,7 @@ function txSaveRule(){
   txCloseRule();
   txRenderDetail();
   renderPVOCKanban(); // 고정 분류(tx-pvoc-*) 편집 시 ⑦구매경험 VOC 즉시 반영
+  if(typeof renderProductVOC==='function') renderProductVOC(); // 제품 경험(tx-product) 편집 시 ⑧ 즉시 반영
   showToast('✓ 매칭 완료 — '+keywords.length+'개 키워드로 분류됨');
 }
 
@@ -8595,6 +8764,7 @@ function txDeleteTopic(){
   txCloseRule();
   txRenderDetail();
   renderPVOCKanban(); // 고정 분류 Topic 삭제 시 ⑦구매경험 VOC 즉시 반영
+  if(typeof renderProductVOC==='function') renderProductVOC();
 }
 
 // ── CSV 내보내기 ──
