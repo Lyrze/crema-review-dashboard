@@ -1561,10 +1561,17 @@
 
   <!-- ⑦ 구매경험 VOC -->
   <section class="section animate delay-5" id="sec-pvoc" aria-label="구매경험 VOC">
-    <div class="section-header">
+    <div class="section-header" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
       <div>
         <div class="section-title"><span class="drag-handle" title="드래그해서 이동">⠿</span><span class="sec-num">7</span>구매경험 VOC</div>
         <div class="section-subtitle">구매 전 탐색 → 구매 동기 → 구매 후 과정 · 브랜드 전체 언급 기준 · SKU별 상세는 상단 필터 사용</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
+        <div style="display:inline-flex;gap:3px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:3px;">
+          <button class="pvj-sent-mode-btn active" data-mode="rating" onclick="pvjSetSentMode('rating')" title="별점 ★4↑=긍정 / ★3↓=부정" style="padding:4px 11px;background:var(--accent);border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;color:#fff;font-family:inherit;">별점기반</button>
+          <button class="pvj-sent-mode-btn" data-mode="intent" onclick="pvjSetSentMode('intent')" title="AI가 각 리뷰의 '그 항목에 대한' 칭찬/불만을 판정" style="padding:4px 11px;background:transparent;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;color:var(--text-secondary);font-family:inherit;">감성기반</button>
+        </div>
+        <span id="pvj-sent-hint" style="font-size:10px;color:var(--text-secondary);"></span>
       </div>
     </div>
     <div class="pvoc-kanban" id="pvoc-kanban">
@@ -2433,14 +2440,16 @@ function populateMonths(){
 
 async function loadData(brand,month){
   var base='data/'+encodeURIComponent(brand)+'/'+month;
-  var res=await Promise.allSettled([fetchJSON(base+'/summary.json'),fetchJSON(base+'/products.json'),fetchJSON(base+'/keywords.json'),fetchJSON(base+'/reviews.json')]);
-  // reviews.json(4번째)은 선택 — 실패해도 배너 띄우지 않음 (구버전 데이터 호환)
+  var res=await Promise.allSettled([fetchJSON(base+'/summary.json'),fetchJSON(base+'/products.json'),fetchJSON(base+'/keywords.json'),fetchJSON(base+'/reviews.json'),fetchJSON(base+'/pvoc_intent.json')]);
+  // reviews.json(4번째)·pvoc_intent.json(5번째)은 선택 — 실패해도 배너 띄우지 않음
   var anyFailed=res.slice(0,3).some(function(r){return r.status==='rejected';});
   STATE.summary  = res[0].status==='fulfilled' ? res[0].value : REAL_DATA.summary;
   STATE.products = res[1].status==='fulfilled' ? (res[1].value.products||[]) : REAL_DATA.products;
   STATE.keywords = res[2].status==='fulfilled' ? res[2].value : REAL_DATA.keywords;
   // 전체 리뷰 인덱스 (review_id → {rating,date,product,text})
   STATE.reviewsById = (res[3].status==='fulfilled' && res[3].value && res[3].value.reviews) ? res[3].value.reviews : null;
+  // PVOC 감성기반 데이터 (선택) — 토픽별 칭찬/불만 review_id (없으면 별점 폴백)
+  STATE.pvocIntent = (res[4] && res[4].status==='fulfilled' && res[4].value && res[4].value.topics) ? res[4].value : null;
   STATE.brand=brand; STATE.month=month;
   // 상품 필터가 현재 월/브랜드에 없는 상품이면 해제 (칩만 남고 데이터는 브랜드로 폴백되는 불일치 방지)
   if(STATE.productFocus && !(STATE.products||[]).some(function(p){return p.name===STATE.productFocus;})){
@@ -6383,6 +6392,17 @@ function pvjCompute(){
         return {name:it.name, icon:it.icon, pats:it.pats, pos:pos, neg:neg, total:pos+neg, _ids:ids};
       });
     }
+    // 감성기반 모드: 별점 대신 AI 의도(pvoc_intent)로 pos/neg 재계산 (데이터 있는 토픽만)
+    if(typeof PVJ_SENT_MODE!=='undefined' && PVJ_SENT_MODE==='intent' && STATE.pvocIntent && STATE.pvocIntent.topics){
+      items.forEach(function(it){
+        var im=STATE.pvocIntent.topics[it.name];
+        if(!im){ it._intentMissing=true; return; }  // 데이터 없는 토픽 → 별점 유지
+        var negSet={}; (im.neg||[]).forEach(function(id){ negSet[String(id)]=1; });
+        var pos=0, neg=0;
+        (it._ids||[]).forEach(function(id){ if(negSet[String(id)]) neg++; else pos++; });
+        it.pos=pos; it.neg=neg; it.total=pos+neg; it._intentUsed=true;
+      });
+    }
     return {key:col.key, icon:col.icon, label:col.label, desc:col.desc, accent:col.accent,
             taxId:tax?tax.id:null,
             items:items, total:items.reduce(function(s,x){return s+x.total;},0)};
@@ -6390,6 +6410,28 @@ function pvjCompute(){
 }
 
 var PVJ_DATA=null;
+// 긍/부정 판정 기준: 'rating'(별점 ★4↑) | 'intent'(AI 의도, pvoc_intent.json 필요)
+var PVJ_SENT_MODE=(function(){ try{ return localStorage.getItem('pvj_sent_mode')==='intent'?'intent':'rating'; }catch(e){ return 'rating'; } })();
+function pvjSetSentMode(m){
+  if(m!=='rating'&&m!=='intent') return;
+  PVJ_SENT_MODE=m;
+  try{ localStorage.setItem('pvj_sent_mode', m); }catch(e){}
+  renderPVOCKanban();
+}
+function pvjSyncSentToggle(){
+  document.querySelectorAll('.pvj-sent-mode-btn').forEach(function(b){
+    var a=b.getAttribute('data-mode')===PVJ_SENT_MODE;
+    b.classList.toggle('active', a);
+    b.style.background=a?'var(--accent)':'transparent';
+    b.style.color=a?'#fff':'var(--text-secondary)';
+  });
+  var hint=$('pvj-sent-hint');
+  if(hint){
+    if(PVJ_SENT_MODE==='intent'){
+      hint.textContent = STATE.pvocIntent ? 'AI 감성 기준 (그 항목에 대한 칭찬/불만)' : '⚠ 감성 데이터 없음 — 별점 기준 표시 (파이프라인 생성 필요)';
+    } else { hint.textContent='별점 기준 (★4↑ 긍정 / ★3↓ 부정)'; }
+  }
+}
 function renderPVOCKanban(){
   var container=$('pvoc-kanban');
   if(!container) return;
@@ -6452,6 +6494,7 @@ function renderPVOCKanban(){
     }
   }
   container.innerHTML=head+grid+favHtml;
+  if(typeof pvjSyncSentToggle==='function') pvjSyncSentToggle();
 }
 
 // 항목 클릭 → 패턴 OR 검색으로 관련 리뷰 모달
