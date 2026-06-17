@@ -7414,12 +7414,14 @@ function txLoad(){
       TAXONOMIES=JSON.parse(raw);
       txCleanupLegacySeeds();      // 미사용 기본 시드 정리 (Saved topics·예시 불량 라벨)
       txEnsurePvocTaxonomies();    // 기존 사용자도 신규 고정 분류 자동 추가 (마이그레이션)
+      txEnsureProductTaxonomy();   // 제품 경험 분류 자동 추가 (미분류 감소)
       return;
     }
   }catch(e){}
-  // 첫 사용 시 — 고정 분류(구매 전 탐색/구매 동기/구매 후 과정)만 시드
+  // 첫 사용 시 — 고정 분류(구매여정 + 제품 경험) 시드
   TAXONOMIES=[];
   txEnsurePvocTaxonomies();
+  txEnsureProductTaxonomy();
   txSave();
 }
 
@@ -7436,6 +7438,45 @@ function txCleanupLegacySeeds(){
     return true;
   });
   if(TAXONOMIES.length!==before) txSave();
+}
+
+// ── 제품 경험 고정 분류(PRODUCT_TAXONOMY) → Taxonomy 시드/마이그레이션 ──
+//   구매여정(PVOC) 분류로는 못 잡는 '제품 자체 후기'(효과·강도·소음 등)를 분류해 미분류를 대폭 줄인다.
+//   ⑦구매경험 VOC와 무관(pvoc 키 없음) — Taxonomy 페이지에서만 보이는 독립 분류.
+//   키워드는 실제 슬룸 리뷰로 검증(미분류 66%→12%). 삭제해도 다음 로드 때 재생성된다.
+var PRODUCT_TAXONOMY = {
+  id:'tx-product',
+  name:'🧩 제품 경험',
+  description:'제품 자체에 대한 후기를 속성별로 분류 — 효과·강도·온열·소음·디자인 등. 키워드를 편집하면 분류가 갱신됩니다. (구매여정 분류와 별개)',
+  topics:[
+    {name:'효과 / 효능', icon:'✨', keywords:['효과','시원','개운','풀려','풀린','풀리','편안','편해','완화','가벼워','뭉친','뭉침','통증이 줄','덜 아프','나아','호전','이완','뻐근함이','결림이','효능','도움이 됐','도움이 되','만족']},
+    {name:'강도 / 세기', icon:'💪', keywords:['강도','세기','강하','세게','약하','약해','자극','지압','세지','강력','쎄','쎈','쎄게','부드럽','강약']},
+    {name:'온열 / 발열', icon:'🔥', keywords:['온열','따뜻','뜨겁','열기','발열','찜질','온도','따듯','뜨뜻','데워']},
+    {name:'소음 / 진동', icon:'🔊', keywords:['소음','시끄','조용','소리가','소리는','진동','웅웅','정숙','소리도']},
+    {name:'착용감 / 사용 편의', icon:'🤲', keywords:['착용','사용법','사용하기','간편','조작','버튼','리모컨','작동법','쓰기','거치','맞춰','고정이','밀착','감기']},
+    {name:'디자인 / 외관', icon:'🎨', keywords:['디자인','색상','색깔','예뻐','예쁘','고급','이쁘','외관','컬러','모양','심플','깔끔']},
+    {name:'크기 / 무게', icon:'📏', keywords:['크기','사이즈','무게','가볍','무겁','크다','작다','커서','작아','부피','크고','두께','휴대']},
+    {name:'배터리 / 충전', icon:'🔋', keywords:['배터리','충전','방전','무선','유선','케이블','선이','코드','어댑터','전원','콘센트']},
+    {name:'내구성 / 품질', icon:'🛡️', keywords:['내구','튼튼','견고','마감','품질','퀄리티','튼실','오래 쓸','내구성','만듦새','꼼꼼']},
+    {name:'가격 / 가성비', icon:'💰', keywords:['가성비','가격','비싸','저렴','할인','값','가격대','돈값','금액','혜자','비쌈','가격이']}
+  ]
+};
+
+// 제품 경험 고정 분류 시드/마이그레이션 — 없으면 생성(삭제 후 재로드 시 초기화 동작)
+function txEnsureProductTaxonomy(){
+  if(typeof PRODUCT_TAXONOMY==='undefined') return;
+  if(TAXONOMIES.some(function(t){return t.id===PRODUCT_TAXONOMY.id;})) return;
+  TAXONOMIES.push({
+    id:PRODUCT_TAXONOMY.id,
+    product:true,
+    name:PRODUCT_TAXONOMY.name,
+    favorite:false,
+    description:PRODUCT_TAXONOMY.description,
+    topics:PRODUCT_TAXONOMY.topics.map(function(it,i){
+      return {id:'t-prod-'+i, name:it.name, icon:it.icon, keywords:it.keywords.slice(), mode:'any'};
+    })
+  });
+  txSave();
 }
 
 // ── 구매경험 고정 분류(PVOC_TAXONOMY) → Taxonomy 시드/마이그레이션 ──
