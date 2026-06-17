@@ -1577,7 +1577,7 @@
     <div class="pvoc-kanban" id="pvoc-kanban">
       <!-- JS로 동적 생성 -->
     </div>
-    <div class="section-desc">* 고정 기준 키워드로 리뷰 본문을 분류한 결과입니다 (★4 이상 = 긍정 · ★3 이하 = 부정). 항목 클릭 시 관련 리뷰를 확인할 수 있고, 기준 키워드 확장은 Taxonomy에서 가능합니다.</div>
+    <div class="section-desc" id="pvj-method-note">* 고정 기준 키워드로 리뷰 본문을 분류한 결과입니다 (★4 이상 = 긍정 · ★3 이하 = 부정). 항목 클릭 시 관련 리뷰를 확인할 수 있고, 기준 키워드 확장은 Taxonomy에서 가능합니다.</div>
   </section>
 
   <!-- ⑧ 커스텀 차트 (구 ⑨, AI 커스텀 질문은 Hey Sloom 패널로 통합됨) -->
@@ -6430,6 +6430,13 @@ function pvjSyncSentToggle(){
     if(PVJ_SENT_MODE==='intent'){
       hint.textContent = STATE.pvocIntent ? 'AI 감성 기준 (그 항목에 대한 칭찬/불만)' : '⚠ 감성 데이터 없음 — 별점 기준 표시 (파이프라인 생성 필요)';
     } else { hint.textContent='별점 기준 (★4↑ 긍정 / ★3↓ 부정)'; }
+  }
+  var note=$('pvj-method-note');
+  if(note){
+    var basis = (PVJ_SENT_MODE==='intent' && STATE.pvocIntent)
+      ? '긍/부정은 <b>AI가 각 항목에 대한 칭찬/불만으로 판정</b>'
+      : '긍/부정은 별점 기준(★4↑ 긍정 · ★3↓ 부정)';
+    note.innerHTML='* 고정 기준 키워드로 리뷰 본문을 분류한 결과입니다 · '+basis+'. 항목 클릭 시 관련 리뷰를 확인할 수 있고, 기준 키워드 확장은 Taxonomy에서 가능합니다.';
   }
 }
 function renderPVOCKanban(){
