@@ -1025,12 +1025,10 @@
         <button class="tx-io-btn" onclick="txGithubUpload()" title="Taxonomy 분류 + AI 전체 재분류 결과를 GitHub 저장소에 업로드 (담당자·일시 태그)" style="border-color:var(--accent);color:var(--accent);">☁️ 저장소 업로드</button>
         <button class="tx-io-btn" onclick="txGithubOpenList()" title="저장소에 업로드된 분류 불러오기" style="border-color:var(--accent);color:var(--accent);">☁️ 불러오기</button>
         <button class="tx-io-btn" id="tx-live-btn" onclick="fwToggle()" title="실시간 협업 동기화 (Firebase)" style="border-color:var(--accent);color:var(--accent);">🌐 실시간 미설정</button>
-        <button class="tx-io-btn" onclick="txExportBackup()" title="JSON 파일로 백업">⬇ 백업</button>
-        <button class="tx-io-btn" onclick="txImportBackup()" title="백업 JSON 파일에서 복원/병합">⬆ 복원</button>
         <button class="tx-add-btn" onclick="txCreateNew()">+ Taxonomy</button>
       </div>
     </div>
-    <div class="tx-io-note" id="tx-io-note">💾 분류는 이 브라우저에 자동 저장됩니다. 팀 실시간 공유는 <strong>🌐 실시간</strong>(Firebase 설정 시 자동 동기화), 수동 공유는 <strong>☁️ 저장소 업로드/불러오기</strong>·<strong>⬇ 백업</strong> 파일을 사용하세요.</div>
+    <div class="tx-io-note" id="tx-io-note">💾 분류는 이 브라우저에 자동 저장됩니다. 팀 실시간 공유는 <strong>🌐 실시간</strong>(Firebase 설정 시 자동 동기화), 수동 공유·이전은 <strong>☁️ 저장소 업로드/불러오기</strong>를 사용하세요.</div>
     <div id="tx-gh-modal" style="display:none;position:fixed;inset:0;z-index:880;background:rgba(0,0,0,.55);align-items:flex-start;justify-content:center;padding-top:70px;" onclick="if(event.target===this)this.style.display='none';">
       <div style="background:var(--card);border-radius:14px;width:100%;max-width:560px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.22);">
         <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
@@ -1040,7 +1038,6 @@
         <div id="tx-gh-list" style="padding:12px 20px;overflow-y:auto;"></div>
       </div>
     </div>
-    <input type="file" id="tx-import-file" accept="application/json,.json" style="display:none;" onchange="txImportFileChosen(event)" />
     <div class="tx-grid" id="tx-grid"></div>
   </div>
   <div id="taxonomy-detail"></div>
@@ -3475,10 +3472,24 @@ function saveSectionOrder() {
 
 function restoreSectionOrder() {
   try{
-    var order = JSON.parse(localStorage.getItem('sectionOrder') || 'null');
-    if(!order) return;
+    var saved = JSON.parse(localStorage.getItem('sectionOrder') || 'null');
+    if(!saved) return;
     var main = document.getElementById('main-content');
-    order.forEach(function(id) {
+    // 현재(자연) DOM 순서의 섹션 id — 신규 섹션이 saved 에 없을 때 위치 기준이 된다.
+    var natural = Array.prototype.filter.call(main.children, function(el){
+      return el.classList && el.classList.contains('section') && el.id;
+    }).map(function(el){ return el.id; });
+    // 저장된 순서를 기본으로 하되, saved 에 없는 신규 섹션은 자연 순서의 '바로 앞 섹션' 뒤에 끼워넣는다.
+    // (이렇게 하지 않으면 appendChild 가 알려진 섹션만 맨 뒤로 옮겨 신규 섹션이 맨 위로 떠오른다.)
+    var finalOrder = saved.slice();
+    natural.forEach(function(id, idx){
+      if(finalOrder.indexOf(id) >= 0) return;
+      var anchor = null;
+      for(var i=idx-1; i>=0; i--){ if(finalOrder.indexOf(natural[i]) >= 0){ anchor = natural[i]; break; } }
+      if(anchor) finalOrder.splice(finalOrder.indexOf(anchor)+1, 0, id);
+      else finalOrder.unshift(id);
+    });
+    finalOrder.forEach(function(id) {
       var sec = document.getElementById(id);
       if(sec) main.appendChild(sec);
     });
@@ -7668,81 +7679,6 @@ function fwUpdateStatus(){
   else { btn.textContent='⚪ 실시간 OFF'; btn.title='클릭하면 실시간 협업 동기화 켜기'+(FW.lastErr?(' · 오류: '+FW.lastErr):''); }
 }
 
-// ── 백업(내보내기) / 복원(가져오기) ──
-// localStorage는 브라우저-로컬·캐시삭제 시 소실 → JSON 파일로 백업/이전/공유 가능하게
-function txExportBackup(){
-  txLoad(); // 최신 상태 확보
-  var payload={
-    _type:'crema-taxonomy-backup',
-    _version:1,
-    brand:STATE.brand||'',
-    month:STATE.month||'',
-    exported_at:new Date().toISOString(),
-    taxonomies:TAXONOMIES
-  };
-  var manualTotal=TAXONOMIES.reduce(function(s,t){return s+Object.keys(t.manualClassifications||{}).length;},0);
-  var blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-  var url=URL.createObjectURL(blob);
-  var a=document.createElement('a');
-  var stamp=new Date().toISOString().slice(0,10);
-  a.href=url; a.download='taxonomy-backup_'+(STATE.brand||'brand')+'_'+stamp+'.json';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  showToast('백업 완료 — Taxonomy '+TAXONOMIES.length+'개 · 수동 분류 '+manualTotal+'건');
-}
-
-function txImportBackup(){
-  var inp=$('tx-import-file');
-  if(inp){ inp.value=''; inp.click(); }
-}
-
-function txImportFileChosen(evt){
-  var file=evt.target.files && evt.target.files[0];
-  if(!file) return;
-  var reader=new FileReader();
-  reader.onload=function(e){
-    var data=null;
-    try{ data=JSON.parse(e.target.result); }catch(err){ alert('JSON 파싱 실패 — 올바른 백업 파일이 아닙니다.'); return; }
-    var incoming = (data && data._type==='crema-taxonomy-backup' && Array.isArray(data.taxonomies)) ? data.taxonomies
-                  : (Array.isArray(data) ? data : null);
-    if(!incoming){ alert('인식할 수 없는 형식입니다. crema-taxonomy-backup JSON을 사용하세요.'); return; }
-    var inManual=incoming.reduce(function(s,t){return s+Object.keys(t.manualClassifications||{}).length;},0);
-    var mode=confirm('백업에서 Taxonomy '+incoming.length+'개(수동 분류 '+inManual+'건)를 가져옵니다.\n\n[확인] = 병합 (같은 ID는 백업 내용으로 덮어쓰고 수동 분류 합침)\n[취소] = 가져오기 중단');
-    if(!mode) return;
-    txLoad();
-    // ID 기준 병합
-    var byId={}; TAXONOMIES.forEach(function(t){ byId[t.id]=t; });
-    incoming.forEach(function(it){
-      if(!it || !it.id){ return; }
-      var cur=byId[it.id];
-      if(!cur){ TAXONOMIES.push(it); byId[it.id]=it; return; }
-      // 토픽: 백업 우선(이름/규칙) — 없는 토픽은 추가
-      var curTopicIds={}; (cur.topics||[]).forEach(function(tp){curTopicIds[tp.id]=tp;});
-      (it.topics||[]).forEach(function(tp){
-        if(curTopicIds[tp.id]){ var idx=cur.topics.indexOf(curTopicIds[tp.id]); cur.topics[idx]=tp; }
-        else { cur.topics=cur.topics||[]; cur.topics.push(tp); }
-      });
-      // 수동 분류 병합 (백업의 include/exclude를 합집합으로)
-      cur.manualClassifications=cur.manualClassifications||{};
-      var inc=it.manualClassifications||{};
-      Object.keys(inc).forEach(function(rid){
-        var a=cur.manualClassifications[rid]||{include:[],exclude:[]};
-        var b=inc[rid]||{include:[],exclude:[]};
-        function uniq(arr){ var o={}; (arr||[]).forEach(function(x){o[x]=1;}); return Object.keys(o); }
-        cur.manualClassifications[rid]={
-          include:uniq((a.include||[]).concat(b.include||[])),
-          exclude:uniq((a.exclude||[]).concat(b.exclude||[]))
-        };
-      });
-    });
-    txSave();
-    txRenderGrid();
-    var total=TAXONOMIES.reduce(function(s,t){return s+Object.keys(t.manualClassifications||{}).length;},0);
-    showToast('복원 완료 — 현재 Taxonomy '+TAXONOMIES.length+'개 · 수동 분류 '+total+'건');
-  };
-  reader.readAsText(file);
-}
-
 // ── GitHub 저장소 업로드/불러오기 (start-tunnel 로컬 프록시 경유) ──
 function txGhBase(){ return (getOllamaUrl()||'').replace(/\/+$/,''); }
 
@@ -7783,8 +7719,18 @@ function txMergeIncoming(incoming){
     if(!cur){ TAXONOMIES.push(it); byId[it.id]=it; return; }
     var curTopicIds={}; (cur.topics||[]).forEach(function(tp){curTopicIds[tp.id]=tp;});
     (it.topics||[]).forEach(function(tp){
-      if(curTopicIds[tp.id]){ cur.topics[cur.topics.indexOf(curTopicIds[tp.id])]=tp; }
-      else { cur.topics=cur.topics||[]; cur.topics.push(tp); }
+      var existing=curTopicIds[tp.id];
+      if(existing){
+        // 같은 토픽: 다른 작업자의 키워드 추가가 서로 덮이지 않도록 키워드는 합집합(union).
+        //   (이름·모드 등은 들어온 값 우선 = last-write-wins. 학습은 추가형이라 union 이 안전.)
+        var seen={}, merged=[];
+        (existing.keywords||[]).concat(tp.keywords||[]).forEach(function(k){
+          var key=String(k).toLowerCase(); if(key && !seen[key]){ seen[key]=1; merged.push(k); }
+        });
+        var mt={}; for(var kk in existing) mt[kk]=existing[kk]; for(var k2 in tp) mt[k2]=tp[k2];
+        mt.keywords=merged;
+        cur.topics[cur.topics.indexOf(existing)]=mt;
+      } else { cur.topics=cur.topics||[]; cur.topics.push(tp); }
     });
     cur.manualClassifications=cur.manualClassifications||{};
     var inc=it.manualClassifications||{};
@@ -8313,6 +8259,7 @@ function txRenderDetail(){
         '<button class="txd-back-btn" onclick="txBackToList()" title="목록으로">←</button>'+
         '<div class="txd-sidebar-title">'+escapeHtml(t.name)+'</div>'+
       '</div>'+
+      '<button onclick="txLearnAllKeywords()" title="수동 분류한 리뷰에서 키워드를 학습해 각 Topic 규칙에 추가합니다. 분류는 키워드 매칭이라 추가한 키워드는 다음 달 데이터부터 자동 분류에 반영됩니다." style="margin:0 0 8px;width:100%;padding:8px 10px;background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">✦ 키워드 학습 (수동 분류 → 규칙)</button>'+
       '<div class="txd-topics-head">'+
         '<span class="txd-topics-label">Topics ('+(t.topics||[]).length+')</span>'+
         '<button onclick="txAddTopic()" style="border:none;background:transparent;cursor:pointer;font-size:14px;color:var(--text-secondary);padding:2px 6px;border-radius:4px;" title="Topic 추가">+</button>'+
@@ -8588,7 +8535,6 @@ function txRenderTopicDetail(taxonomy){
     '</div>'+
     '<div class="txd-main-actions">'+
       '<button onclick="txEditTopic(\''+topic.id.replace(/\'/g,"\\\'")+'\')">✎ 규칙 편집</button>'+
-      '<button onclick="txLearnKeywords(\''+topic.id.replace(/\'/g,"\\\'")+'\')" title="이 Topic에 수동 분류한 리뷰에서 키워드를 학습해 규칙에 추가합니다. 추가한 키워드는 다음 달 업로드부터 자동 분류에 반영됩니다.">✦ 키워드 학습</button>'+
       '<button onclick="txOpenTopicInsights(\''+topic.id.replace(/\'/g,"\\\'")+'\')" class="primary">📊 View insights</button>'+
     '</div>'+
   '</div>'+
@@ -8621,37 +8567,29 @@ function txRenderTopicDetail(taxonomy){
   );
 }
 
-// ── 키워드 학습 — 수동 분류한 리뷰에서 대표 키워드를 추출해 Topic 규칙에 제안 ──
+// ── 키워드 학습 — 수동 분류한 리뷰에서 대표 키워드를 추출해 Topic 규칙에 추가 ──
 //   원리: 분류는 '키워드 매칭'이라 월(月) 독립적 → 학습한 키워드는 다음 달 데이터 업로드부터 자동 분류에 반영된다.
-//   1순위 AI(Ollama) 추출, 오프라인이면 빈도기반(한글 n-gram) 폴백. 제안은 편집 모달에 채워 사람이 확인 후 저장.
+//   분류 상세 상단의 한 버튼(txLearnAllKeywords)으로 수동 분류된 모든 Topic을 일괄 학습한다.
+//   추출: 1순위 AI(Ollama), 오프라인/실패 시 빈도기반(한글 n-gram) 폴백.
 var TX_KO_STOP=['그리고','하지만','너무','정말','진짜','조금','약간','구매','제품','사용','상품','배송','구입','후기','리뷰','생각','때문','정도','그냥','아주','매우','완전','계속','이것','저것','그것','여기','거기','경우','부분','느낌','같아요','같습니다','있어요','있습니다','없어요','합니다','해요','네요','어요','구요','구매했','샀어요','했어요','좋아요','좋았','좋고','좋네','만족','감사'];
-async function txLearnKeywords(topicId){
-  var t=TAXONOMIES.find(function(x){return x.id===TX_STATE.activeTaxonomyId;});
-  if(!t) return;
-  var tp=(t.topics||[]).find(function(x){return x.id===topicId;});
-  if(!tp){ alert('Topic을 찾을 수 없습니다.'); return; }
-  var manual=t.manualClassifications||{};
-  var allReviews=txGetAllReviews();
+
+// 한 Topic의 수동 분류 리뷰에서 신규 키워드 후보를 추출 (기존 키워드 제외). 비동기.
+async function txExtractKeywordsForTopic(taxonomy, tp, allReviews, online){
+  var manual=taxonomy.manualClassifications||{};
   var curKws=(tp.keywords||[]).map(function(k){return String(k).toLowerCase();});
-  // 수동 포함(include)된 리뷰 수집 — 현재 키워드로 안 잡히는 '신규 학습감'을 앞쪽에 배치
   var examples=[];
   allReviews.forEach(function(r){
     var cls=manual[String(r.review_id)];
-    if(cls && cls.include && cls.include.indexOf(topicId)>=0){
+    if(cls && cls.include && cls.include.indexOf(tp.id)>=0){
       var lt=(r.text||'').toLowerCase();
       var novel=!curKws.some(function(k){return k && lt.indexOf(k)>=0;});
       examples.push({text:r.text||'', novel:novel});
     }
   });
-  if(examples.length===0){
-    alert('이 Topic에 수동으로 분류(포함)한 리뷰가 아직 없습니다.\n\n먼저 미분류 보기 등에서 이 Topic에 리뷰를 배정해 주세요. 그 리뷰들을 바탕으로 키워드를 학습합니다.');
-    return;
-  }
+  if(examples.length===0) return [];
   examples.sort(function(a,b){return (b.novel?1:0)-(a.novel?1:0);});
   var sampleTexts=examples.slice(0,40).map(function(e){return e.text;});
-  showToast('✦ 키워드 학습 중... ('+examples.length+'건 분석)');
   var suggestions=[];
-  var online=$('ollama-dot') && $('ollama-dot').className.indexOf('online')>=0;
   if(online){
     try{
       var prompt='아래는 "'+tp.name+'" 주제로 분류된 리뷰들이다. 이 주제를 자동 분류하기 위한 대표 키워드(한국어 단어/짧은 구) 5~10개를 뽑아라.\n'+
@@ -8683,21 +8621,51 @@ async function txLearnKeywords(topicId){
       });
     });
     suggestions=Object.keys(freq).sort(function(a,b){return freq[b]-freq[a];})
-      .filter(function(w){return freq[w]>=2;}).slice(0,12);
+      .filter(function(w){return freq[w]>=2;}).slice(0,10);
   }
   // 기존 키워드/중복 제거
   var uniq=[];
   suggestions.forEach(function(s){ var ls=String(s).toLowerCase(); if(ls && curKws.indexOf(ls)<0 && uniq.indexOf(s)<0) uniq.push(s); });
-  suggestions=uniq.slice(0,12);
-  if(suggestions.length===0){
+  return uniq.slice(0,10);
+}
+
+// 분류 상세 상단 버튼 — 수동 분류된 모든 Topic의 키워드를 일괄 학습·확인 후 추가.
+async function txLearnAllKeywords(){
+  var t=TAXONOMIES.find(function(x){return x.id===TX_STATE.activeTaxonomyId;});
+  if(!t){ alert('분류를 먼저 여세요.'); return; }
+  var manual=t.manualClassifications||{};
+  var allReviews=txGetAllReviews();
+  // 수동 포함(include)이 있는 Topic만 대상
+  var targets=(t.topics||[]).filter(function(tp){
+    return Object.keys(manual).some(function(rid){ var c=manual[rid]; return c && c.include && c.include.indexOf(tp.id)>=0; });
+  });
+  if(targets.length===0){
+    alert('이 분류에서 수동으로 배정(분류)한 리뷰가 아직 없습니다.\n\n미분류 보기 등에서 리뷰를 Topic에 배정한 뒤 다시 눌러주세요. 배정한 리뷰들을 바탕으로 키워드를 학습합니다.');
+    return;
+  }
+  var online=$('ollama-dot') && $('ollama-dot').className.indexOf('online')>=0;
+  showToast('✦ 키워드 학습 중... ('+targets.length+'개 Topic'+(online?' · AI':' · 빠른 추출')+')');
+  var results=[];
+  for(var i=0;i<targets.length;i++){
+    try{
+      var sugg=await txExtractKeywordsForTopic(t, targets[i], allReviews, online);
+      if(sugg.length) results.push({tp:targets[i], suggestions:sugg});
+    }catch(e){}
+  }
+  if(results.length===0){
     alert('새로 제안할 키워드를 찾지 못했습니다.\n(이미 키워드가 충분하거나 표본이 적습니다)');
     return;
   }
-  // 편집 모달에 기존+제안 키워드를 채워 사람이 확인·정리 후 저장
-  txEditTopic(topicId);
-  var ta=$('tx-rule-keywords');
-  if(ta){ ta.value=(tp.keywords||[]).slice().concat(suggestions).join(', '); }
-  showToast('✦ 키워드 '+suggestions.length+'개 제안 — 확인 후 저장하세요: '+suggestions.join(', '));
+  var msg='아래 키워드를 각 Topic 규칙에 추가할까요?\n(추가 후 다음 달 데이터부터 자동 분류에 반영됩니다)\n\n'+
+    results.map(function(r){return '· '+r.tp.name+' ← '+r.suggestions.join(', ');}).join('\n');
+  if(!confirm(msg)) return;
+  var added=0;
+  results.forEach(function(r){ r.tp.keywords=(r.tp.keywords||[]).concat(r.suggestions); added+=r.suggestions.length; });
+  txSave();
+  txRenderDetail();
+  if(typeof renderProductVOC==='function') renderProductVOC();
+  if(typeof renderPVOCKanban==='function') renderPVOCKanban();
+  showToast('✓ '+results.length+'개 Topic에 키워드 '+added+'개 추가됨');
 }
 
 // ── Topic 추가/편집 ──
