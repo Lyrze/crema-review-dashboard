@@ -7481,7 +7481,14 @@ function txSave(){
 //   FIREBASE_CONFIG 를 채우면 활성화 → 여러 담당자의 분류가 실시간 동기화·병합됨.
 //   비어있으면 기존 localStorage 단독 동작(기능 영향 없음). 설정 가이드는 README 참고.
 // ─────────────────────────────────────────────
-var FIREBASE_CONFIG = null; // 예: {apiKey:"…",authDomain:"…",projectId:"…",appId:"…"} — 가이드 참고
+var FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBrToDdRW81kH6151UYn2wUtly6ydP4Qlg",
+  authDomain: "crema-taxonomy.firebaseapp.com",
+  projectId: "crema-taxonomy",
+  storageBucket: "crema-taxonomy.firebasestorage.app",
+  messagingSenderId: "171999902880",
+  appId: "1:171999902880:web:577181001eb7a007001dc5"
+};
 var FW = { ready:false, enabled:false, db:null, unsub:null, pushTimer:null, applying:false, lastErr:'', lastSync:null };
 
 function fwConfigValid(){ return !!(FIREBASE_CONFIG && FIREBASE_CONFIG.projectId && FIREBASE_CONFIG.apiKey); }
