@@ -232,6 +232,36 @@ def main():
             eprint()
             eprint("  [3.5/4] 14b 이상 모델 없음 → 정밀 보정 생략 (7b 3단계 결과 사용)")
 
+    # 3.6 구매경험 VOC '감성기반' 데이터 (PVOC 토픽별 칭찬/불만 AI 판정)
+    #   대시보드 ⑦구매경험 VOC '감성기반' 토글이 pvoc_intent.json 을 사용. 없으면 별점 폴백.
+    pvoc_intent_flag = ""
+    if models:
+        eprint()
+        eprint("  [3.6/4] 구매경험 VOC '감성기반' 데이터 생성 (PVOC 토픽별 칭찬/불만 AI 판정)")
+        eprint("    별점이 아닌 '그 항목에 대한' 실제 의도로 긍/부정 분류 → 감성기반 토글에 사용")
+        eprint()
+        eprint("    1. 포함 (권장, 약 5~15분)")
+        eprint("    2. 건너뛰기 (감성기반은 별점으로 폴백)")
+        eprint()
+        while True:
+            try:
+                raw_in = ask("  선택 (1~2, Enter=1번 권장): ").strip()
+                psel = 1 if raw_in == "" else int(raw_in)
+                if psel in (1, 2):
+                    break
+                eprint("  1 또는 2를 입력하세요.")
+            except ValueError:
+                eprint("  1 또는 2를 입력하세요.")
+            except EOFError:
+                psel = 2
+                break
+        if psel == 1:
+            pvoc_model = models[msel - 1] if msel > 0 else models[0]
+            pvoc_intent_flag = f"--model {pvoc_model}"
+            eprint(f"  감성 데이터 모델: {pvoc_model}")
+        else:
+            eprint("  감성 데이터 생략 — 대시보드는 별점기반으로 표시됩니다.")
+
     anon_out = f"data/anonymized/{brand}/{month}/reviews_anon.csv"
 
     eprint()
@@ -246,6 +276,7 @@ def main():
     print(f"AI_FLAG={ai_flag}")
     print(f"RECLASS_FLAG={reclass_flag}")
     print(f"REVERIFY_FLAG={reverify_flag}")
+    print(f"PVOC_INTENT_FLAG={pvoc_intent_flag}")
     print(f"ANON_OUT={anon_out}")
 
 

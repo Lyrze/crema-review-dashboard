@@ -15,7 +15,7 @@ python scripts\interactive_select.py > "%TEMP%\crema_sel.tmp"
 if errorlevel 1 ( echo. & echo [FAILED] & pause & exit /b 1 )
 
 :: 결과 파싱
-set "BRAND=" & set "MONTH=" & set "CSV=" & set "PREV_FLAG=" & set "AI_FLAG=" & set "RECLASS_FLAG=" & set "REVERIFY_FLAG=" & set "ANON_OUT="
+set "BRAND=" & set "MONTH=" & set "CSV=" & set "PREV_FLAG=" & set "AI_FLAG=" & set "RECLASS_FLAG=" & set "REVERIFY_FLAG=" & set "PVOC_INTENT_FLAG=" & set "ANON_OUT="
 
 for /f "usebackq tokens=1,* delims==" %%A in ("%TEMP%\crema_sel.tmp") do (
   if "%%A"=="BRAND"         set "BRAND=%%B"
@@ -25,6 +25,7 @@ for /f "usebackq tokens=1,* delims==" %%A in ("%TEMP%\crema_sel.tmp") do (
   if "%%A"=="AI_FLAG"       set "AI_FLAG=%%B"
   if "%%A"=="RECLASS_FLAG"  set "RECLASS_FLAG=%%B"
   if "%%A"=="REVERIFY_FLAG" set "REVERIFY_FLAG=%%B"
+  if "%%A"=="PVOC_INTENT_FLAG" set "PVOC_INTENT_FLAG=%%B"
   if "%%A"=="ANON_OUT"      set "ANON_OUT=%%B"
 )
 
@@ -46,6 +47,13 @@ if not "!REVERIFY_FLAG!"=="" (
   echo.
   echo  [3.5/4] AI 정밀 보정 중 - 의심 키워드 재검증...
   python scripts\reverify_suspect.py --brand "!BRAND!" --month "!MONTH!" !REVERIFY_FLAG!
+)
+
+:: [3.6/4] 구매경험 VOC 감성 데이터 (PVOC 토픽별 칭찬/불만) - PVOC_INTENT_FLAG 있을 때만
+if not "!PVOC_INTENT_FLAG!"=="" (
+  echo.
+  echo  [3.6/4] 구매경험 VOC 감성 데이터 생성 중...
+  python scripts\classify_pvoc_intent.py --brand "!BRAND!" --month "!MONTH!" !PVOC_INTENT_FLAG!
 )
 
 :: 처리 결과
