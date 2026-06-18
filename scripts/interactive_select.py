@@ -129,7 +129,9 @@ def main():
 
     # 2. Ollama 모델 선택
     eprint()
-    eprint("  [2/4] AI 분석 설정...")
+    eprint("  [2/4] AI 분석 설정 (리뷰별 감성분석 — 긍정/중립/부정 라벨 생성)")
+    eprint("        ※ 모델을 고르면 리뷰마다 AI 감성이 reviews.json 에 기록되어")
+    eprint("          대시보드 '감성기준' 토글이 정확히 동작합니다. 건너뛰면 별점기준만.")
     models = get_ollama_models()
     ai_flag = "--skip-ai"
 
@@ -139,7 +141,7 @@ def main():
         eprint()
         for i, m in enumerate(models, 1):
             eprint(f"    {i}. {m}")
-        eprint("    0. AI 분석 건너뛰기")
+        eprint("    0. AI 분석 건너뛰기 (감성분석 없음 → 별점기준만)")
         eprint()
 
         while True:
