@@ -7642,7 +7642,9 @@ function fwEnable(){
       if(document.body.classList.contains('taxonomy-mode')){
         try{ if(typeof txRenderGrid==='function') txRenderGrid(); if(TX_STATE && TX_STATE.activeTaxonomyId) txRenderDetail(); }catch(e){}
       }
-      try{ renderPVOCKanban(); }catch(e){}
+      // Taxonomy 직접 구동 대시보드 섹션 갱신 (무상태 재계산 — 동기화 시 항상 일치).
+      try{ renderPVOCKanban(); }catch(e){}                                      // ⑦ 구매경험 VOC
+      try{ if(typeof renderProductVOC==='function') renderProductVOC(); }catch(e){} // ⑧ 제품 경험
       FW.lastSync=new Date();
     }
     fwUpdateStatus();
@@ -7722,17 +7724,11 @@ function txMergeIncoming(incoming){
     var curTopicIds={}; (cur.topics||[]).forEach(function(tp){curTopicIds[tp.id]=tp;});
     (it.topics||[]).forEach(function(tp){
       var existing=curTopicIds[tp.id];
-      if(existing){
-        // 같은 토픽: 다른 작업자의 키워드 추가가 서로 덮이지 않도록 키워드는 합집합(union).
-        //   (이름·모드 등은 들어온 값 우선 = last-write-wins. 학습은 추가형이라 union 이 안전.)
-        var seen={}, merged=[];
-        (existing.keywords||[]).concat(tp.keywords||[]).forEach(function(k){
-          var key=String(k).toLowerCase(); if(key && !seen[key]){ seen[key]=1; merged.push(k); }
-        });
-        var mt={}; for(var kk in existing) mt[kk]=existing[kk]; for(var k2 in tp) mt[k2]=tp[k2];
-        mt.keywords=merged;
-        cur.topics[cur.topics.indexOf(existing)]=mt;
-      } else { cur.topics=cur.topics||[]; cur.topics.push(tp); }
+      // 같은 토픽은 들어온 값으로 통째 교체(last-write-wins). 키워드 union 이면 '삭제·편집'이
+      //   전파되지 않아(상대에 옛 키워드가 남음) 규칙 편집이 동기화 안 됨 → 교체로 추가·삭제 모두 반영.
+      //   (트레이드오프: 같은 토픽을 두 명이 동시에 편집하면 나중 저장이 이김.)
+      if(existing){ cur.topics[cur.topics.indexOf(existing)]=tp; }
+      else { cur.topics=cur.topics||[]; cur.topics.push(tp); }
     });
     cur.manualClassifications=cur.manualClassifications||{};
     var inc=it.manualClassifications||{};
