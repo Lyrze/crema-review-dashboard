@@ -1230,6 +1230,13 @@
       </div>
     </div>
     <div class="sync-filter-right">
+      <div class="filter-chip" id="chip-sent" title="긍정/부정 판정 기준 — 전 섹션·리뷰 확인에 공통 적용" style="display:inline-flex;align-items:center;gap:6px;cursor:default;">
+        <span class="chip-label">긍·부정 기준</span>
+        <span style="display:inline-flex;gap:2px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:2px;">
+          <button class="sent-mode-btn" data-sent="rating" onclick="setSentMode('rating')" title="별점 ★4↑=긍정 / ★3=중립 / ★2↓=부정" style="padding:3px 9px;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:700;background:transparent;color:var(--text-secondary);font-family:inherit;">별점</button>
+          <button class="sent-mode-btn" data-sent="sentiment" onclick="setSentMode('sentiment')" title="AI 감성분석 결과로 긍/부정 판정(데이터 없으면 별점 폴백)" style="padding:3px 9px;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:700;background:transparent;color:var(--text-secondary);font-family:inherit;">감성</button>
+        </span>
+      </div>
       <button class="filter-chip" id="chip-search" onclick="openReviewSearch()" title="리뷰 본문 검색">🔍 리뷰 검색</button>
       <button class="filter-chip" id="chip-refresh" onclick="manualReload()" title="데이터 새로고침">🔄</button>
       <button class="filter-chip" id="chip-share" onclick="shareCurrentURL()" title="현재 상태 URL 복사">🔗 공유</button>
@@ -2485,7 +2492,7 @@ function onMonthChange(v){
 }
 async function reload(){ await loadData(STATE.brand,STATE.month); render(); }
 
-function render(){ if(typeof COMPARE_STATE!=='undefined'){ if(COMPARE_STATE.active) applyCompareBaseline(); else restoreCompareBaseline(); } renderHeader(); renderExec(); renderSKUScorecards(); renderKPI(); renderTimeline(); renderSKUTable(); renderSKUCombo(); renderChangeTables(); renderVOC(); updateProductFocusBar(); updateCustomAIModelLabel(); populateCompareMonths(); updateCompareBanner(); renderPVOCKanban(); renderProductVOC(); syncChipBarFromState(); refreshOpenInsightModal(); setTimeout(enhanceCardActions,50); }
+function render(){ if(typeof COMPARE_STATE!=='undefined'){ if(COMPARE_STATE.active) applyCompareBaseline(); else restoreCompareBaseline(); } renderHeader(); renderExec(); renderSKUScorecards(); renderKPI(); renderTimeline(); renderSKUTable(); renderSKUCombo(); renderChangeTables(); renderVOC(); updateProductFocusBar(); updateCustomAIModelLabel(); populateCompareMonths(); updateCompareBanner(); renderPVOCKanban(); renderProductVOC(); syncChipBarFromState(); if(typeof syncSentToggle==='function') syncSentToggle(); refreshOpenInsightModal(); setTimeout(enhanceCardActions,50); }
 
 // View Insight 모달이 열려 있으면 인사이트 카드 숫자도 즉시 갱신
 function refreshOpenInsightModal(){
@@ -4615,7 +4622,7 @@ function krmRenderList(){
   listEl.innerHTML=shown.map(function(item){
     var r=item.r;
     var stars=''; for(var i=1;i<=5;i++) stars+=i<=r.rating?'★':'☆';
-    var tag=r.rating>=4?'<span style="background:rgba(22,163,74,.12);color:#16a34a;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">긍정 ★'+r.rating+'</span>':r.rating<=2?'<span style="background:rgba(220,38,38,.10);color:#dc2626;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">부정 ★'+r.rating+'</span>':'<span style="background:var(--surface-hover);color:var(--text-secondary);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">중립 ★'+r.rating+'</span>';
+    var tag=senBadge(r);
     var text=r.text||'';
     // 다중 토큰 하이라이트 — 검색에 사용된 모든 토큰 처리
     var highlightTokens=[];
@@ -6374,6 +6381,57 @@ function pvjMatchText(txt, pats){
   return false;
 }
 
+// ── 전역 긍/부정 판정 기준 (별점 ↔ AI 감성) ──────────────────────────
+//   'rating'    : 별점 ★4↑=긍정 · ★3=중립 · ★2↓=부정
+//   'sentiment' : 리뷰별 AI 감성(reviews.json sentiment). 없으면 그 리뷰만 별점 폴백.
+//   상단 필터바 토글로 전환 → ⑦구매경험·⑧제품경험·리뷰 확인 모달이 같은 기준 사용(긍정 정의 통일).
+var SENT_MODE=(function(){ try{ return localStorage.getItem('sent_mode')==='rating'?'rating':'sentiment'; }catch(e){ return 'sentiment'; } })();
+function senClass(r){
+  // r: {rating, sentiment?, review_id?} → 'pos' | 'neu' | 'neg'
+  if(SENT_MODE==='sentiment' && r){
+    var s=r.sentiment;
+    // 객체에 감성이 없으면 review_id 로 reviews.json 인덱스에서 조회 (모달 등 어디서나 동작)
+    if(!s && r.review_id!=null && STATE.reviewsById){ var rr=STATE.reviewsById[String(r.review_id)]; if(rr) s=rr.sentiment; }
+    if(s){ s=String(s).toLowerCase();
+      if(s==='positive') return 'pos';
+      if(s==='negative') return 'neg';
+      if(s==='neutral') return 'neu';
+    }
+  }
+  var rt=(r&&r.rating)||0;
+  return rt>=4?'pos':(rt<=2?'neg':'neu');
+}
+function senPos(r){ return senClass(r)==='pos'; }
+// 리뷰 카드용 긍/부정 뱃지 — 현재 기준(별점/감성)에 따라 라벨 결정, 별점은 항상 표기
+function senBadge(r){
+  var c=senClass(r), rt=(r&&r.rating)||0;
+  var lab=c==='pos'?'긍정':(c==='neg'?'부정':'중립');
+  var col=c==='pos'?'background:rgba(22,163,74,.12);color:#16a34a;':(c==='neg'?'background:rgba(220,38,38,.10);color:#dc2626;':'background:var(--surface-hover);color:var(--text-secondary);');
+  return '<span style="'+col+'font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">'+lab+' ★'+rt+'</span>';
+}
+// 현재 데이터(이 월)에 리뷰별 감성 라벨이 있는지 — 토글 힌트/폴백 안내용
+function senDataAvailable(){
+  try{ if(!STATE.reviewsById) return false; var ks=Object.keys(STATE.reviewsById); for(var i=0;i<ks.length && i<50;i++){ if(STATE.reviewsById[ks[i]].sentiment) return true; } }catch(e){}
+  return false;
+}
+function setSentMode(m){
+  if(m!=='rating'&&m!=='sentiment') return;
+  SENT_MODE=m;
+  try{ localStorage.setItem('sent_mode', m); }catch(e){}
+  if(typeof PVJ_SENT_MODE!=='undefined'){ try{ PVJ_SENT_MODE = (m==='sentiment'?'intent':'rating'); }catch(e){} }
+  try{ render(); }catch(e){}
+  try{ syncSentToggle(); }catch(e){}
+}
+function syncSentToggle(){
+  document.querySelectorAll('.sent-mode-btn').forEach(function(b){
+    var a=b.getAttribute('data-sent')===SENT_MODE;
+    b.classList.toggle('active', a);
+    b.style.background=a?'var(--accent)':'transparent';
+    b.style.color=a?'#fff':'var(--text-secondary)';
+  });
+  var chip=$('chip-sent-val'); if(chip) chip.textContent=(SENT_MODE==='sentiment'?'감성기준':'별점기준');
+}
+
 // 전체 리뷰(reviews.json)에서 고정 분류 집계 — productFocus 존중
 // Taxonomy에 고정 분류(tx-pvoc-*)가 있으면 그것을 기준으로 집계 →
 // Taxonomy에서 키워드/Topic 추가·수동 분류(포함/제외)가 ⑦구매경험 VOC에 즉시 반영된다.
@@ -6383,12 +6441,12 @@ function pvjCompute(){
     Object.keys(STATE.reviewsById).forEach(function(id){
       var rv=STATE.reviewsById[id];
       if(STATE.productFocus && rv.product!==STATE.productFocus) return;
-      src.push({review_id:String(id), rating:rv.rating||0, text:(rv.text||'').toLowerCase()});
+      src.push({review_id:String(id), rating:rv.rating||0, text:(rv.text||'').toLowerCase(), sentiment:rv.sentiment});
     });
   } else {
     txGetAllReviews().forEach(function(r){
       if(STATE.productFocus && r.product!==STATE.productFocus) return;
-      src.push({review_id:String(r.review_id), rating:r.rating||0, text:(r.text||'').toLowerCase()});
+      src.push({review_id:String(r.review_id), rating:r.rating||0, text:(r.text||'').toLowerCase(), sentiment:r.sentiment});
     });
   }
   return PVOC_TAXONOMY.map(function(col){
@@ -6399,7 +6457,7 @@ function pvjCompute(){
       items=(tax.topics||[]).map(function(tp){
         var matched=txMatchTopic(tp, src, tax);
         var pos=0, neg=0;
-        matched.forEach(function(r){ if((r.rating||0)>=4) pos++; else neg++; });
+        matched.forEach(function(r){ if(senPos(r)) pos++; else neg++; });
         return {name:tp.name, icon:tp.icon||'🏷️', pats:(tp.keywords||[]).slice(), pos:pos, neg:neg, total:pos+neg,
                 _ids:matched.map(function(r){return String(r.review_id);})};
       });
@@ -6412,7 +6470,7 @@ function pvjCompute(){
           if(!r.text) continue;
           if(pvjMatchText(r.text, it.pats)){
             ids.push(String(r.review_id));
-            if(r.rating>=4) pos++; else neg++;
+            if(senPos(r)) pos++; else neg++;
           }
         }
         return {name:it.name, icon:it.icon, pats:it.pats, pos:pos, neg:neg, total:pos+neg, _ids:ids};
@@ -6436,13 +6494,11 @@ function pvjCompute(){
 }
 
 var PVJ_DATA=null;
-// 긍/부정 판정 기준: 'rating'(별점 ★4↑) | 'intent'(AI 의도, pvoc_intent.json 필요)
-var PVJ_SENT_MODE=(function(){ try{ return localStorage.getItem('pvj_sent_mode')==='intent'?'intent':'rating'; }catch(e){ return 'rating'; } })();
+// ⑦ 구매경험 VOC 내부 표기용 — 전역 SENT_MODE 에서 파생('sentiment'→'intent'). 토글은 전역과 연동.
+var PVJ_SENT_MODE=(SENT_MODE==='sentiment'?'intent':'rating');
 function pvjSetSentMode(m){
   if(m!=='rating'&&m!=='intent') return;
-  PVJ_SENT_MODE=m;
-  try{ localStorage.setItem('pvj_sent_mode', m); }catch(e){}
-  renderPVOCKanban();
+  setSentMode(m==='intent'?'sentiment':'rating');  // 전역 토글로 위임 → 긍정 정의 통일
 }
 function pvjSyncSentToggle(){
   document.querySelectorAll('.pvj-sent-mode-btn').forEach(function(b){
@@ -6563,17 +6619,17 @@ function renderProductVOC(){
     Object.keys(STATE.reviewsById).forEach(function(id){
       var rv=STATE.reviewsById[id];
       if(STATE.productFocus && rv.product!==STATE.productFocus) return;
-      src.push({review_id:String(id), rating:rv.rating||0, text:(rv.text||'').toLowerCase()});
+      src.push({review_id:String(id), rating:rv.rating||0, text:(rv.text||'').toLowerCase(), sentiment:rv.sentiment});
     });
   } else {
     txGetAllReviews().forEach(function(r){
       if(STATE.productFocus && r.product!==STATE.productFocus) return;
-      src.push({review_id:String(r.review_id), rating:r.rating||0, text:(r.text||'').toLowerCase()});
+      src.push({review_id:String(r.review_id), rating:r.rating||0, text:(r.text||'').toLowerCase(), sentiment:r.sentiment});
     });
   }
   var items=(tax.topics||[]).map(function(tp){
     var matched=txMatchTopic(tp, src, tax);
-    var pos=0,neg=0; matched.forEach(function(r){ if((r.rating||0)>=4) pos++; else neg++; });
+    var pos=0,neg=0; matched.forEach(function(r){ if(senPos(r)) pos++; else neg++; });
     return {name:tp.name, icon:tp.icon||'🏷️', pats:(tp.keywords||[]).slice(), pos:pos, neg:neg, total:pos+neg,
             _ids:matched.map(function(r){return String(r.review_id);})};
   }).filter(function(it){return it.total>0;}).sort(function(a,b){return b.total-a.total;});
@@ -7280,9 +7336,9 @@ function scGetProductReviews(productName, sentiment, rating){
     var seen={};
     rv=rv.filter(function(it){ var k=it.r.review_id; if(seen[k]) return false; seen[k]=true; return true; });
   }
-  if(sentiment==='positive') rv=rv.filter(function(it){return it.r.rating>=4;});
-  else if(sentiment==='negative') rv=rv.filter(function(it){return it.r.rating<=2;});
-  else if(sentiment==='neutral') rv=rv.filter(function(it){return it.r.rating===3;});
+  if(sentiment==='positive') rv=rv.filter(function(it){return senClass(it.r)==='pos';});
+  else if(sentiment==='negative') rv=rv.filter(function(it){return senClass(it.r)==='neg';});
+  else if(sentiment==='neutral') rv=rv.filter(function(it){return senClass(it.r)==='neu';});
   if(rating) rv=rv.filter(function(it){return it.r.rating===rating;});
   // 부정 우선 정렬(부정 컨텍스트) 아니면 별점 높은 순
   if(sentiment==='negative') rv.sort(function(a,b){return a.r.rating-b.r.rating;});
@@ -7465,7 +7521,7 @@ function scInsightRenderList(){
   listEl.innerHTML=shown.map(function(item){
     var r=item.r;
     var stars=''; for(var i=1;i<=5;i++) stars+=i<=r.rating?'★':'☆';
-    var tag=r.rating>=4?'<span style="background:rgba(22,163,74,.12);color:#16a34a;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">긍정 ★'+r.rating+'</span>':r.rating<=2?'<span style="background:rgba(220,38,38,.10);color:#dc2626;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">부정 ★'+r.rating+'</span>':'<span style="background:var(--surface-hover);color:var(--text-secondary);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">중립 ★'+r.rating+'</span>';
+    var tag=senBadge(r);
     var highlighted=escapeHtml(r.text||'');
     hl.forEach(function(tk){
       if(!tk||tk.length<2) return;
