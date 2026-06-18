@@ -1305,6 +1305,7 @@ def build_reviews_index(df: pd.DataFrame, max_body: int = 600) -> dict:
     has_date = "review_date" in df.columns
     has_prod = "product_name" in df.columns
     has_rating = "rating" in df.columns
+    has_sent = "sentiment" in df.columns  # AI 감성분석 결과(positive/neutral/negative)
     for row in df.itertuples(index=False):
         rid = str(getattr(row, "review_id", "")) if has_rid else ""
         if not rid:
@@ -1317,12 +1318,19 @@ def build_reviews_index(df: pd.DataFrame, max_body: int = 600) -> dict:
                     date_str = pd.Timestamp(rv_date).strftime("%Y-%m-%d")
                 except Exception:
                     date_str = ""
-        reviews[rid] = {
+        rec = {
             "rating": int(getattr(row, "rating")) if has_rating and pd.notna(getattr(row, "rating", None)) else 0,
             "date": date_str,
             "product": str(getattr(row, "product_name", "")) if has_prod else "",
             "text": str(getattr(row, "body", ""))[:max_body],
         }
+        # 리뷰별 AI 감성 라벨 — 대시보드의 '감성기준' 토글이 사용(없으면 별점기준 폴백).
+        if has_sent:
+            sv = getattr(row, "sentiment", None)
+            if sv is not None and pd.notna(sv):
+                s = str(sv).strip().lower()
+                rec["sentiment"] = s if s in ("positive", "neutral", "negative") else "neutral"
+        reviews[rid] = rec
     return {"count": len(reviews), "reviews": reviews}
 
 
