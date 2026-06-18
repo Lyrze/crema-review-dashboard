@@ -8409,14 +8409,19 @@ function txUpdateBulkBar(){
 }
 
 // 벌크 액션: 선택된 리뷰들을 특정 Topic으로 분류
-function txBulkAssign(targetTopicId){
+function txBulkAssign(target){
   if(TX_STATE.selectedReviews.size===0) return;
-  if(!targetTopicId){ alert('대상 Topic을 선택하세요.'); return; }
+  if(!target){ alert('대상 Topic을 선택하세요.'); return; }
+  // 값 형식: 'taxonomyId::topicId' (구버전 호환: '::' 없으면 현재 분류의 topicId로 간주)
+  var taxId, topicId;
+  if(String(target).indexOf('::')>=0){ var parts=String(target).split('::'); taxId=parts[0]; topicId=parts[1]; }
+  else { taxId=TX_STATE.activeTaxonomyId; topicId=target; }
   var rids=Array.from(TX_STATE.selectedReviews);
-  txAssignToTopic(TX_STATE.activeTaxonomyId, targetTopicId, rids);
-  var t=TAXONOMIES.find(function(x){return x.id===TX_STATE.activeTaxonomyId;});
-  var tp=t.topics.find(function(x){return x.id===targetTopicId;});
-  showToast('✓ '+rids.length+'건이 "'+(tp?tp.name:'')+'" Topic에 분류됨');
+  txAssignToTopic(taxId, topicId, rids);
+  var t=TAXONOMIES.find(function(x){return x.id===taxId;});
+  var tp=t&&(t.topics||[]).find(function(x){return x.id===topicId;});
+  var other=(taxId!==TX_STATE.activeTaxonomyId && t)?(' ['+t.name+']'):'';
+  showToast('✓ '+rids.length+'건이 "'+(tp?tp.name:'')+'"'+other+' Topic에 분류됨');
   TX_STATE.selectedReviews=new Set();
   txRenderDetail();
 }
@@ -8488,9 +8493,18 @@ function txRenderUnclassified(taxonomy){
 
 // 벌크 액션 바 (선택된 항목들에 대한 일괄 작업)
 function txRenderBulkBar(taxonomy, isUnclassified){
-  var topicOptions=(taxonomy.topics||[]).map(function(tp){
-    return '<option value="'+tp.id+'">'+escapeHtml(tp.name)+'</option>';
-  }).join('');
+  // 대상 Topic 후보 = 전체 (비시스템) Taxonomy 의 모든 Topic. 현재 분류를 맨 위에 두고,
+  // 나머지는 분류별 그룹(optgroup)으로 묶는다. 값은 'taxonomyId::topicId'.
+  function optsFor(tx){
+    return (tx.topics||[]).map(function(tp){
+      return '<option value="'+escapeHtml(tx.id+'::'+tp.id)+'">'+escapeHtml(tp.name)+'</option>';
+    }).join('');
+  }
+  var others=(typeof TAXONOMIES!=='undefined'?TAXONOMIES:[]).filter(function(tx){
+    return !tx.system && tx.id!==taxonomy.id && (tx.topics||[]).length;
+  });
+  var topicOptions='<optgroup label="'+escapeHtml(taxonomy.name)+' (현재)">'+optsFor(taxonomy)+'</optgroup>'+
+    others.map(function(tx){ return '<optgroup label="'+escapeHtml(tx.name)+'">'+optsFor(tx)+'</optgroup>'; }).join('');
   var visible=TX_STATE.selectedReviews.size>0?'flex':'none';
   return '<div id="txd-bulk-bar" style="display:'+visible+';align-items:center;gap:10px;background:var(--accent-bg);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:14px;flex-wrap:wrap;">'+
     '<span class="txd-bulk-count" style="font-size:12.5px;font-weight:700;color:var(--accent);">'+TX_STATE.selectedReviews.size+'건 선택됨</span>'+
