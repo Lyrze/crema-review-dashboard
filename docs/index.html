@@ -2378,6 +2378,17 @@ async function loadIndex(){
     var sel=$('brand-select'); sel.innerHTML='';
     Object.values(idx.brands||{}).forEach(function(b){ var o=document.createElement('option'); o.value=b.display_name; o.textContent=b.display_name; sel.appendChild(o); });
     sel.value=STATE.brand;
+    // 기본 월을 '최신 월'로 (URL ?month= 가 지정돼 있으면 그것을 우선 존중)
+    try{
+      var urlMonth=new URLSearchParams(location.search).get('month');
+      if(!urlMonth){
+        var bb=Object.values(idx.brands||{}).find(function(x){return x.display_name===STATE.brand;});
+        if(bb && bb.months && bb.months.length){
+          var latest=[].concat(bb.months).sort().slice(-1)[0];  // YYYY-MM 사전순 최대 = 최신
+          if(latest) STATE.month=latest;
+        }
+      }
+    }catch(e){}
   }catch(e){ $('brand-select').innerHTML='<option value="슬룸">슬룸</option>'; }
   populateMonths();
   await reload();
