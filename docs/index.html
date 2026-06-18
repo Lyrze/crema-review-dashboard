@@ -7736,11 +7736,13 @@ function txMergeIncoming(incoming){
     });
     cur.manualClassifications=cur.manualClassifications||{};
     var inc=it.manualClassifications||{};
+    // 리뷰별 분류 상태(include/exclude)는 '그 리뷰의 현재 상태'를 통째로 나타낸다.
+    //   union(합집합)으로 합치면 제외(exclude)·재포함 같은 '되돌리기'가 전파되지 않는다
+    //   (상대 화면에 include가 남아 매칭에서 계속 이김). 그래서 들어온 스냅샷(가장 최근 전체
+    //   저장본)을 리뷰 단위로 그대로 반영한다 = last-write-wins per review.
+    //   스냅샷에 없는 리뷰(상대가 안 건드린 리뷰)는 로컬 값을 유지 → 서로 다른 리뷰 동시 작업 보존.
     Object.keys(inc).forEach(function(rid){
-      var a=cur.manualClassifications[rid]||{include:[],exclude:[]};
-      var b=inc[rid]||{include:[],exclude:[]};
-      function uniq(arr){var o={};(arr||[]).forEach(function(x){o[x]=1;});return Object.keys(o);}
-      cur.manualClassifications[rid]={include:uniq((a.include||[]).concat(b.include||[])),exclude:uniq((a.exclude||[]).concat(b.exclude||[]))};
+      cur.manualClassifications[rid]=inc[rid];
     });
   });
   txSave();
