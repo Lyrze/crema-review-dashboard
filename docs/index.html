@@ -6542,7 +6542,8 @@ function renderProductVOC(){
   var container=$('prod-voc'); if(!container) return;
   var tax=(typeof TAXONOMIES!=='undefined')?TAXONOMIES.find(function(t){return t.id==='tx-product';}):null;
   if(!tax || !(tax.topics||[]).length){
-    container.innerHTML='<div style="padding:24px;text-align:center;color:var(--text-secondary);font-size:12.5px;">제품 경험 분류가 아직 없습니다. Taxonomy 페이지를 한 번 열면 자동 생성됩니다.</div>';
+    container.innerHTML='<div style="padding:24px;text-align:center;color:var(--text-secondary);font-size:12.5px;">이 브랜드의 제품 경험 분류가 비어 있습니다. '+
+      '<span onclick="showTaxonomyPage();setTimeout(function(){txOpenTaxonomy(\'tx-product\');},60);" style="color:var(--accent);font-weight:700;cursor:pointer;">Taxonomy(🧩 제품 경험)</span>에서 토픽·키워드를 추가하세요.</div>';
     return;
   }
   // 대상 리뷰 (productFocus 존중)
@@ -7575,18 +7576,21 @@ var PRODUCT_TAXONOMY = {
 };
 
 // 제품 경험 고정 분류 시드/마이그레이션 — 없으면 생성(삭제 후 재로드 시 초기화 동작)
+//   기본 키워드는 슬룸(마사지/자세교정 기기)에 특화됨 → 슬룸만 키워드 시드.
+//   다른 브랜드는 '빈 분류'로 생성(토픽 0개) → 나중에 그 브랜드 키워드를 받아 채운다.
 function txEnsureProductTaxonomy(){
   if(typeof PRODUCT_TAXONOMY==='undefined') return;
   if(TAXONOMIES.some(function(t){return t.id===PRODUCT_TAXONOMY.id;})) return;
+  var isSloom = (STATE.brand||'슬룸')==='슬룸';
   TAXONOMIES.push({
     id:PRODUCT_TAXONOMY.id,
     product:true,
     name:PRODUCT_TAXONOMY.name,
     favorite:false,
     description:PRODUCT_TAXONOMY.description,
-    topics:PRODUCT_TAXONOMY.topics.map(function(it,i){
+    topics: isSloom ? PRODUCT_TAXONOMY.topics.map(function(it,i){
       return {id:'t-prod-'+i, name:it.name, icon:it.icon, keywords:it.keywords.slice(), mode:'any'};
-    })
+    }) : []  // 신규 브랜드: 빈 분류 — Taxonomy(🧩 제품 경험)에서 토픽·키워드 추가
   });
   txSave();
 }
