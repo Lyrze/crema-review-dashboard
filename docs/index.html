@@ -2453,7 +2453,15 @@ async function loadData(brand,month){
   if(anyFailed) console.warn('일부 JSON 로드 실패 — 기본 데이터로 표시 중');
 }
 
-function onBrandChange(v){ STATE.brand=v; populateMonths(); reload(); }
+function onBrandChange(v){
+  STATE.brand=v;
+  try{ txLoad(); }catch(e){}                      // 새 브랜드의 분류 로드 (전역 TAXONOMIES 교체)
+  try{ if(typeof FW!=='undefined' && FW.ready && FW.enabled) fwEnable(); }catch(e){} // Firebase 리스너를 새 브랜드 문서로 재구독
+  try{ localStorage.removeItem('sc_sku1'); localStorage.removeItem('sc_sku2'); }catch(e){} // 이전 브랜드 SKU 비교 선택 초기화
+  if(document.body.classList.contains('taxonomy-mode')){ try{ txBackToList(); }catch(e){} } // 분류 화면 보던 중이면 목록으로(다른 브랜드 분류였음)
+  populateMonths();
+  reload();
+}
 function onMonthChange(v){
   STATE.month=v;
   // 월 전환 시 기간 필터 초기화 — 이전 월 날짜가 남으면 새 월 타임라인이 비어 보임
@@ -7497,9 +7505,23 @@ var TX_STATE = { activeTaxonomyId:null, activeTopicId:null, editingTopicId:null,
 // 'unclassified' = 가상 토픽 ID (어떤 Topic에도 매칭 안 된 리뷰)
 var TX_UNCLASSIFIED = '__unclassified__';
 
+// 분류는 브랜드별로 분리 저장한다(키: taxonomies::{brand}). 전역 1개로 두면 브랜드를
+//   추가했을 때 분류·수동분류가 서로 섞이고, 브랜드별 Firestore 문서와도 어긋난다.
+function txStorageKey(){ return 'taxonomies::'+(STATE.brand||'슬룸'); }
+
 function txLoad(){
   try{
-    var raw=localStorage.getItem('taxonomies');
+    var key=txStorageKey();
+    var raw=localStorage.getItem(key);
+    if(raw===null){
+      // 레거시 전역 키 마이그레이션 — 현재 브랜드 키로 1회 이전 후 전역 키 제거
+      //   (다른 브랜드로 다시 새지 않도록 제거. 기존엔 슬룸 단일이라 슬룸으로 귀속됨)
+      var legacy=localStorage.getItem('taxonomies');
+      if(legacy!==null){
+        raw=legacy;
+        try{ localStorage.setItem(key, legacy); localStorage.removeItem('taxonomies'); }catch(e){}
+      }
+    }
     if(raw){
       TAXONOMIES=JSON.parse(raw);
       txCleanupLegacySeeds();      // 미사용 기본 시드 정리 (Saved topics·예시 불량 라벨)
@@ -7508,7 +7530,7 @@ function txLoad(){
       return;
     }
   }catch(e){}
-  // 첫 사용 시 — 고정 분류(구매여정 + 제품 경험) 시드
+  // 첫 사용(또는 신규 브랜드 첫 접속) — 고정 분류(구매여정 + 제품 경험) 시드
   TAXONOMIES=[];
   txEnsurePvocTaxonomies();
   txEnsureProductTaxonomy();
@@ -7593,7 +7615,7 @@ function txEnsurePvocTaxonomies(){
 }
 
 function txSave(){
-  try{ localStorage.setItem('taxonomies', JSON.stringify(TAXONOMIES)); }catch(e){}
+  try{ localStorage.setItem(txStorageKey(), JSON.stringify(TAXONOMIES)); }catch(e){}
   if(typeof FW!=='undefined' && FW.enabled && !FW.applying) fwPush();
 }
 
