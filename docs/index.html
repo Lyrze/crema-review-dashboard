@@ -1014,6 +1014,9 @@
   <!-- 데이터 로드 실패 경고 배너 (loadData에서 표시 제어) -->
   <div id="data-load-banner" style="display:none;margin:0 0 14px;padding:10px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;color:#b91c1c;font-size:12.5px;font-weight:600;">⚠️ 일부 데이터 파일을 불러오지 못했습니다. 표시 중인 수치가 최신이 아닐 수 있습니다 — 새로고침(Ctrl+Shift+R) 후에도 계속되면 담당자에게 알려주세요.</div>
 
+  <!-- 🔎 신규 키워드 후보 (검토형) — 부정 미포착 리뷰에서 발굴, 채택/무시 -->
+  <div id="kwcand-panel" style="display:none;margin:0 0 16px;"></div>
+
   <!-- ── Syncly 스타일 상단 필터 칩 바 ── -->
   <!-- ───────── Taxonomy 페이지 (분류 관리) ───────── -->
   <div id="taxonomy-page">
@@ -2450,8 +2453,8 @@ function populateMonths(){
 
 async function loadData(brand,month){
   var base='data/'+encodeURIComponent(brand)+'/'+month;
-  var res=await Promise.allSettled([fetchJSON(base+'/summary.json'),fetchJSON(base+'/products.json'),fetchJSON(base+'/keywords.json'),fetchJSON(base+'/reviews.json'),fetchJSON(base+'/pvoc_intent.json')]);
-  // reviews.json(4번째)·pvoc_intent.json(5번째)은 선택 — 실패해도 배너 띄우지 않음
+  var res=await Promise.allSettled([fetchJSON(base+'/summary.json'),fetchJSON(base+'/products.json'),fetchJSON(base+'/keywords.json'),fetchJSON(base+'/reviews.json'),fetchJSON(base+'/pvoc_intent.json'),fetchJSON(base+'/keyword_candidates.json')]);
+  // reviews(4)·pvoc_intent(5)·keyword_candidates(6)는 선택 — 실패해도 배너 안 띄움
   var anyFailed=res.slice(0,3).some(function(r){return r.status==='rejected';});
   STATE.summary  = res[0].status==='fulfilled' ? res[0].value : REAL_DATA.summary;
   STATE.products = res[1].status==='fulfilled' ? (res[1].value.products||[]) : REAL_DATA.products;
@@ -2460,6 +2463,8 @@ async function loadData(brand,month){
   STATE.reviewsById = (res[3].status==='fulfilled' && res[3].value && res[3].value.reviews) ? res[3].value.reviews : null;
   // PVOC 감성기반 데이터 (선택) — 토픽별 칭찬/불만 review_id (없으면 별점 폴백)
   STATE.pvocIntent = (res[4] && res[4].status==='fulfilled' && res[4].value && res[4].value.topics) ? res[4].value : null;
+  // 신규 키워드 후보(검토형) — 부정 미포착 리뷰에서 발굴, 사람이 채택/무시
+  STATE.keywordCandidates = (res[5] && res[5].status==='fulfilled' && res[5].value && Array.isArray(res[5].value.candidates)) ? res[5].value : null;
   STATE.brand=brand; STATE.month=month;
   // 상품 필터가 현재 월/브랜드에 없는 상품이면 해제 (칩만 남고 데이터는 브랜드로 폴백되는 불일치 방지)
   if(STATE.productFocus && !(STATE.products||[]).some(function(p){return p.name===STATE.productFocus;})){
@@ -2494,7 +2499,7 @@ function onMonthChange(v){
 }
 async function reload(){ await loadData(STATE.brand,STATE.month); render(); }
 
-function render(){ if(typeof COMPARE_STATE!=='undefined'){ if(COMPARE_STATE.active) applyCompareBaseline(); else restoreCompareBaseline(); } renderHeader(); renderExec(); renderSKUScorecards(); renderKPI(); renderTimeline(); renderSKUTable(); renderSKUCombo(); renderChangeTables(); renderVOC(); updateProductFocusBar(); updateCustomAIModelLabel(); populateCompareMonths(); updateCompareBanner(); renderPVOCKanban(); renderProductVOC(); syncChipBarFromState(); if(typeof syncSentToggle==='function') syncSentToggle(); refreshOpenInsightModal(); setTimeout(enhanceCardActions,50); }
+function render(){ if(typeof COMPARE_STATE!=='undefined'){ if(COMPARE_STATE.active) applyCompareBaseline(); else restoreCompareBaseline(); } renderHeader(); renderExec(); renderSKUScorecards(); renderKPI(); renderTimeline(); renderSKUTable(); renderSKUCombo(); renderChangeTables(); renderVOC(); updateProductFocusBar(); updateCustomAIModelLabel(); populateCompareMonths(); updateCompareBanner(); renderPVOCKanban(); renderProductVOC(); if(typeof renderKeywordCandidates==='function') renderKeywordCandidates(); syncChipBarFromState(); if(typeof syncSentToggle==='function') syncSentToggle(); refreshOpenInsightModal(); setTimeout(enhanceCardActions,50); }
 
 // View Insight 모달이 열려 있으면 인사이트 카드 숫자도 즉시 갱신
 function refreshOpenInsightModal(){
@@ -6670,6 +6675,68 @@ function prodVocOpen(ii){
     return {name:rv.product||'(상품 미상)', r:{review_id:String(id), rating:rv.rating, date:rv.date, text:rv.text}};
   }).filter(function(x){return !!x;});
   openKeywordReviewsModal(it.name, STATE.productFocus||null, domType, (it.pats||[]).join('|'), explicit);
+}
+
+// ── 🔎 신규 키워드 후보 (검토형) — 부정 미포착 리뷰 발굴 → 채택/무시 ──
+function kwcandDecidedKey(){ return 'kwcand_decided::'+(STATE.brand||'')+'::'+(STATE.month||''); }
+function kwcandDecided(){ try{ return JSON.parse(localStorage.getItem(kwcandDecidedKey())||'{}'); }catch(e){ return {}; } }
+function kwcandSaveDecided(d){ try{ localStorage.setItem(kwcandDecidedKey(), JSON.stringify(d)); }catch(e){} }
+function renderKeywordCandidates(){
+  var panel=$('kwcand-panel'); if(!panel) return;
+  var data=STATE.keywordCandidates;
+  if(!data || !Array.isArray(data.candidates) || !data.candidates.length){ panel.style.display='none'; panel.innerHTML=''; return; }
+  var decided=kwcandDecided();
+  var rows=data.candidates.map(function(c, idx){
+    if(decided[c.word]) return '';
+    var isImp=c.type==='improvement';
+    var badge=isImp
+      ? '<span style="background:var(--warning-bg);color:var(--warning);font-size:10px;font-weight:800;padding:2px 8px;border-radius:8px;">개선요청</span>'
+      : '<span style="background:var(--negative-bg);color:var(--negative);font-size:10px;font-weight:800;padding:2px 8px;border-radius:8px;">불만</span>';
+    var samples=(c.samples||[]).slice(0,2).map(function(s){
+      return '<div style="font-size:11px;color:var(--text-secondary);margin-top:3px;line-height:1.4;">★'+(s.rating||'')+' '+escapeHtml((s.text||'').slice(0,72))+'</div>';
+    }).join('');
+    return '<div style="display:flex;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--card);margin-bottom:8px;">'+
+      '<div style="min-width:0;flex:1;">'+badge+' <b style="font-size:13px;">'+escapeHtml(c.word)+'</b> <span style="color:var(--text-secondary);font-size:11px;">'+(c.count||0)+'건</span>'+samples+'</div>'+
+      '<div style="display:flex;gap:6px;flex-shrink:0;align-items:flex-start;">'+
+        '<button onclick="kwcandAdopt('+idx+')" style="padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">➕ 채택</button>'+
+        '<button onclick="kwcandDismiss('+idx+')" style="padding:6px 10px;background:transparent;color:var(--text-secondary);border:1px solid var(--border);border-radius:7px;font-size:11.5px;cursor:pointer;font-family:inherit;white-space:nowrap;">✕ 무시</button>'+
+      '</div></div>';
+  }).join('');
+  var pendingCount=data.candidates.filter(function(c){return !decided[c.word];}).length;
+  if(pendingCount===0){ panel.style.display='none'; panel.innerHTML=''; return; }
+  panel.innerHTML='<div style="background:var(--accent-bg);border:1px solid var(--accent);border-radius:12px;padding:13px 15px;">'+
+    '<div style="font-weight:800;font-size:13.5px;color:var(--accent);margin-bottom:3px;">🔎 신규 키워드 후보 '+pendingCount+'건 — 검토 필요</div>'+
+    '<div style="font-size:11.5px;color:var(--text-secondary);margin-bottom:11px;">부정 리뷰 중 <b>기존 불만 키워드에 안 잡힌</b> 것에서 발굴했습니다. <b>채택</b>하면 Taxonomy <b>🔎 발굴 키워드</b>에 추가되어 분류에 반영됩니다(키워드 학습으로 규칙 보강 가능).</div>'+
+    rows+'</div>';
+  panel.style.display='block';
+}
+function kwcandDismiss(idx){
+  var data=STATE.keywordCandidates; if(!data||!data.candidates[idx]) return;
+  var d=kwcandDecided(); d[data.candidates[idx].word]='ignore'; kwcandSaveDecided(d);
+  renderKeywordCandidates();
+}
+function kwcandAdopt(idx){
+  var data=STATE.keywordCandidates; if(!data||!data.candidates[idx]) return;
+  var c=data.candidates[idx];
+  try{
+    var tax=(typeof TAXONOMIES!=='undefined')?TAXONOMIES.find(function(t){return t.id==='tx-discovered';}):null;
+    if(!tax){
+      tax={id:'tx-discovered', discovered:true, name:'🔎 발굴 키워드', favorite:false,
+           description:'부정 리뷰에서 발굴해 채택한 키워드(검토형). 키워드 학습으로 규칙을 보강하세요.', topics:[]};
+      TAXONOMIES.push(tax);
+    }
+    var tid='t-disc-'+tax.topics.length+'-'+(''+(c.word)).replace(/[^가-힣a-zA-Z0-9]/g,'').slice(0,8);
+    var icon=c.type==='improvement'?'🛠️':'⚠️';
+    tax.topics.push({id:tid, name:icon+' '+c.word, keywords:[c.word], mode:'any'});
+    txSave();
+    // 발굴된 실제 리뷰들을 그 토픽에 수동 배정 → 키워드 매칭이 약해도 즉시 채워짐
+    if(typeof txAssignToTopic==='function' && (c.review_ids||[]).length){
+      txAssignToTopic('tx-discovered', tid, c.review_ids.map(String));
+    }
+  }catch(e){ console.warn('후보 채택 실패', e); }
+  var d=kwcandDecided(); d[c.word]='adopt'; kwcandSaveDecided(d);
+  renderKeywordCandidates();
+  if(typeof showToast==='function') showToast('➕ 채택: "'+c.word+'" → 🔎 발굴 키워드 ('+((c.review_ids||[]).length)+'건 배정)');
 }
 
 // ═══════════════════════════════════════════════

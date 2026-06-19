@@ -64,6 +64,13 @@ if not "!PVOC_REVERIFY_FLAG!"=="" (
   python scripts\reverify_pvoc_intent.py --brand "!BRAND!" --month "!MONTH!" !PVOC_REVERIFY_FLAG!
 )
 
+:: [3.8/4] 신규 키워드 후보 발굴 (부정 미포착 → 검토형) - AI_FLAG 있을 때만
+if not "!AI_FLAG!"=="--skip-ai" (
+  echo.
+  echo  [3.8/4] 신규 키워드 후보 발굴 중 - 부정 미포착 리뷰 클러스터링...
+  python scripts\discover_keywords.py --brand "!BRAND!" --month "!MONTH!" !AI_FLAG!
+)
+
 :: 처리 결과
 python scripts\show_result.py "!BRAND!" "!MONTH!" 2>nul
 
