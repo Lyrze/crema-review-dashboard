@@ -16,12 +16,12 @@
       },
       "photo_count": 19,
       "sentiment": {
-        "positive": 1201,
-        "neutral": 96,
-        "negative": 5
+        "positive": 1230,
+        "neutral": 63,
+        "negative": 9
       },
-      "positive_rate": 92.24,
-      "negative_rate": 0.38,
+      "positive_rate": 94.47,
+      "negative_rate": 0.69,
       "prev_review_count": 722,
       "prev_avg_rating": 4.67,
       "top_reviews": [
@@ -255,11 +255,11 @@
       },
       "photo_count": 6,
       "sentiment": {
-        "positive": 219,
-        "neutral": 0,
+        "positive": 216,
+        "neutral": 3,
         "negative": 0
       },
-      "positive_rate": 100.0,
+      "positive_rate": 98.63,
       "negative_rate": 0.0,
       "prev_review_count": null,
       "prev_avg_rating": null,
@@ -463,12 +463,12 @@
       },
       "photo_count": 70,
       "sentiment": {
-        "positive": 153,
-        "neutral": 24,
-        "negative": 22
+        "positive": 104,
+        "neutral": 46,
+        "negative": 49
       },
-      "positive_rate": 76.88,
-      "negative_rate": 11.06,
+      "positive_rate": 52.26,
+      "negative_rate": 24.62,
       "prev_review_count": 334,
       "prev_avg_rating": 4.24,
       "top_reviews": [
@@ -804,12 +804,12 @@
       },
       "photo_count": 26,
       "sentiment": {
-        "positive": 65,
-        "neutral": 5,
-        "negative": 2
+        "positive": 47,
+        "neutral": 20,
+        "negative": 5
       },
-      "positive_rate": 90.28,
-      "negative_rate": 2.78,
+      "positive_rate": 65.28,
+      "negative_rate": 6.94,
       "prev_review_count": 74,
       "prev_avg_rating": 4.66,
       "top_reviews": [
@@ -1055,12 +1055,12 @@
       },
       "photo_count": 27,
       "sentiment": {
-        "positive": 53,
-        "neutral": 0,
-        "negative": 0
+        "positive": 38,
+        "neutral": 14,
+        "negative": 1
       },
-      "positive_rate": 100.0,
-      "negative_rate": 0.0,
+      "positive_rate": 71.7,
+      "negative_rate": 1.89,
       "prev_review_count": 18,
       "prev_avg_rating": 4.67,
       "top_reviews": [
@@ -1263,12 +1263,12 @@
       },
       "photo_count": 17,
       "sentiment": {
-        "positive": 25,
-        "neutral": 0,
-        "negative": 1
+        "positive": 19,
+        "neutral": 4,
+        "negative": 3
       },
-      "positive_rate": 96.15,
-      "negative_rate": 3.85,
+      "positive_rate": 73.08,
+      "negative_rate": 11.54,
       "prev_review_count": 6,
       "prev_avg_rating": 5.0,
       "top_reviews": [
@@ -1454,11 +1454,11 @@
       },
       "photo_count": 8,
       "sentiment": {
-        "positive": 22,
-        "neutral": 1,
+        "positive": 19,
+        "neutral": 4,
         "negative": 1
       },
-      "positive_rate": 91.67,
+      "positive_rate": 79.17,
       "negative_rate": 4.17,
       "prev_review_count": 72,
       "prev_avg_rating": 4.67,
@@ -1639,11 +1639,11 @@
       },
       "photo_count": 9,
       "sentiment": {
-        "positive": 19,
-        "neutral": 0,
+        "positive": 15,
+        "neutral": 4,
         "negative": 0
       },
-      "positive_rate": 100.0,
+      "positive_rate": 78.95,
       "negative_rate": 0.0,
       "prev_review_count": null,
       "prev_avg_rating": null,
@@ -1781,11 +1781,11 @@
       },
       "photo_count": 4,
       "sentiment": {
-        "positive": 17,
-        "neutral": 0,
+        "positive": 12,
+        "neutral": 5,
         "negative": 1
       },
-      "positive_rate": 94.44,
+      "positive_rate": 66.67,
       "negative_rate": 5.56,
       "prev_review_count": 37,
       "prev_avg_rating": 4.73,
@@ -1924,12 +1924,12 @@
       },
       "photo_count": 8,
       "sentiment": {
-        "positive": 10,
+        "positive": 7,
         "neutral": 3,
-        "negative": 1
+        "negative": 4
       },
-      "positive_rate": 71.43,
-      "negative_rate": 7.14,
+      "positive_rate": 50.0,
+      "negative_rate": 28.57,
       "prev_review_count": 3,
       "prev_avg_rating": 2.33,
       "top_reviews": [
@@ -2061,12 +2061,12 @@
       },
       "photo_count": 3,
       "sentiment": {
-        "positive": 6,
-        "neutral": 0,
-        "negative": 1
+        "positive": 4,
+        "neutral": 1,
+        "negative": 2
       },
-      "positive_rate": 85.71,
-      "negative_rate": 14.29,
+      "positive_rate": 57.14,
+      "negative_rate": 28.57,
       "prev_review_count": 7,
       "prev_avg_rating": 5.0,
       "top_reviews": [
@@ -2208,12 +2208,12 @@
       },
       "photo_count": 1,
       "sentiment": {
-        "positive": 4,
+        "positive": 3,
         "neutral": 1,
-        "negative": 0
+        "negative": 1
       },
-      "positive_rate": 80.0,
-      "negative_rate": 0.0,
+      "positive_rate": 60.0,
+      "negative_rate": 20.0,
       "prev_review_count": 10,
       "prev_avg_rating": 4.2,
       "top_reviews": [
@@ -2273,12 +2273,12 @@
       },
       "photo_count": 1,
       "sentiment": {
-        "positive": 2,
-        "neutral": 2,
-        "negative": 0
+        "positive": 1,
+        "neutral": 1,
+        "negative": 2
       },
-      "positive_rate": 50.0,
-      "negative_rate": 0.0,
+      "positive_rate": 25.0,
+      "negative_rate": 50.0,
       "prev_review_count": 4,
       "prev_avg_rating": 4.5,
       "top_reviews": [
@@ -2338,11 +2338,11 @@
       },
       "photo_count": 4,
       "sentiment": {
-        "positive": 4,
-        "neutral": 0,
+        "positive": 2,
+        "neutral": 2,
         "negative": 0
       },
-      "positive_rate": 100.0,
+      "positive_rate": 50.0,
       "negative_rate": 0.0,
       "prev_review_count": 5,
       "prev_avg_rating": 5.0,
@@ -2390,11 +2390,11 @@
       },
       "photo_count": 1,
       "sentiment": {
-        "positive": 3,
-        "neutral": 0,
+        "positive": 0,
+        "neutral": 3,
         "negative": 0
       },
-      "positive_rate": 100.0,
+      "positive_rate": 0.0,
       "negative_rate": 0.0,
       "prev_review_count": 1,
       "prev_avg_rating": 5.0,
@@ -2436,11 +2436,11 @@
       },
       "photo_count": 1,
       "sentiment": {
-        "positive": 2,
-        "neutral": 1,
+        "positive": 1,
+        "neutral": 2,
         "negative": 0
       },
-      "positive_rate": 66.67,
+      "positive_rate": 33.33,
       "negative_rate": 0.0,
       "prev_review_count": 3,
       "prev_avg_rating": 4.0,
@@ -2535,11 +2535,11 @@
       },
       "photo_count": 2,
       "sentiment": {
-        "positive": 2,
-        "neutral": 0,
+        "positive": 1,
+        "neutral": 1,
         "negative": 0
       },
-      "positive_rate": 100.0,
+      "positive_rate": 50.0,
       "negative_rate": 0.0,
       "prev_review_count": 3,
       "prev_avg_rating": 5.0,
@@ -2615,12 +2615,12 @@
       },
       "photo_count": 1,
       "sentiment": {
-        "positive": 1,
+        "positive": 0,
         "neutral": 1,
-        "negative": 0
+        "negative": 1
       },
-      "positive_rate": 50.0,
-      "negative_rate": 0.0,
+      "positive_rate": 0.0,
+      "negative_rate": 50.0,
       "prev_review_count": 2,
       "prev_avg_rating": 4.0,
       "top_reviews": [
@@ -2702,11 +2702,11 @@
       },
       "photo_count": 2,
       "sentiment": {
-        "positive": 2,
-        "neutral": 0,
+        "positive": 1,
+        "neutral": 1,
         "negative": 0
       },
-      "positive_rate": 100.0,
+      "positive_rate": 50.0,
       "negative_rate": 0.0,
       "prev_review_count": null,
       "prev_avg_rating": null,
@@ -2810,11 +2810,11 @@
       },
       "photo_count": 0,
       "sentiment": {
-        "positive": 1,
-        "neutral": 0,
+        "positive": 0,
+        "neutral": 1,
         "negative": 0
       },
-      "positive_rate": 100.0,
+      "positive_rate": 0.0,
       "negative_rate": 0.0,
       "prev_review_count": 4,
       "prev_avg_rating": 5.0,
@@ -2885,11 +2885,11 @@
       },
       "photo_count": 1,
       "sentiment": {
-        "positive": 1,
-        "neutral": 0,
+        "positive": 0,
+        "neutral": 1,
         "negative": 0
       },
-      "positive_rate": 100.0,
+      "positive_rate": 0.0,
       "negative_rate": 0.0,
       "prev_review_count": 7,
       "prev_avg_rating": 5.0,

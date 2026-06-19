@@ -1,7 +1,7 @@
 {
   "brand": "슬룸",
   "month": "2026-03",
-  "generated_at": "2026-06-15T09:59:14.627864",
+  "generated_at": "2026-06-18T17:05:30.207955",
   "kpis": {
     "total_reviews": 1332,
     "avg_rating": 4.55,
@@ -14,11 +14,11 @@
     },
     "photo_review_count": 269,
     "photo_review_rate": 20.2,
-    "positive_count": 1188,
-    "neutral_count": 102,
-    "negative_count": 42,
-    "positive_rate": 89.19,
-    "negative_rate": 3.15,
+    "positive_count": 1060,
+    "neutral_count": 175,
+    "negative_count": 97,
+    "positive_rate": 79.58,
+    "negative_rate": 7.28,
     "mom_review_change": null,
     "mom_review_change_pct": null,
     "mom_rating_change": null
