@@ -19,8 +19,16 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 # 개선요청 신호어 — 미포착 부정 중 '변화 요구'를 improvement 로 우선 분류하는 힌트
-_IMPROVE_HINT = ("했으면", "하면 좋", "되면 좋", "개선", "추가", "바랍니다", "원해요", "있으면",
-                 "좋겠", "였으면", "더 ", "조절", "기능이 있")
+# (덜 엄격하게: '있으면 좋겠다 / 됐으면 / 아쉽다 / 부족하다' 같은 약한 뉘앙스도 포함)
+_IMPROVE_HINT = ("했으면", "하면 좋", "되면 좋", "면 좋겠", "으면 좋겠", "었으면", "였으면", "있으면",
+                 "개선", "보완", "업그레이드", "강화", "추가", "생겼으면", "나왔으면",
+                 "바랍니다", "바래요", "원해요", "주세요", "해주", "지원", "옵션", "선택할 수",
+                 "필요", "아쉽", "아쉬", "부족", "없어서", "없네", "없으니", "안 되", "안되",
+                 "조절", "기능이 있", "좋겠", "기대", "더 ")
+# 강한 개선 신호 — AI가 complaint로 줘도 이 신호가 있으면 improvement 로 승격(과도 전환 방지용 보수적 집합)
+_IMPROVE_STRONG = ("있으면 좋", "었으면 좋", "였으면 좋", "면 좋겠", "으면 좋겠", "했으면", "되면 좋",
+                   "추가되", "추가해", "개선해", "개선되", "보완", "업그레이드", "지원해", "지원되",
+                   "생겼으면", "나왔으면", "주세요", "필요해", "필요할")
 
 
 def eprint(*a, **k):
@@ -77,7 +85,9 @@ def main():
         "다음은 '부정적이지만 기존 불만 키워드에 안 잡힌' 제품 리뷰들이다. "
         "반복되는 불만·개선요청을 5~10개의 키워드로 묶어라.\n"
         "- word: 짧은 한국어 명사구(예: '에어튜브 크기', '버튼 위치', '진동 강도')\n"
-        "- type: 'complaint'(불만·문제) 또는 'improvement'(개선요청 — ~했으면/추가/개선/조절 등 변화 요구)\n"
+        "- type: 'complaint'(고장·불량·단순 불만) 또는 'improvement'(개선요청). "
+        "improvement는 너그럽게 분류하라 — '~있으면 좋겠다 / ~됐으면 / ~해주세요 / ~추가 / ~지원 / ~옵션 / 아쉽다 / 부족하다' "
+        "처럼 변화·추가를 바라는 약한 뉘앙스도 모두 improvement로 본다. 명백한 고장·환불·불량만 complaint.\n"
         "- reviews: 그 키워드에 해당하는 위 리뷰 번호 배열\n\n"
         "[리뷰]\n" + "\n".join(lines) + "\n\n"
         'JSON 배열로만 출력: [{"word":"키워드","type":"complaint","reviews":[0,2]}]'
@@ -114,10 +124,13 @@ def main():
             rids = [sample[i][0] for i in idxs]
             texts = [(sample[i][2], sample[i][1]) for i in idxs]
             ctype = str(c.get("type", "complaint")).strip().lower()
+            joined = (word + " " + " ".join(t for _, t in texts))
             if ctype not in ("complaint", "improvement"):
                 # 힌트로 보정
-                joined = " ".join(t for _, t in texts)
                 ctype = "improvement" if any(h in joined for h in _IMPROVE_HINT) else "complaint"
+            elif ctype == "complaint" and any(h in joined for h in _IMPROVE_STRONG):
+                # AI가 불만으로 줬어도 강한 개선 신호가 있으면 개선요청으로 승격(덜 엄격)
+                ctype = "improvement"
             cands.append({
                 "word": word, "type": ctype, "count": len(rids),
                 "review_ids": [str(r) for r in rids],
