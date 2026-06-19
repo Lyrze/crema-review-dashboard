@@ -1468,20 +1468,68 @@ def run_pipeline(args: argparse.Namespace) -> None:
 
             analyzer = OllamaAnalyzer(model=args.ollama_model, base_url=args.ollama_url)
             if analyzer.health_check():
+                # 배치당 하드 타임아웃 — Ollama 가 hang 해도 무한 대기 방지(과거 7시간 멈춤 재발 방지).
+                # 연속 타임아웃 N회면 감성분석 중단 → 나머지는 라벨 없음(대시보드 별점 폴백).
+                from concurrent.futures import ThreadPoolExecutor, TimeoutError as _FT
+                SENT_BATCH_TIMEOUT = 60   # 초/배치
+                SENT_MAX_CONSEC = 3       # 연속 타임아웃 허용 횟수 → 초과 시 중단
+
+                def _rating_sent(rt):
+                    """타임아웃/오류 시 그 리뷰의 별점으로 감성 폴백(집계 일관성 유지)."""
+                    try: rt = int(rt)
+                    except Exception: rt = 0
+                    return {"sentiment": "positive" if rt >= 4 else ("neutral" if rt == 3 else "negative"),
+                            "score": 0.5, "reason": "별점 폴백(감성 타임아웃)"}
+
                 progress = Progress(len(df), desc="감성 분석")
                 sentiments: List[dict] = []
                 batch_size = 5
+                _ex = ThreadPoolExecutor(max_workers=1)
+                _consec = 0
+                _aborted = False
+                _fallback_cnt = 0
 
                 for i in range(0, len(df), batch_size):
                     batch = df.iloc[i: i + batch_size]
-                    results = analyzer.analyze_sentiment_batch(batch["body"].tolist())
-                    sentiments.extend(results)
+                    ratings = batch["rating"].tolist()
+                    if _aborted:
+                        sentiments.extend([_rating_sent(rt) for rt in ratings])  # 나머지는 별점 폴백
+                        _fallback_cnt += len(batch)
+                        progress.update(len(batch))
+                        continue
+                    _fut = _ex.submit(analyzer.analyze_sentiment_batch, batch["body"].tolist())
+                    try:
+                        results = _fut.result(timeout=SENT_BATCH_TIMEOUT)
+                        sentiments.extend(results)
+                        _consec = 0
+                    except _FT:
+                        _consec += 1
+                        logger.warning("  감성 배치 타임아웃 (연속 %d) @%d — 별점 폴백", _consec, i)
+                        try: _ex.shutdown(wait=False, cancel_futures=True)
+                        except Exception: pass
+                        _ex = ThreadPoolExecutor(max_workers=1)   # 멈춘 스레드 버리고 새 실행기
+                        try: analyzer = OllamaAnalyzer(model=args.ollama_model, base_url=args.ollama_url)
+                        except Exception: pass
+                        sentiments.extend([_rating_sent(rt) for rt in ratings])
+                        _fallback_cnt += len(batch)
+                        if _consec >= SENT_MAX_CONSEC:
+                            logger.warning("  감성 연속 타임아웃 %d회 → 감성분석 중단, 나머지는 별점 폴백", SENT_MAX_CONSEC)
+                            _aborted = True
+                    except Exception as exc:  # noqa: BLE001
+                        logger.warning("  감성 배치 오류 @%d: %s — 별점 폴백", i, exc)
+                        sentiments.extend([_rating_sent(rt) for rt in ratings])
+                        _fallback_cnt += len(batch)
                     progress.update(len(batch))
 
+                try: _ex.shutdown(wait=False)
+                except Exception: pass
                 df["sentiment"] = [r.get("sentiment", "neutral") for r in sentiments]
                 df["sentiment_score"] = [r.get("score", 0.5) for r in sentiments]
                 df["sentiment_reason"] = [r.get("reason", "") for r in sentiments]
-                logger.info("  감성 분석 완료: %d건", len(sentiments))
+                if _fallback_cnt:
+                    logger.warning("  감성 분석 완료(%d건) — 그중 %d건은 타임아웃으로 별점 폴백", len(sentiments), _fallback_cnt)
+                else:
+                    logger.info("  감성 분석 완료: %d건", len(sentiments))
             else:
                 logger.warning("Ollama 서버 응답 없음 → 별점 기반 감성 추정으로 대체")
                 skip_ai = True
