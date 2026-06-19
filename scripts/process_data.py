@@ -1306,6 +1306,7 @@ def build_reviews_index(df: pd.DataFrame, max_body: int = 600) -> dict:
     has_prod = "product_name" in df.columns
     has_rating = "rating" in df.columns
     has_sent = "sentiment" in df.columns  # AI 감성분석 결과(positive/neutral/negative)
+    has_src = "sentiment_src" in df.columns  # 'rating'=타임아웃 별점 폴백(나중에 재처리 대상)
     for row in df.itertuples(index=False):
         rid = str(getattr(row, "review_id", "")) if has_rid else ""
         if not rid:
@@ -1330,6 +1331,9 @@ def build_reviews_index(df: pd.DataFrame, max_body: int = 600) -> dict:
             if sv is not None and pd.notna(sv):
                 s = str(sv).strip().lower()
                 rec["sentiment"] = s if s in ("positive", "neutral", "negative") else "neutral"
+                # 타임아웃으로 별점 폴백된 건만 표시 → 나중에 patch_sentiment 로 재처리 대상
+                if has_src and str(getattr(row, "sentiment_src", "")) == "rating":
+                    rec["sentiment_src"] = "rating"
         reviews[rid] = rec
     return {"count": len(reviews), "reviews": reviews}
 
@@ -1479,7 +1483,7 @@ def run_pipeline(args: argparse.Namespace) -> None:
                     try: rt = int(rt)
                     except Exception: rt = 0
                     return {"sentiment": "positive" if rt >= 4 else ("neutral" if rt == 3 else "negative"),
-                            "score": 0.5, "reason": "별점 폴백(감성 타임아웃)"}
+                            "score": 0.5, "reason": "별점 폴백(감성 타임아웃)", "src": "rating"}
 
                 progress = Progress(len(df), desc="감성 분석")
                 sentiments: List[dict] = []
@@ -1526,6 +1530,7 @@ def run_pipeline(args: argparse.Namespace) -> None:
                 df["sentiment"] = [r.get("sentiment", "neutral") for r in sentiments]
                 df["sentiment_score"] = [r.get("score", 0.5) for r in sentiments]
                 df["sentiment_reason"] = [r.get("reason", "") for r in sentiments]
+                df["sentiment_src"] = [r.get("src", "ai") for r in sentiments]  # 'rating'=폴백(재처리 대상)
                 if _fallback_cnt:
                     logger.warning("  감성 분석 완료(%d건) — 그중 %d건은 타임아웃으로 별점 폴백", len(sentiments), _fallback_cnt)
                 else:
