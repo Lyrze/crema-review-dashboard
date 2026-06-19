@@ -264,6 +264,15 @@ def main():
         else:
             eprint("  감성 데이터 생략 — 대시보드는 별점기반으로 표시됩니다.")
 
+    # 3.7 PVOC 의도(감성) 14b 재검증 — 감성 데이터 생성 시 + 14b 이상 모델 있으면 자동
+    #   7b가 '부정'으로 본 건만 큰 모델로 엄격 재판정해 거짓 부정 완화(제거형, 빠름·안전).
+    pvoc_reverify_flag = ""
+    if pvoc_intent_flag:
+        big = [m for m in models if any(t in m.lower() for t in ("14b", "32b", "70b", "72b"))]
+        if big:
+            pvoc_reverify_flag = f"--model {big[0]}"
+            eprint(f"  PVOC 의도 14b 재검증 자동 적용: {big[0]} (부정 거짓양성 완화)")
+
     anon_out = f"data/anonymized/{brand}/{month}/reviews_anon.csv"
 
     eprint()
@@ -279,6 +288,7 @@ def main():
     print(f"RECLASS_FLAG={reclass_flag}")
     print(f"REVERIFY_FLAG={reverify_flag}")
     print(f"PVOC_INTENT_FLAG={pvoc_intent_flag}")
+    print(f"PVOC_REVERIFY_FLAG={pvoc_reverify_flag}")
     print(f"ANON_OUT={anon_out}")
 
 
