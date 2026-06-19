@@ -6749,10 +6749,11 @@ function renderKeywordCandidates(){
     var samples=(c.samples||[]).slice(0,2).map(function(s){
       return '<div style="font-size:11px;color:var(--text-secondary);margin-top:3px;line-height:1.4;">★'+(s.rating||'')+' '+escapeHtml((s.text||'').slice(0,72))+'</div>';
     }).join('');
+    var viewBtn='<button onclick="kwcandViewReviews('+idx+')" style="margin-top:6px;padding:3px 9px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:6px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit;">📄 전체 '+(c.count||0)+'건 보기</button>';
     var sel=kwcandGuessTopic(c);
     return '<div style="padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--card);margin-bottom:8px;">'+
       '<div style="display:flex;justify-content:space-between;gap:12px;">'+
-        '<div style="min-width:0;flex:1;">'+badge+' <b style="font-size:13px;">'+escapeHtml(c.word)+'</b> <span style="color:var(--text-secondary);font-size:11px;">'+(c.count||0)+'건</span>'+samples+'</div>'+
+        '<div style="min-width:0;flex:1;">'+badge+' <b style="font-size:13px;">'+escapeHtml(c.word)+'</b> <span style="color:var(--text-secondary);font-size:11px;">'+(c.count||0)+'건</span>'+samples+viewBtn+'</div>'+
         '<div style="display:flex;gap:6px;flex-shrink:0;align-items:flex-start;">'+
           '<button onclick="kwcandAdopt('+idx+')" style="padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">➕ 채택</button>'+
           '<button onclick="kwcandDismiss('+idx+')" style="padding:6px 10px;background:transparent;color:var(--text-secondary);border:1px solid var(--border);border-radius:7px;font-size:11.5px;cursor:pointer;font-family:inherit;white-space:nowrap;">✕ 무시</button>'+
@@ -6767,6 +6768,37 @@ function renderKeywordCandidates(){
     headBar.replace('width:100%;text-align:left;background:var(--accent-bg);border:1px solid var(--accent);border-radius:12px;padding:11px 15px;','width:100%;text-align:left;background:none;border:none;padding:0 0 9px;')+
     '<div style="font-size:11.5px;color:var(--text-secondary);margin-bottom:11px;">부정 리뷰 중 <b>기존 불만 키워드에 안 잡힌</b> 것에서 발굴했습니다. 이미 맞는 토픽이 있으면 <b>분류 대상 토픽</b>에서 선택해 거기로 합치고(추천 자동 선택), 없으면 <b>새 토픽으로</b> 두세요. <b>채택</b>하면 해당 리뷰가 그 토픽에 배정됩니다.</div>'+
     rows+'</div>';
+}
+// 후보에 속한 리뷰 전체 보기 — reviews.json(STATE.reviewsById) 본문 조회
+function kwcandViewReviews(idx){
+  var data=STATE.keywordCandidates; if(!data||!data.candidates[idx]) return;
+  var c=data.candidates[idx];
+  var ids=(c.review_ids||[]).map(String);
+  var byId=STATE.reviewsById||{};
+  var items=ids.map(function(id){
+    var rv=byId[id];
+    if(!rv) return '<div style="border:1px dashed var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:11.5px;color:var(--text-secondary);">#'+escapeHtml(id)+' — 본문 없음(reviews.json 재생성 필요)</div>';
+    var stars=''; for(var i=1;i<=5;i++) stars+=(i<=Math.round(rv.rating||0)?'★':'☆');
+    return '<div style="border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:8px;background:var(--card);">'+
+      '<div style="font-size:11px;color:var(--text-secondary);margin-bottom:5px;">'+stars+'  '+escapeHtml(rv.date||'')+'  '+escapeHtml(rv.product||'')+'</div>'+
+      '<div style="font-size:12.5px;line-height:1.6;color:var(--text);">'+escapeHtml(rv.text||'')+'</div></div>';
+  }).join('');
+  if(!items) items='<div style="color:var(--text-secondary);font-size:12.5px;">표시할 리뷰 본문이 없습니다.</div>';
+  var m=$('kwcand-rev-modal');
+  if(!m){
+    m=document.createElement('div'); m.id='kwcand-rev-modal';
+    m.style.cssText='display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.55);align-items:flex-start;justify-content:center;padding:60px 16px;';
+    m.onclick=function(e){ if(e.target===m) m.style.display='none'; };
+    document.body.appendChild(m);
+  }
+  var isImp=c.type==='improvement';
+  m.innerHTML='<div style="background:var(--card);border-radius:14px;width:100%;max-width:640px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.22);">'+
+    '<div style="padding:15px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;">'+
+      '<div style="font-size:14.5px;font-weight:800;min-width:0;">'+(isImp?'🛠️':'⚠️')+' "'+escapeHtml(c.word)+'" — 리뷰 '+ids.length+'건</div>'+
+      '<button onclick="document.getElementById(\'kwcand-rev-modal\').style.display=\'none\'" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--text-secondary);flex-shrink:0;">×</button>'+
+    '</div>'+
+    '<div style="padding:14px 20px;overflow-y:auto;">'+items+'</div></div>';
+  m.style.display='flex';
 }
 function kwcandDismiss(idx){
   var data=STATE.keywordCandidates; if(!data||!data.candidates[idx]) return;
