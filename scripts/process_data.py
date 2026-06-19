@@ -869,14 +869,19 @@ PRAISE_PATTERNS: List[tuple] = [
 ]
 
 # ── 개선요청(improvement) 패턴 ──
+# 기준 완화(2026-06): '있으면 좋겠다 / 됐으면 / 해주세요 / 추가 / 조절 / 아쉽다 / 부족하다' 등
+# 변화·추가를 바라는 약한 뉘앙스까지 포착. 각 라벨이 대시보드에 표시되는 키워드명.
 IMPROVEMENT_PATTERNS: List[tuple] = [
-    ("강도개선",   r"강도.*쎈|강도.*강하|더.*강하|강도.*높|강도.*세|세게.*해|강하게.*해줬으면",  "강도 강화 요청"),
-    ("무선충전",   r"무선이라면|충전.*되면|무선.*있으면|배터리.*있으면|무선으로.*바꿔",          "무선/충전 개선"),
-    ("소음개선",   r"소음.*줄|소음.*낮|조용하게|소리.*작게",                          "소음 개선"),
-    ("리모컨",     r"리모컨.*있으면|리모컨.*없|리모컨.*추가|별도.*리모컨",             "리모컨 추가"),
-    ("높이조절",   r"높이.*조절|높이.*다양|높이.*선택|낮은.*버전",                    "높이 조절 기능"),
-    ("AS개선",    r"AS.*개선|상담원.*연결|전화.*연결|반품.*가능하게",                 "AS·반품 정책 개선"),
-    ("경량화",     r"가벼웠으면|가볍게|무거워|무겁지.*않|경량",                       "경량화"),
+    ("기능추가요청", r"기능.*추가|추가.*기능|기능.*있으면|기능.*있었으면|옵션.*있으면|옵션.*추가|선택지.*있|모드.*추가|다양.*기능|기능.*다양|있으면.*좋|있었으면.*좋", "기능 추가 요청"),
+    ("강도조절",   r"강도.*쎈|강도.*강하|더.*강하|강도.*높|강도.*세|세게.*해|강하게.*해|강도.*조절|세기.*조절|단계.*세분|미세.*조절|조절.*되면|조절.*됐으면|조절.*가능했으면|강도.*아쉽|약하다|약해요|약함", "강도/세기 조절"),
+    ("무선충전",   r"무선이라면|충전.*되면|무선.*있으면|배터리.*있으면|무선으로.*바꿔|선이.*없었으면|유선.*불편|코드.*불편|충전식.*불편", "무선/충전 개선"),
+    ("소음개선",   r"소음.*줄|소음.*낮|조용했으면|조용하게|소리.*작게|소리.*줄|덜.*시끄|소음.*아쉽|소리.*컸으면|소리.*크다", "소음 개선"),
+    ("조작리모컨", r"리모컨.*있으면|리모컨.*없|리모컨.*추가|별도.*리모컨|버튼.*위치.*불편|조작.*불편|조작.*편했으면|버튼.*불편|작동.*불편", "조작/리모컨 개선"),
+    ("크기높이조절", r"높이.*조절|높이.*다양|높이.*선택|낮은.*버전|사이즈.*다양|크기.*조절|크기.*작았으면|크기.*컸으면|더.*컸으면|더.*작았으면|사이즈.*아쉽|크기.*아쉽|폭.*좁", "크기/높이 조절"),
+    ("AS반품개선", r"AS.*개선|상담원.*연결|전화.*연결|반품.*가능하게|반품.*쉽게|환불.*쉽게|고객센터.*개선|CS.*개선|문의.*안.*됐|연결.*안.*됐으면|반품.*어렵|반품.*곤란", "AS·반품 정책 개선"),
+    ("경량화",     r"가벼웠으면|가볍게.*했|무거워|무겁지.*않았으면|경량|덜.*무겁|무게.*아쉽", "경량화"),
+    ("효과강화",   r"효과.*더|더.*효과|효과.*있었으면|효과.*아쉽|효과.*미흡|시원했으면|시원함.*부족|마사지.*약|마사지.*아쉽|롤링.*있으면|롤링.*부족|온열.*더|발열.*아쉽|기능성.*부족|기능성.*아쉽", "효과/성능 강화 요청"),
+    ("내구성개선", r"내구성.*아쉽|쉽게.*고장|금방.*고장|오래.*못.*쓰|튼튼했으면|마감.*아쉽|품질.*아쉽|내구성.*부족", "내구성 개선 요청"),
 ]
 
 # 패턴 사전 컴파일 (모듈 로드 시 1회만 실행)
@@ -983,6 +988,19 @@ def extract_keywords_basic(df: pd.DataFrame, top_n: int = 30) -> dict:
     neg_df = df[df["rating"].le(2)].reset_index(drop=True)
     pos_df = df[df["rating"].ge(4)].reset_index(drop=True)
 
+    # 개선요청 풀 — 거짓양성(긍정 리뷰의 '효과가 더 좋다' 류) 차단을 위해 '비긍정'만 사용.
+    # 감성 컬럼이 있으면 sentiment!=positive, 없으면 별점<=3(low_df)로 폴백.
+    if "sentiment" in df.columns:
+        nonpos_df = df[df["sentiment"].fillna("") != "positive"].reset_index(drop=True)
+    else:
+        nonpos_df = low_df
+    nonpos_texts = nonpos_df["body"].fillna("").astype(str).tolist()
+    nonpos_ids = (
+        nonpos_df["review_id"].astype(str).tolist()
+        if "review_id" in nonpos_df.columns
+        else [str(i) for i in range(len(nonpos_df))]
+    )
+
     all_texts = df["body"].fillna("").astype(str).tolist()
     low_texts = low_df["body"].fillna("").astype(str).tolist()
 
@@ -1000,7 +1018,7 @@ def extract_keywords_basic(df: pd.DataFrame, top_n: int = 30) -> dict:
 
     praise_items = _match_compiled_patterns(_COMPILED_PRAISE, all_texts, all_ids)
     complaint_items = _match_compiled_patterns(_COMPILED_COMPLAINT, low_texts, low_ids)
-    improvement_items = _match_compiled_patterns(_COMPILED_IMPROVEMENT, all_texts, all_ids)
+    improvement_items = _match_compiled_patterns(_COMPILED_IMPROVEMENT, nonpos_texts, nonpos_ids)
 
     # review_id → product_name 매핑 생성 (by_product 분포 계산용)
     if "product_name" in df.columns and "review_id" in df.columns:
@@ -1096,7 +1114,7 @@ def extract_keywords_basic(df: pd.DataFrame, top_n: int = 30) -> dict:
     _attach_by_product(improvement_top)
     _attach_review_samples(praise_top, df, max_samples=50)
     _attach_review_samples(complaint_top, low_df, max_samples=50)
-    _attach_review_samples(improvement_top, df, max_samples=50)
+    _attach_review_samples(improvement_top, nonpos_df, max_samples=50)
 
     return {
         "negative_keywords": _count_keywords(neg_df, top_n),
