@@ -850,8 +850,6 @@
     .ins-rank { font-size:13px; font-weight:800; color:var(--accent); width:22px; text-align:center; flex-shrink:0; }
     .ins-bar-track { flex:1; height:7px; background:var(--border); border-radius:4px; overflow:hidden; min-width:40px; }
     .ins-bar-fill { height:100%; border-radius:4px; }
-    .ins-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-    @media (max-width:720px){ .ins-grid2 { grid-template-columns:1fr; } }
     .sc-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px; gap:16px; flex-wrap:wrap; }
     .sc-title { font-size:22px; font-weight:800; color:var(--text); letter-spacing:-.4px; display:flex; align-items:center; gap:10px; }
     .sc-subtitle { font-size:12.5px; color:var(--text-secondary); margin-top:5px; }
@@ -1079,10 +1077,7 @@
     </div>
     <div id="ins-impact" class="ins-card"></div>
     <div id="ins-trend" class="ins-card"></div>
-    <div class="ins-grid2">
-      <div id="ins-driver-down" class="ins-card"></div>
-      <div id="ins-driver-up" class="ins-card"></div>
-    </div>
+    <div id="ins-driver" class="ins-card"></div>
     <div id="ins-mismatch" class="ins-card"></div>
   </div>
 
@@ -6894,7 +6889,7 @@ function kwcandAdopt(idx){
 // ═══════════════════════════════════════════════
 //  🔬 심층 분석 — Impact·추세·드라이버·세그먼트·불일치
 // ═══════════════════════════════════════════════
-var INS_CHART=null, INS_PREVKW=null, INS_TREND=null, INS_SETS={}, INS_SETSEQ=0;
+var INS_CHART=null, INS_DRIVER_CHART=null, INS_DRIVER_DATA=[], INS_PREVKW=null, INS_TREND=null, INS_SETS={}, INS_SETSEQ=0;
 // 리뷰 묶음을 레지스트리에 보관 → onclick엔 키만 전달(거대한 JSON 인라인/200건 제한 제거 → 전수)
 function insRegister(title, ids){ var k='s'+(INS_SETSEQ++); INS_SETS[k]={title:title, ids:(ids||[]).map(String)}; return k; }
 function insOpenSet(k){ var s=INS_SETS[k]; if(s) insReviewModal(s.title, s.ids); }
@@ -6965,12 +6960,16 @@ function insRenderImpact(){
   var bi=(STATE.keywords||{}).by_intent||{}; var byId=STATE.reviewsById||{};
   var prevMap={}; if(INS_PREVKW){ var pb=INS_PREVKW.by_intent||{}; (pb.complaint||[]).concat(pb.improvement||[]).forEach(function(k){ prevMap[k.word]=(prevMap[k.word]||0)+(k.count||0); }); }
   var items=[];
-  function add(arr,type){ (arr||[]).forEach(function(k){ var ids=k.all_review_ids||[]; var n=ids.length||k.count||0; if(!n) return; var neg=0,cnt=0; ids.forEach(function(id){ var r=byId[String(id)]; if(r){ cnt++; if(insIsNeg({rating:r.rating,sent:r.sentiment})) neg++; } }); var negRate=cnt?neg/cnt:0; var prevC=prevMap[k.word]||0; var mom=n-prevC; var trendF=prevC>0?(1+Math.max(0,mom/prevC)):(n>=5?1.25:1); var score=n*(0.4+0.6*negRate)*trendF; items.push({word:k.word,type:type,count:n,negRate:negRate,mom:mom,prevC:prevC,score:score,ids:ids}); }); }
+  function add(arr,type){ (arr||[]).forEach(function(k){ var ids=k.all_review_ids||[]; var n=ids.length||k.count||0; if(!n) return; var neg=0,pos=0,neu=0,cnt=0; ids.forEach(function(id){ var r=byId[String(id)]; if(r){ cnt++; var s=r.sentiment; if(s==='negative')neg++; else if(s==='positive')pos++; else neu++; } }); var negRate=cnt?neg/cnt:0; var prevC=prevMap[k.word]||0; var mom=n-prevC; var trendF=prevC>0?(1+Math.max(0,mom/prevC)):(n>=5?1.25:1); var score=n*(0.4+0.6*negRate)*trendF; items.push({word:k.word,type:type,count:n,negRate:negRate,pos:pos,neu:neu,neg:neg,cnt:cnt,mom:mom,prevC:prevC,score:score,ids:ids}); }); }
   add(bi.complaint,'불만'); add(bi.improvement,'개선');
   items.sort(function(a,b){ return b.score-a.score; });
   var top=items.slice(0,10); var maxScore=top.length?top[0].score:1;
-  var rows=top.map(function(x,i){ var pct=Math.round(x.score/maxScore*100); var momTxt=x.prevC>0?((x.mom>=0?'▲':'▼')+Math.abs(x.mom)):'신규'; var momColor=x.mom>0?'var(--negative)':x.mom<0?'var(--positive)':'var(--text-secondary)'; var tcolor=x.type==='개선'?'var(--warning)':'var(--negative)'; var key=insRegister('🎯 '+x.word+' ('+x.type+')', x.ids); return '<div class="ins-row" onclick="insOpenSet(\''+key+'\')"><span class="ins-rank">'+(i+1)+'</span><div style="min-width:0;flex:1;"><div style="font-size:12.5px;font-weight:700;">'+escapeHtml(x.word)+' <span style="font-size:10px;color:'+tcolor+';font-weight:800;">'+x.type+'</span></div><div class="ins-bar-track" style="margin-top:4px;"><div class="ins-bar-fill" style="width:'+pct+'%;background:'+tcolor+';"></div></div></div><div style="text-align:right;flex-shrink:0;font-size:11px;color:var(--text-secondary);">'+x.count+'건 · 부정 '+Math.round(x.negRate*100)+'%<br><span style="color:'+momColor+';font-weight:700;">'+momTxt+'</span></div></div>'; }).join('');
-  el.innerHTML='<div class="ins-card-title">🎯 이슈 우선순위 Top 10</div><div class="ins-card-sub">건수 × 부정 비중 × 전월 추세로 점수화 — <b>먼저 손봐야 할 이슈</b> 순. 행 클릭 시 관련 리뷰.</div>'+(rows||'<div style="color:var(--text-secondary);font-size:12px;">데이터 없음</div>');
+  var rows=top.map(function(x,i){ var pct=Math.round(x.score/maxScore*100); var momTxt=x.prevC>0?((x.mom>=0?'▲':'▼')+Math.abs(x.mom)):'신규'; var momColor=x.mom>0?'var(--negative)':x.mom<0?'var(--positive)':'var(--text-secondary)'; var tcolor=x.type==='개선'?'var(--warning)':'var(--negative)'; var key=insRegister('🎯 '+x.word+' ('+x.type+')', x.ids);
+    var base=x.cnt||1; var pp=Math.round(x.pos/base*100), np=Math.round(x.neg/base*100), up=100-pp-np;
+    var compBar='<div title="긍정 '+pp+'% · 중립 '+up+'% · 부정 '+np+'%" style="display:flex;height:7px;border-radius:4px;overflow:hidden;margin-top:5px;width:100%;">'+(pp?'<div style="width:'+pp+'%;background:var(--positive);"></div>':'')+(up?'<div style="width:'+up+'%;background:var(--border);"></div>':'')+(np?'<div style="width:'+np+'%;background:var(--negative);"></div>':'')+'</div>';
+    var scoreBar='<div class="ins-bar-track" style="margin-top:6px;"><div class="ins-bar-fill" style="width:'+pct+'%;background:'+tcolor+';"></div></div>';
+    return '<div class="ins-row" onclick="insOpenSet(\''+key+'\')"><span class="ins-rank">'+(i+1)+'</span><div style="min-width:0;flex:1;"><div style="font-size:12.5px;font-weight:700;">'+escapeHtml(x.word)+' <span style="font-size:10px;color:'+tcolor+';font-weight:800;">'+x.type+'</span></div>'+scoreBar+compBar+'</div><div style="text-align:right;flex-shrink:0;font-size:11px;color:var(--text-secondary);">'+x.count+'건 · 부정 '+Math.round(x.negRate*100)+'%<br><span style="color:'+momColor+';font-weight:700;">'+momTxt+'</span></div></div>'; }).join('');
+  el.innerHTML='<div class="ins-card-title">🎯 이슈 우선순위 Top 10</div><div class="ins-card-sub">건수 × 부정 비중 × 전월 추세로 점수화 — <b>먼저 손봐야 할 이슈</b> 순. 색 막대=우선순위 점수, 아래 가는 막대=감성 구성(🟢긍정·⬜중립·🔴부정). 행 클릭 시 리뷰.</div>'+(rows||'<div style="color:var(--text-secondary);font-size:12px;">데이터 없음</div>');
 }
 
 // ② 핵심 테마 월별 추세
@@ -6990,19 +6989,26 @@ function insRenderTrend(months){
   if(ctx && typeof Chart!=='undefined'){ INS_CHART=new Chart(ctx,{type:'line',data:{labels:labels,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,onClick:function(evt,els){ if(els&&els.length){ var w=latest[els[0].datasetIndex]; if(w) openTheme(w.word); } },plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}},onClick:function(e,item){ var w=latest[item.datasetIndex]; if(w) openTheme(w.word); }}},scales:{y:{beginAtZero:true}}}}); }
 }
 
-// ③ 별점 드라이버 (끌어내림 / 끌어올림)
+// ③ 별점 드라이버 — 전체 평균 기준 발산형 가로막대(Chattermill Impact 스타일)
 function insRenderDrivers(){
-  var down=$('ins-driver-down'), up=$('ins-driver-up'); if(!down||!up) return;
+  var el=$('ins-driver'); if(!el) return;
   var byId=STATE.reviewsById||{}; var bi=(STATE.keywords||{}).by_intent||{};
   var all=insReviewsArr(); var overall=all.length?all.reduce(function(s,r){ return s+(r.rating||0); },0)/all.length:0;
   function rateOf(ids){ var s=0,c=0; (ids||[]).forEach(function(id){ var r=byId[String(id)]; if(r&&r.rating){ s+=r.rating; c++; } }); return {avg:c?s/c:0,n:c}; }
-  var negItems=(bi.complaint||[]).concat(bi.improvement||[]).map(function(k){ var st=rateOf(k.all_review_ids); return {word:k.word,avg:st.avg,n:st.n,ids:k.all_review_ids||[]}; }).filter(function(x){ return x.n>=5; });
-  negItems.sort(function(a,b){ return a.avg-b.avg; });
-  var praiseItems=(bi.praise||[]).map(function(k){ var st=rateOf(k.all_review_ids); return {word:k.word,avg:st.avg,n:st.n,ids:k.all_review_ids||[]}; }).filter(function(x){ return x.n>=5; });
-  praiseItems.sort(function(a,b){ return b.avg-a.avg; });
-  function rowsOf(list,color){ return list.slice(0,8).map(function(x){ var key=insRegister(x.word+' (평균 '+x.avg.toFixed(2)+'★)', x.ids); return '<div class="ins-row" onclick="insOpenSet(\''+key+'\')"><div style="min-width:0;flex:1;font-size:12.5px;font-weight:600;">'+escapeHtml(x.word)+'</div><div style="flex-shrink:0;font-size:11px;color:var(--text-secondary);">평균 <b style="color:'+color+';">'+x.avg.toFixed(2)+'★</b> · '+x.n+'건</div></div>'; }).join(''); }
-  down.innerHTML='<div class="ins-card-title">📉 별점을 끌어내리는 토픽</div><div class="ins-card-sub">전체 평균 '+overall.toFixed(2)+'★ 대비 해당 토픽 리뷰의 평균 별점이 낮을수록 별점을 깎는 주범 (5건 이상).</div>'+(rowsOf(negItems,'var(--negative)')||'<div style="color:var(--text-secondary);font-size:12px;">데이터 없음</div>');
-  up.innerHTML='<div class="ins-card-title">📈 별점을 끌어올리는 토픽</div><div class="ins-card-sub">칭찬 토픽 중 평균 별점이 높은 순 (5건 이상).</div>'+(rowsOf(praiseItems,'var(--positive)')||'<div style="color:var(--text-secondary);font-size:12px;">데이터 없음</div>');
+  // 전체 토픽(칭찬/불만/개선)의 전체평균 대비 별점 격차
+  var seen={}, cand=[];
+  ['praise','complaint','improvement'].forEach(function(g){ (bi[g]||[]).forEach(function(k){ if(seen[k.word]) return; seen[k.word]=1; var st=rateOf(k.all_review_ids); if(st.n>=5) cand.push({word:k.word,avg:st.avg,n:st.n,gap:st.avg-overall,ids:k.all_review_ids||[]}); }); });
+  var downs=cand.filter(function(x){ return x.gap<0; }).sort(function(a,b){ return a.gap-b.gap; }).slice(0,7);
+  var ups=cand.filter(function(x){ return x.gap>0; }).sort(function(a,b){ return b.gap-a.gap; }).slice(0,7);
+  // 위(긍정)→아래(부정): 발산 막대는 gap 내림차순
+  INS_DRIVER_DATA=ups.concat(downs).sort(function(a,b){ return b.gap-a.gap; });
+  if(!INS_DRIVER_DATA.length){ el.innerHTML='<div class="ins-card-title">⚖️ 별점 드라이버</div><div class="ins-card-sub">5건 이상 토픽이 없어 표시할 수 없습니다.</div>'; return; }
+  el.innerHTML='<div class="ins-card-title">⚖️ 별점 드라이버 (전체 평균 '+overall.toFixed(2)+'★ 기준)</div><div class="ins-card-sub">막대가 <b style="color:var(--negative);">왼쪽(빨강)</b>일수록 별점을 깎는 토픽, <b style="color:var(--positive);">오른쪽(초록)</b>일수록 올리는 토픽. 길이=평균 별점 격차. 막대 클릭 시 리뷰.</div><div style="position:relative;height:'+(INS_DRIVER_DATA.length*34+40)+'px;"><canvas id="ins-driver-canvas"></canvas></div>';
+  if(INS_DRIVER_CHART){ try{ INS_DRIVER_CHART.destroy(); }catch(e){} INS_DRIVER_CHART=null; }
+  var ctx=$('ins-driver-canvas');
+  if(ctx && typeof Chart!=='undefined'){
+    INS_DRIVER_CHART=new Chart(ctx,{type:'bar',data:{labels:INS_DRIVER_DATA.map(function(x){return x.word;}),datasets:[{data:INS_DRIVER_DATA.map(function(x){return +x.gap.toFixed(2);}),backgroundColor:INS_DRIVER_DATA.map(function(x){return x.gap<0?'rgba(220,38,38,.82)':'rgba(22,163,74,.82)';}),borderRadius:4,barThickness:18}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,onClick:function(evt,els){ if(els&&els.length){ var x=INS_DRIVER_DATA[els[0].index]; if(x) insReviewModal('⚖️ '+x.word+' (평균 '+x.avg.toFixed(2)+'★)', x.ids); } },plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){ var x=INS_DRIVER_DATA[c.dataIndex]; return ['평균 '+x.avg.toFixed(2)+'★ ('+(x.gap>=0?'+':'')+x.gap.toFixed(2)+')', x.n+'건']; }}}},scales:{x:{grid:{color:'rgba(127,127,127,.12)'},title:{display:true,text:'← 별점 끌어내림    전체평균 대비 ±★    별점 끌어올림 →',font:{size:10}}},y:{grid:{display:false},ticks:{font:{size:11}}}}}});
+  }
 }
 
 // ④ 별점 ↔ 감성 불일치
@@ -7010,10 +7016,11 @@ function insRenderMismatch(){
   var el=$('ins-mismatch'); if(!el) return;
   var all=insReviewsArr();
   if(!all.some(function(r){ return r.sent; })){ el.innerHTML='<div class="ins-card-title">⚠️ 별점 ↔ 감성 불일치</div><div class="ins-card-sub">감성 데이터가 없어 분석 불가.</div>'; return; }
+  var total=all.length||1;
   var hiNeg=all.filter(function(r){ return (r.rating||0)>=4 && r.sent==='negative'; });
   var loPos=all.filter(function(r){ return (r.rating||0)<=2 && r.sent==='positive'; });
-  function block(title,color,list,desc){ var key=insRegister(title, list.map(function(r){return r.id;})); return '<div style="flex:1;min-width:0;border:1px solid var(--border);border-radius:10px;padding:12px 14px;"><div style="font-size:13px;font-weight:800;color:'+color+';margin-bottom:4px;cursor:pointer;" onclick="insOpenSet(\''+key+'\')">'+title+' <b>'+list.length+'건</b> ›</div><div style="font-size:10.5px;color:var(--text-secondary);line-height:1.5;">'+desc+'</div></div>'; }
-  el.innerHTML='<div class="ins-card-title">⚠️ 별점 ↔ 감성 불일치</div><div class="ins-card-sub">별점만 믿으면 놓치는 리뷰 — 별점·AI감성을 모두 가진 이 대시보드만의 교차검증. 제목 클릭 시 리뷰.</div><div style="display:flex;gap:14px;flex-wrap:wrap;">'+block('⭐ 고별점인데 내용 부정','var(--negative)',hiNeg,'★4~5인데 감성=부정. 칭찬 속 숨은 불만 — 우선 확인 대상')+block('⭐ 저별점인데 내용 긍정','var(--positive)',loPos,'★1~2인데 감성=긍정. 오평가/배송·오작동 등 제품 외 불만 가능')+'</div>';
+  function card(emoji,title,color,list,desc){ var key=insRegister(title, list.map(function(r){return r.id;})); var pctTxt=(list.length/total*100).toFixed(1); var w=Math.max(2,Math.min(100, list.length/total*100*6)); return '<div onclick="insOpenSet(\''+key+'\')" style="flex:1;min-width:200px;border:1px solid var(--border);border-radius:12px;padding:15px 17px;cursor:pointer;transition:border-color .12s;background:var(--bg);" onmouseover="this.style.borderColor=\''+color+'\'" onmouseout="this.style.borderColor=\'var(--border)\'"><div style="display:flex;align-items:baseline;gap:8px;"><span style="font-size:30px;font-weight:800;color:'+color+';line-height:1;">'+list.length+'</span><span style="font-size:12px;color:var(--text-secondary);">건 · 전체의 '+pctTxt+'%</span></div><div style="font-size:12.5px;font-weight:700;margin-top:7px;">'+emoji+' '+title+' ›</div><div style="height:6px;border-radius:3px;background:var(--border);margin-top:8px;overflow:hidden;"><div style="height:100%;width:'+w+'%;background:'+color+';border-radius:3px;"></div></div><div style="font-size:10.5px;color:var(--text-secondary);line-height:1.5;margin-top:8px;">'+desc+'</div></div>'; }
+  el.innerHTML='<div class="ins-card-title">⚠️ 별점 ↔ 감성 불일치</div><div class="ins-card-sub">별점만 믿으면 놓치는 리뷰 — 별점·AI감성을 모두 가진 이 대시보드만의 교차검증. 카드 클릭 시 리뷰 전수.</div><div style="display:flex;gap:14px;flex-wrap:wrap;">'+card('⭐','고별점인데 내용 부정','var(--negative)',hiNeg,'★4~5인데 감성=부정. 칭찬 속 숨은 불만 — 우선 확인 대상')+card('⭐','저별점인데 내용 긍정','var(--positive)',loPos,'★1~2인데 감성=긍정. 오평가/배송·오작동 등 제품 외 불만 가능')+'</div>';
 }
 
 // ═══════════════════════════════════════════════
