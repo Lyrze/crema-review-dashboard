@@ -872,9 +872,11 @@ PRAISE_PATTERNS: List[tuple] = [
 # 기준 완화(2026-06): '있으면 좋겠다 / 됐으면 / 추가 / 조절 / 아쉽다 / 부족하다' 등 변화·결핍 뉘앙스 포착.
 # 단, 칭찬 오포착 방지를 위해 (주제어)가 (결핍/요망 신호어)와 ±8자 이내로 가까이 등장할 때만 매칭한다.
 #   ('온열…더하면'처럼 .* 가 문장 전체를 가로질러 칭찬을 잘못 잡던 문제를 차단)
+# 결핍/요망 신호어 — '조절/추가/개선'처럼 칭찬('조절된다')에도 쓰이는 모호어는 제외.
+# 명확한 결핍(약하다·부족·없어서·불편) + 요망(했으면·면 좋겠·해주세요·원해) 표현만.
 _IMP_SIGNAL = (
-    r"약하|약함|약해|아쉽|아쉬|부족|미흡|없어|없네|없으|안\s?되|안\s?됨|불편|곤란|"
-    r"었으면|였으면|했으면|면\s?좋|되면\s?좋|해주|추가|조절|바라|원해|있으면\s?좋|개선"
+    r"약하|약함|약해|아쉽|아쉬|부족|미흡|없어서|없네|없으니|없다|안\s?되|안\s?돼|안\s?됨|불편|곤란|힘들|불만족|"
+    r"었으면|였으면|했으면|면\s?좋|되면\s?좋|해주|해줬으면|원해|원합니|있으면\s?좋|있었으면|바랍|필요"
 )
 
 
@@ -1000,12 +1002,13 @@ def extract_keywords_basic(df: pd.DataFrame, top_n: int = 30) -> dict:
     neg_df = df[df["rating"].le(2)].reset_index(drop=True)
     pos_df = df[df["rating"].ge(4)].reset_index(drop=True)
 
-    # 개선요청 풀 — 칭찬 오포착 차단을 위해 '부정 감성 또는 별점<=3'만 사용.
-    # (★5인데 감성 neutral인 칭찬 리뷰까지 새는 것을 막기 위해 non-positive 보다 강하게 게이트)
+    # 개선요청 풀 — 칭찬 오포착 차단을 위해 '부정 감성'만 사용(별점 무시).
+    # (★3에도 만족 후기가 많아 별점<=3 게이트는 칭찬이 샘 → 감성=negative 만 사용)
+    # 감성 컬럼이 없으면 별점<=2(neg_df)로 폴백.
     if "sentiment" in df.columns:
-        imp_pool = df[(df["sentiment"].fillna("") == "negative") | (df["rating"].le(3))].reset_index(drop=True)
+        imp_pool = df[df["sentiment"].fillna("") == "negative"].reset_index(drop=True)
     else:
-        imp_pool = low_df
+        imp_pool = neg_df
     nonpos_texts = imp_pool["body"].fillna("").astype(str).tolist()
     nonpos_ids = (
         imp_pool["review_id"].astype(str).tolist()

@@ -33,19 +33,12 @@ if not rpath.is_file() or not kpath.is_file():
 reviews = json.loads(rpath.read_text(encoding="utf-8")).get("reviews", {})
 kdata = json.loads(kpath.read_text(encoding="utf-8"))
 
-# '부정 감성 또는 별점<=3'만 대상 — ★5인데 감성 neutral인 칭찬 리뷰까지 새는 것 차단
+# '감성=부정'만 대상 — ★3 만족 후기까지 새는 별점 게이트 대신 감성으로만 거른다
 # 안정 순서 — texts/ids 의 위치 인덱스가 _matched_indices 와 1:1 대응
-def _imp_target(r):
-    if (r.get("sentiment") or "") == "negative":
-        return True
-    try:
-        return int(r.get("rating") or 0) <= 3
-    except (TypeError, ValueError):
-        return False
-ids = [rid for rid, r in reviews.items() if _imp_target(r)]
+ids = [rid for rid, r in reviews.items() if (r.get("sentiment") or "") == "negative"]
 recs = [reviews[i] for i in ids]
 texts = [(r.get("text") or "") for r in recs]
-print(f"  개선요청 대상(부정 또는 별점<=3) {len(ids)} / 전체 {len(reviews)}")
+print(f"  개선요청 대상(감성=부정) {len(ids)} / 전체 {len(reviews)}")
 
 items = _match_compiled_patterns(_COMPILED_IMPROVEMENT, texts, ids)
 
