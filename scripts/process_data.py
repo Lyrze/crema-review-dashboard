@@ -1340,6 +1340,9 @@ def build_reviews_index(df: pd.DataFrame, max_body: int = 600) -> dict:
     has_rating = "rating" in df.columns
     has_sent = "sentiment" in df.columns  # AI 감성분석 결과(positive/neutral/negative)
     has_src = "sentiment_src" in df.columns  # 'rating'=타임아웃 별점 폴백(나중에 재처리 대상)
+    has_grade = "member_grade" in df.columns   # 회원등급 — 세그먼트 분석용
+    has_opt = "product_option" in df.columns   # 상품옵션 — 세그먼트 분석용
+    has_chan = "review_path" in df.columns      # 리뷰작성경로(채널) — 세그먼트 분석용
     for row in df.itertuples(index=False):
         rid = str(getattr(row, "review_id", "")) if has_rid else ""
         if not rid:
@@ -1367,6 +1370,19 @@ def build_reviews_index(df: pd.DataFrame, max_body: int = 600) -> dict:
                 # 타임아웃으로 별점 폴백된 건만 표시 → 나중에 patch_sentiment 로 재처리 대상
                 if has_src and str(getattr(row, "sentiment_src", "")) == "rating":
                     rec["sentiment_src"] = "rating"
+        # 세그먼트 분석용 메타 (회원등급·옵션·채널) — 심층분석 탭에서 사용
+        if has_grade:
+            g = getattr(row, "member_grade", None)
+            if g is not None and pd.notna(g) and str(g).strip():
+                rec["grade"] = str(g).strip()
+        if has_opt:
+            o = getattr(row, "product_option", None)
+            if o is not None and pd.notna(o) and str(o).strip():
+                rec["option"] = str(o).strip()[:80]
+        if has_chan:
+            c = getattr(row, "review_path", None)
+            if c is not None and pd.notna(c) and str(c).strip():
+                rec["channel"] = str(c).strip()
         reviews[rid] = rec
     return {"count": len(reviews), "reviews": reviews}
 
