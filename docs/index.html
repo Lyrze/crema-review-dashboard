@@ -6984,9 +6984,17 @@ function insRenderImpact(){
     var bar='<div title="긍정 '+pp+'% · 중립 '+up+'% · 부정 '+np+'%" style="display:flex;height:16px;width:100%;border-radius:5px;overflow:hidden;margin-top:6px;">'+
       seg(pp,'var(--positive)',pp+'%')+seg(up,'#9aa3b2',up+'%')+seg(np,'var(--negative)',np+'%')+'</div>';
     return '<div class="ins-row" onclick="insOpenSet(\''+key+'\')"><span class="ins-rank">'+(i+1)+'</span><div style="min-width:0;flex:1;"><div style="font-size:12.5px;font-weight:700;">'+escapeHtml(x.word)+' <span style="font-size:10px;color:'+tcolor+';font-weight:800;">'+x.type+'</span></div>'+bar+'</div><div style="text-align:right;flex-shrink:0;font-size:11px;color:var(--text-secondary);">'+x.count+'건 · 부정 '+Math.round(x.negRate*100)+'%<br><span style="color:'+momColor+';font-weight:700;">'+momTxt+'</span></div></div>'; }).join('');
-  var emptyMsg=INS_PRODUCT
-    ? '<div style="color:var(--text-secondary);font-size:12.5px;padding:8px 2px;line-height:1.6;">📦 <b>'+escapeHtml(INS_PRODUCT)+'</b>에서 부정·개선 키워드로 잡힌 리뷰가 없습니다.<br>부정 감성 리뷰가 거의 없는 <b>매우 긍정적인 상품</b>일 수 있어요 — 아래 <b>별점 드라이버</b>에서 강점 토픽을 확인하세요.</div>'
-    : '<div style="color:var(--text-secondary);font-size:12px;">데이터 없음</div>';
+  var emptyMsg;
+  if(INS_PRODUCT){
+    var pr=insReviewsArr(); var pneg=pr.filter(function(r){ return r.sent==='negative'; }).length;
+    if(pneg===0){
+      emptyMsg='<div style="color:var(--text-secondary);font-size:12.5px;padding:8px 2px;line-height:1.6;">📦 <b>'+escapeHtml(INS_PRODUCT)+'</b>는 <b>부정 감성 리뷰가 0건</b>인 매우 긍정적인 상품이라 우선순위 이슈가 없습니다 (전체 '+pr.length+'건).<br>강점은 아래 <b>⚖️ 별점 드라이버</b>에서 확인하세요.</div>';
+    } else {
+      emptyMsg='<div style="color:var(--text-secondary);font-size:12.5px;padding:8px 2px;line-height:1.6;">📦 <b>'+escapeHtml(INS_PRODUCT)+'</b>는 부정 리뷰 <b>'+pneg+'건</b>이 있으나 고정 불만·개선 키워드에 잡히지 않았습니다 (소표본이거나 정형화 안 된 표현).<br>⚠️ <b>별점↔감성 불일치</b> 카드나 브랜드 전체의 <b>🔎 신규 키워드 발굴</b>(Taxonomy 탭)에서 확인하세요.</div>';
+    }
+  } else {
+    emptyMsg='<div style="color:var(--text-secondary);font-size:12px;">데이터 없음</div>';
+  }
   el.innerHTML='<div class="ins-card-title">🎯 이슈 우선순위 Top 10'+(INS_PRODUCT?' <span style="font-size:11px;font-weight:600;color:var(--accent);">· '+escapeHtml(INS_PRODUCT)+'</span>':'')+'</div><div class="ins-card-sub">건수 × 부정 비중 × 전월 추세로 점수화 — <b>먼저 손봐야 할 이슈</b> 순. 막대=감성 비율(🟢긍정·⬜중립·🔴부정), 우측 건수·전월증감. 행 클릭 시 리뷰 전수.</div>'+(rows||emptyMsg);
 }
 
@@ -6997,7 +7005,7 @@ function insRenderTrend(months){
   var latest=(bi.complaint||[]).concat(bi.improvement||[]).map(function(k){ return {word:k.word,c:insKwCount(k)}; }).filter(function(x){ return x.c>0; }).sort(function(a,b){ return b.c-a.c; }).slice(0,6);
   var labels=months.filter(function(m){ return INS_TREND[m]; });
   if(labels.length<2){ el.innerHTML='<div class="ins-card-title">📈 핵심 테마 월별 추세</div><div class="ins-card-sub">비교할 월이 2개 이상 필요합니다 (현재 '+labels.length+'개월).</div>'; return; }
-  if(!latest.length){ el.innerHTML='<div class="ins-card-title">📈 핵심 테마 월별 추세</div><div class="ins-card-sub">선택 상품에 표시할 테마가 없습니다.</div>'; return; }
+  if(!latest.length){ el.innerHTML='<div class="ins-card-title">📈 핵심 테마 월별 추세'+(INS_PRODUCT?' <span style="font-size:11px;font-weight:600;color:var(--accent);">· '+escapeHtml(INS_PRODUCT)+'</span>':'')+'</div><div class="ins-card-sub">'+(INS_PRODUCT?'이 상품은 불만·개선 키워드로 잡힌 테마가 없어 추세를 그릴 수 없습니다(부정 리뷰가 없거나 소표본).':'표시할 테마가 없습니다.')+'</div>'; return; }
   var palette=['#2E6BE6','#dc2626','#16a34a','#f59e0b','#7c3aed','#0891b2'];
   var datasets=latest.map(function(t,idx){ var data=labels.map(function(m){ var b=(INS_TREND[m].by_intent)||{}; var all=(b.complaint||[]).concat(b.improvement||[]); var f=all.find(function(k){ return k.word===t.word; }); return f?insKwCount(f):0; }); return {label:t.word,data:data,borderColor:palette[idx%palette.length],backgroundColor:'transparent',tension:0.3,borderWidth:2,pointRadius:3,pointHoverRadius:6}; });
   el.innerHTML='<div class="ins-card-title">📈 핵심 테마 월별 추세</div><div class="ins-card-sub">상위 부정·개선 테마의 월별 언급 건수 — 일시적 vs 구조적(지속 악화) 문제 구분. <b>점·범례 클릭 시 해당 테마 리뷰(현재 월).</b></div><div style="position:relative;height:300px;"><canvas id="ins-trend-canvas"></canvas></div>';
