@@ -852,8 +852,6 @@
     .ins-bar-fill { height:100%; border-radius:4px; }
     .ins-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
     @media (max-width:720px){ .ins-grid2 { grid-template-columns:1fr; } }
-    .ins-seg-tab { padding:5px 12px; border:1px solid var(--border); border-radius:8px; background:transparent; color:var(--text-secondary); font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; }
-    .ins-seg-tab.active { background:var(--accent); color:#fff; border-color:var(--accent); }
     .sc-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px; gap:16px; flex-wrap:wrap; }
     .sc-title { font-size:22px; font-weight:800; color:var(--text); letter-spacing:-.4px; display:flex; align-items:center; gap:10px; }
     .sc-subtitle { font-size:12.5px; color:var(--text-secondary); margin-top:5px; }
@@ -1085,7 +1083,6 @@
       <div id="ins-driver-down" class="ins-card"></div>
       <div id="ins-driver-up" class="ins-card"></div>
     </div>
-    <div id="ins-segment" class="ins-card"></div>
     <div id="ins-mismatch" class="ins-card"></div>
   </div>
 
@@ -6897,7 +6894,10 @@ function kwcandAdopt(idx){
 // ═══════════════════════════════════════════════
 //  🔬 심층 분석 — Impact·추세·드라이버·세그먼트·불일치
 // ═══════════════════════════════════════════════
-var INS_CHART=null, INS_SEG='channel', INS_PREVKW=null, INS_TREND=null;
+var INS_CHART=null, INS_PREVKW=null, INS_TREND=null, INS_SETS={}, INS_SETSEQ=0;
+// 리뷰 묶음을 레지스트리에 보관 → onclick엔 키만 전달(거대한 JSON 인라인/200건 제한 제거 → 전수)
+function insRegister(title, ids){ var k='s'+(INS_SETSEQ++); INS_SETS[k]={title:title, ids:(ids||[]).map(String)}; return k; }
+function insOpenSet(k){ var s=INS_SETS[k]; if(s) insReviewModal(s.title, s.ids); }
 
 function showInsightsPage(){
   document.body.classList.add('insights-mode');
@@ -6920,20 +6920,34 @@ function insReviewsArr(){
 function insIsNeg(r){ if(SENT_MODE==='sentiment' && r.sent) return r.sent==='negative'; return (r.rating||0)<=2; }
 function insMonthsAvailable(){ var out=[]; var m=STATE.month; for(var i=0;i<6;i++){ if(!m) break; out.unshift(m); m=(typeof getPrevMonth==='function')?getPrevMonth(m):null; } return out; }
 
-// 공용 리뷰 목록 모달
+// 공용 리뷰 목록 모달 — 요약 인사이트(건수·평균별점·감성분포) + 리뷰 전수
 function insReviewModal(title, ids){
   var byId=STATE.reviewsById||{};
-  var items=(ids||[]).map(function(id){ var r=byId[String(id)]; if(!r) return ''; var stars=''; for(var i=1;i<=5;i++) stars+=(i<=Math.round(r.rating||0)?'★':'☆'); var sc=r.sentiment==='negative'?'var(--negative)':r.sentiment==='positive'?'var(--positive)':'var(--text-secondary)'; return '<div style="border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:8px;background:var(--card);"><div style="font-size:11px;color:var(--text-secondary);margin-bottom:5px;">'+stars+' · '+escapeHtml(r.date||'')+' · '+escapeHtml(r.product||'')+' · <span style="color:'+sc+';font-weight:700;">'+escapeHtml(r.sentiment||'')+'</span></div><div style="font-size:12.5px;line-height:1.6;">'+escapeHtml(r.text||'')+'</div></div>'; }).join('');
+  ids=(ids||[]).map(String).filter(function(id){ return byId[id]; });
+  // 요약 인사이트
+  var n=ids.length, sum=0, pos=0, neu=0, neg=0;
+  ids.forEach(function(id){ var r=byId[id]; sum+=(r.rating||0); var s=r.sentiment; if(s==='positive')pos++; else if(s==='negative')neg++; else neu++; });
+  var avg=n?(sum/n):0;
+  var insight='<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--text-secondary);margin-bottom:12px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:9px;">'+
+    '<span>리뷰 <b style="color:var(--text);">'+n+'</b>건</span>'+
+    '<span>평균 <b style="color:#f59e0b;">'+avg.toFixed(2)+'★</b></span>'+
+    '<span>🟢 긍정 <b style="color:var(--positive);">'+pos+'</b></span>'+
+    '<span>⚪ 중립 <b>'+neu+'</b></span>'+
+    '<span>🔴 부정 <b style="color:var(--negative);">'+neg+'</b></span></div>';
+  var CAP=500;
+  var shown=ids.slice(0,CAP);
+  var items=shown.map(function(id){ var r=byId[id]; var stars=''; for(var i=1;i<=5;i++) stars+=(i<=Math.round(r.rating||0)?'★':'☆'); var sc=r.sentiment==='negative'?'var(--negative)':r.sentiment==='positive'?'var(--positive)':'var(--text-secondary)'; return '<div style="border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:8px;background:var(--card);"><div style="font-size:11px;color:var(--text-secondary);margin-bottom:5px;">'+stars+' · '+escapeHtml(r.date||'')+' · '+escapeHtml(r.product||'')+' · <span style="color:'+sc+';font-weight:700;">'+escapeHtml(r.sentiment||'')+'</span></div><div style="font-size:12.5px;line-height:1.6;">'+escapeHtml(r.text||'')+'</div></div>'; }).join('');
   if(!items) items='<div style="color:var(--text-secondary);font-size:12.5px;">표시할 리뷰가 없습니다.</div>';
+  if(n>CAP) items+='<div style="text-align:center;color:var(--text-secondary);font-size:11.5px;padding:8px;">… 외 '+(n-CAP)+'건 더 (상위 '+CAP+'건 표시)</div>';
   var m=$('ins-rev-modal');
   if(!m){ m=document.createElement('div'); m.id='ins-rev-modal'; m.style.cssText='display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.55);align-items:flex-start;justify-content:center;padding:60px 16px;'; m.onclick=function(e){ if(e.target===m) m.style.display='none'; }; document.body.appendChild(m); }
-  m.innerHTML='<div style="background:var(--card);border-radius:14px;width:100%;max-width:640px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.22);"><div style="padding:15px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;"><div style="font-size:14px;font-weight:800;min-width:0;">'+escapeHtml(title)+' ('+(ids||[]).length+'건)</div><button onclick="document.getElementById(\'ins-rev-modal\').style.display=\'none\'" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--text-secondary);flex-shrink:0;">×</button></div><div style="padding:14px 20px;overflow-y:auto;">'+items+'</div></div>';
+  m.innerHTML='<div style="background:var(--card);border-radius:14px;width:100%;max-width:660px;max-height:82vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.22);"><div style="padding:15px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;"><div style="font-size:14px;font-weight:800;min-width:0;">'+escapeHtml(title)+'</div><button onclick="document.getElementById(\'ins-rev-modal\').style.display=\'none\'" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--text-secondary);flex-shrink:0;">×</button></div><div style="padding:14px 20px;overflow-y:auto;">'+insight+items+'</div></div>';
   m.style.display='flex';
 }
-function insIdsAttr(ids){ return encodeURIComponent(JSON.stringify((ids||[]).slice(0,200).map(String))); }
 
 async function renderInsights(){
   if($('ins-sentmode')) $('ins-sentmode').textContent='기준: '+(SENT_MODE==='sentiment'?'감성분석':'별점');
+  INS_SETS={}; INS_SETSEQ=0;
   var months=insMonthsAvailable();
   INS_TREND={};
   await Promise.all(months.map(async function(mo){ try{ INS_TREND[mo]=await fetchJSON('data/'+encodeURIComponent(STATE.brand)+'/'+mo+'/keywords.json'); }catch(e){ INS_TREND[mo]=null; } }));
@@ -6942,7 +6956,6 @@ async function renderInsights(){
   try{ insRenderImpact(); }catch(e){ console.warn('impact',e); }
   try{ insRenderTrend(months); }catch(e){ console.warn('trend',e); }
   try{ insRenderDrivers(); }catch(e){ console.warn('drivers',e); }
-  try{ insRenderSegment(); }catch(e){ console.warn('segment',e); }
   try{ insRenderMismatch(); }catch(e){ console.warn('mismatch',e); }
 }
 
@@ -6956,7 +6969,7 @@ function insRenderImpact(){
   add(bi.complaint,'불만'); add(bi.improvement,'개선');
   items.sort(function(a,b){ return b.score-a.score; });
   var top=items.slice(0,10); var maxScore=top.length?top[0].score:1;
-  var rows=top.map(function(x,i){ var pct=Math.round(x.score/maxScore*100); var momTxt=x.prevC>0?((x.mom>=0?'▲':'▼')+Math.abs(x.mom)):'신규'; var momColor=x.mom>0?'var(--negative)':x.mom<0?'var(--positive)':'var(--text-secondary)'; var tcolor=x.type==='개선'?'var(--warning)':'var(--negative)'; return '<div class="ins-row" onclick="insReviewModal(\''+x.word.replace(/\'/g,"\\'")+'\', JSON.parse(decodeURIComponent(\''+insIdsAttr(x.ids)+'\')))"><span class="ins-rank">'+(i+1)+'</span><div style="min-width:0;flex:1;"><div style="font-size:12.5px;font-weight:700;">'+escapeHtml(x.word)+' <span style="font-size:10px;color:'+tcolor+';font-weight:800;">'+x.type+'</span></div><div class="ins-bar-track" style="margin-top:4px;"><div class="ins-bar-fill" style="width:'+pct+'%;background:'+tcolor+';"></div></div></div><div style="text-align:right;flex-shrink:0;font-size:11px;color:var(--text-secondary);">'+x.count+'건 · 부정 '+Math.round(x.negRate*100)+'%<br><span style="color:'+momColor+';font-weight:700;">'+momTxt+'</span></div></div>'; }).join('');
+  var rows=top.map(function(x,i){ var pct=Math.round(x.score/maxScore*100); var momTxt=x.prevC>0?((x.mom>=0?'▲':'▼')+Math.abs(x.mom)):'신규'; var momColor=x.mom>0?'var(--negative)':x.mom<0?'var(--positive)':'var(--text-secondary)'; var tcolor=x.type==='개선'?'var(--warning)':'var(--negative)'; var key=insRegister('🎯 '+x.word+' ('+x.type+')', x.ids); return '<div class="ins-row" onclick="insOpenSet(\''+key+'\')"><span class="ins-rank">'+(i+1)+'</span><div style="min-width:0;flex:1;"><div style="font-size:12.5px;font-weight:700;">'+escapeHtml(x.word)+' <span style="font-size:10px;color:'+tcolor+';font-weight:800;">'+x.type+'</span></div><div class="ins-bar-track" style="margin-top:4px;"><div class="ins-bar-fill" style="width:'+pct+'%;background:'+tcolor+';"></div></div></div><div style="text-align:right;flex-shrink:0;font-size:11px;color:var(--text-secondary);">'+x.count+'건 · 부정 '+Math.round(x.negRate*100)+'%<br><span style="color:'+momColor+';font-weight:700;">'+momTxt+'</span></div></div>'; }).join('');
   el.innerHTML='<div class="ins-card-title">🎯 이슈 우선순위 Top 10</div><div class="ins-card-sub">건수 × 부정 비중 × 전월 추세로 점수화 — <b>먼저 손봐야 할 이슈</b> 순. 행 클릭 시 관련 리뷰.</div>'+(rows||'<div style="color:var(--text-secondary);font-size:12px;">데이터 없음</div>');
 }
 
@@ -6968,11 +6981,13 @@ function insRenderTrend(months){
   var labels=months.filter(function(m){ return INS_TREND[m]; });
   if(labels.length<2){ el.innerHTML='<div class="ins-card-title">📈 핵심 테마 월별 추세</div><div class="ins-card-sub">비교할 월이 2개 이상 필요합니다 (현재 '+labels.length+'개월).</div>'; return; }
   var palette=['#2E6BE6','#dc2626','#16a34a','#f59e0b','#7c3aed','#0891b2'];
-  var datasets=latest.map(function(t,idx){ var data=labels.map(function(m){ var b=(INS_TREND[m].by_intent)||{}; var all=(b.complaint||[]).concat(b.improvement||[]); var f=all.find(function(k){ return k.word===t.word; }); return f?(f.count||0):0; }); return {label:t.word,data:data,borderColor:palette[idx%palette.length],backgroundColor:'transparent',tension:0.3,borderWidth:2,pointRadius:3}; });
-  el.innerHTML='<div class="ins-card-title">📈 핵심 테마 월별 추세</div><div class="ins-card-sub">상위 부정·개선 테마의 월별 언급 건수 — 일시적 vs 구조적(지속 악화) 문제 구분.</div><div style="position:relative;height:300px;"><canvas id="ins-trend-canvas"></canvas></div>';
+  var datasets=latest.map(function(t,idx){ var data=labels.map(function(m){ var b=(INS_TREND[m].by_intent)||{}; var all=(b.complaint||[]).concat(b.improvement||[]); var f=all.find(function(k){ return k.word===t.word; }); return f?(f.count||0):0; }); return {label:t.word,data:data,borderColor:palette[idx%palette.length],backgroundColor:'transparent',tension:0.3,borderWidth:2,pointRadius:3,pointHoverRadius:6}; });
+  el.innerHTML='<div class="ins-card-title">📈 핵심 테마 월별 추세</div><div class="ins-card-sub">상위 부정·개선 테마의 월별 언급 건수 — 일시적 vs 구조적(지속 악화) 문제 구분. <b>점·범례 클릭 시 해당 테마 리뷰(현재 월).</b></div><div style="position:relative;height:300px;"><canvas id="ins-trend-canvas"></canvas></div>';
   if(INS_CHART){ try{ INS_CHART.destroy(); }catch(e){} INS_CHART=null; }
   var ctx=$('ins-trend-canvas');
-  if(ctx && typeof Chart!=='undefined'){ INS_CHART=new Chart(ctx,{type:'line',data:{labels:labels,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}}}},scales:{y:{beginAtZero:true}}}}); }
+  // 현재 월 키워드에서 테마명→review_ids (클릭 시 전수 리뷰)
+  function openTheme(word){ var b=(STATE.keywords||{}).by_intent||{}; var all=(b.complaint||[]).concat(b.improvement||[]); var f=all.find(function(k){ return k.word===word; }); insReviewModal('📈 '+word+' ('+(STATE.month||'')+')', f?(f.all_review_ids||[]):[]); }
+  if(ctx && typeof Chart!=='undefined'){ INS_CHART=new Chart(ctx,{type:'line',data:{labels:labels,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,onClick:function(evt,els){ if(els&&els.length){ var w=latest[els[0].datasetIndex]; if(w) openTheme(w.word); } },plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}},onClick:function(e,item){ var w=latest[item.datasetIndex]; if(w) openTheme(w.word); }}},scales:{y:{beginAtZero:true}}}}); }
 }
 
 // ③ 별점 드라이버 (끌어내림 / 끌어올림)
@@ -6985,38 +7000,19 @@ function insRenderDrivers(){
   negItems.sort(function(a,b){ return a.avg-b.avg; });
   var praiseItems=(bi.praise||[]).map(function(k){ var st=rateOf(k.all_review_ids); return {word:k.word,avg:st.avg,n:st.n,ids:k.all_review_ids||[]}; }).filter(function(x){ return x.n>=5; });
   praiseItems.sort(function(a,b){ return b.avg-a.avg; });
-  function rowsOf(list,color){ return list.slice(0,8).map(function(x){ return '<div class="ins-row" onclick="insReviewModal(\''+x.word.replace(/\'/g,"\\'")+'\', JSON.parse(decodeURIComponent(\''+insIdsAttr(x.ids)+'\')))"><div style="min-width:0;flex:1;font-size:12.5px;font-weight:600;">'+escapeHtml(x.word)+'</div><div style="flex-shrink:0;font-size:11px;color:var(--text-secondary);">평균 <b style="color:'+color+';">'+x.avg.toFixed(2)+'★</b> · '+x.n+'건</div></div>'; }).join(''); }
+  function rowsOf(list,color){ return list.slice(0,8).map(function(x){ var key=insRegister(x.word+' (평균 '+x.avg.toFixed(2)+'★)', x.ids); return '<div class="ins-row" onclick="insOpenSet(\''+key+'\')"><div style="min-width:0;flex:1;font-size:12.5px;font-weight:600;">'+escapeHtml(x.word)+'</div><div style="flex-shrink:0;font-size:11px;color:var(--text-secondary);">평균 <b style="color:'+color+';">'+x.avg.toFixed(2)+'★</b> · '+x.n+'건</div></div>'; }).join(''); }
   down.innerHTML='<div class="ins-card-title">📉 별점을 끌어내리는 토픽</div><div class="ins-card-sub">전체 평균 '+overall.toFixed(2)+'★ 대비 해당 토픽 리뷰의 평균 별점이 낮을수록 별점을 깎는 주범 (5건 이상).</div>'+(rowsOf(negItems,'var(--negative)')||'<div style="color:var(--text-secondary);font-size:12px;">데이터 없음</div>');
   up.innerHTML='<div class="ins-card-title">📈 별점을 끌어올리는 토픽</div><div class="ins-card-sub">칭찬 토픽 중 평균 별점이 높은 순 (5건 이상).</div>'+(rowsOf(praiseItems,'var(--positive)')||'<div style="color:var(--text-secondary);font-size:12px;">데이터 없음</div>');
 }
 
-// ④ 세그먼트 (채널 / 옵션)
-function insRenderSegment(){
-  var el=$('ins-segment'); if(!el) return;
-  var all=insReviewsArr();
-  var hasChan=all.some(function(r){ return r.channel; });
-  var hasOpt=all.some(function(r){ return r.option; });
-  if(!hasChan && !hasOpt){ el.innerHTML='<div class="ins-card-title">👥 세그먼트 분석</div><div class="ins-card-sub">이 달은 세그먼트 메타(채널/옵션)가 없습니다. 다음 업로드부터 자동 수집됩니다. (회원등급은 원천 데이터에 없어 미지원)</div>'; return; }
-  if(INS_SEG==='channel' && !hasChan) INS_SEG='option';
-  if(INS_SEG==='option' && !hasOpt) INS_SEG='channel';
-  var keyf=INS_SEG==='channel'?function(r){ return r.channel; }:function(r){ return r.option; };
-  var groups={};
-  all.forEach(function(r){ var k=keyf(r); if(!k) return; var g=groups[k]||(groups[k]={n:0,sum:0,neg:0}); g.n++; g.sum+=(r.rating||0); if(insIsNeg(r)) g.neg++; });
-  var arr=Object.keys(groups).map(function(k){ var g=groups[k]; return {name:k,n:g.n,avg:g.n?g.sum/g.n:0,negRate:g.n?g.neg/g.n:0}; }).sort(function(a,b){ return b.n-a.n; }).slice(0,10);
-  var maxN=arr.length?arr[0].n:1;
-  var rows=arr.map(function(x){ var pct=Math.round(x.n/maxN*100); return '<div class="ins-row" style="cursor:default;"><div style="min-width:0;flex:1;"><div style="font-size:12.5px;font-weight:600;">'+escapeHtml(x.name)+'</div><div class="ins-bar-track" style="margin-top:4px;"><div class="ins-bar-fill" style="width:'+pct+'%;background:var(--accent);"></div></div></div><div style="flex-shrink:0;text-align:right;font-size:11px;color:var(--text-secondary);">'+x.n+'건 · '+x.avg.toFixed(2)+'★<br>부정 '+Math.round(x.negRate*100)+'%</div></div>'; }).join('');
-  var tabs='<button class="ins-seg-tab'+(INS_SEG==='channel'?' active':'')+'" onclick="INS_SEG=\'channel\';insRenderSegment();"'+(hasChan?'':' disabled style="opacity:.4;"')+'>채널별</button> <button class="ins-seg-tab'+(INS_SEG==='option'?' active':'')+'" onclick="INS_SEG=\'option\';insRenderSegment();"'+(hasOpt?'':' disabled style="opacity:.4;"')+'>옵션별</button>';
-  el.innerHTML='<div class="ins-card-title">👥 세그먼트 분석</div><div class="ins-card-sub">작성 채널·상품옵션별 리뷰 수·평균 별점·부정률. (회원등급은 원천 미제공)</div><div style="margin-bottom:10px;display:flex;gap:6px;">'+tabs+'</div>'+rows;
-}
-
-// ⑤ 별점 ↔ 감성 불일치
+// ④ 별점 ↔ 감성 불일치
 function insRenderMismatch(){
   var el=$('ins-mismatch'); if(!el) return;
   var all=insReviewsArr();
   if(!all.some(function(r){ return r.sent; })){ el.innerHTML='<div class="ins-card-title">⚠️ 별점 ↔ 감성 불일치</div><div class="ins-card-sub">감성 데이터가 없어 분석 불가.</div>'; return; }
   var hiNeg=all.filter(function(r){ return (r.rating||0)>=4 && r.sent==='negative'; });
   var loPos=all.filter(function(r){ return (r.rating||0)<=2 && r.sent==='positive'; });
-  function block(title,color,list,desc){ return '<div style="flex:1;min-width:0;border:1px solid var(--border);border-radius:10px;padding:12px 14px;"><div style="font-size:13px;font-weight:800;color:'+color+';margin-bottom:4px;cursor:pointer;" onclick="insReviewModal(\''+title.replace(/\'/g,"\\'")+'\', JSON.parse(decodeURIComponent(\''+insIdsAttr(list.map(function(r){return r.id;}))+'\')))">'+title+' <b>'+list.length+'건</b> ›</div><div style="font-size:10.5px;color:var(--text-secondary);line-height:1.5;">'+desc+'</div></div>'; }
+  function block(title,color,list,desc){ var key=insRegister(title, list.map(function(r){return r.id;})); return '<div style="flex:1;min-width:0;border:1px solid var(--border);border-radius:10px;padding:12px 14px;"><div style="font-size:13px;font-weight:800;color:'+color+';margin-bottom:4px;cursor:pointer;" onclick="insOpenSet(\''+key+'\')">'+title+' <b>'+list.length+'건</b> ›</div><div style="font-size:10.5px;color:var(--text-secondary);line-height:1.5;">'+desc+'</div></div>'; }
   el.innerHTML='<div class="ins-card-title">⚠️ 별점 ↔ 감성 불일치</div><div class="ins-card-sub">별점만 믿으면 놓치는 리뷰 — 별점·AI감성을 모두 가진 이 대시보드만의 교차검증. 제목 클릭 시 리뷰.</div><div style="display:flex;gap:14px;flex-wrap:wrap;">'+block('⭐ 고별점인데 내용 부정','var(--negative)',hiNeg,'★4~5인데 감성=부정. 칭찬 속 숨은 불만 — 우선 확인 대상')+block('⭐ 저별점인데 내용 긍정','var(--positive)',loPos,'★1~2인데 감성=긍정. 오평가/배송·오작동 등 제품 외 불만 가능')+'</div>';
 }
 
