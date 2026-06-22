@@ -80,6 +80,18 @@ echo  익명화 CSV 생성 중...
 python scripts\anonymize_csv.py --input "!CSV!" --output "!ANON_OUT!"
 if errorlevel 1 ( echo  [WARNING] 익명화 실패. 계속 진행합니다. )
 
+:: [4/4] 데이터 정합성 검증 (FAIL 시 푸시 중단 - 잘못된 데이터 배포 차단)
+echo.
+echo  [4/4] 데이터 정합성 검증 중...
+python scripts\validate_data.py --brand "!BRAND!" --month "!MONTH!"
+if errorlevel 1 (
+  echo.
+  echo  [중단] 데이터 정합성 검증 실패 - 위 [FAIL] 항목을 해결한 뒤 다시 실행하세요.
+  echo  배포를 막았습니다. 잘못된 데이터가 대시보드에 올라가지 않습니다.
+  pause
+  exit /b 1
+)
+
 :: GitHub 푸시
 echo.
 echo  GitHub 푸시 중...
