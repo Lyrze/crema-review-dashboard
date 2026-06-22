@@ -869,19 +869,31 @@ PRAISE_PATTERNS: List[tuple] = [
 ]
 
 # ── 개선요청(improvement) 패턴 ──
-# 기준 완화(2026-06): '있으면 좋겠다 / 됐으면 / 해주세요 / 추가 / 조절 / 아쉽다 / 부족하다' 등
-# 변화·추가를 바라는 약한 뉘앙스까지 포착. 각 라벨이 대시보드에 표시되는 키워드명.
+# 기준 완화(2026-06): '있으면 좋겠다 / 됐으면 / 추가 / 조절 / 아쉽다 / 부족하다' 등 변화·결핍 뉘앙스 포착.
+# 단, 칭찬 오포착 방지를 위해 (주제어)가 (결핍/요망 신호어)와 ±8자 이내로 가까이 등장할 때만 매칭한다.
+#   ('온열…더하면'처럼 .* 가 문장 전체를 가로질러 칭찬을 잘못 잡던 문제를 차단)
+_IMP_SIGNAL = (
+    r"약하|약함|약해|아쉽|아쉬|부족|미흡|없어|없네|없으|안\s?되|안\s?됨|불편|곤란|"
+    r"었으면|였으면|했으면|면\s?좋|되면\s?좋|해주|추가|조절|바라|원해|있으면\s?좋|개선"
+)
+
+
+def _imp(topic: str) -> str:
+    """(주제어)와 (결핍/요망 신호어)가 ±8자 이내로 인접할 때만 매칭하는 정규식 생성."""
+    return r"(?:%s).{0,8}(?:%s)|(?:%s).{0,8}(?:%s)" % (topic, _IMP_SIGNAL, _IMP_SIGNAL, topic)
+
+
 IMPROVEMENT_PATTERNS: List[tuple] = [
-    ("기능추가요청", r"기능.*추가|추가.*기능|기능.*있으면|기능.*있었으면|옵션.*있으면|옵션.*추가|선택지.*있|모드.*추가|다양.*기능|기능.*다양|있으면.*좋|있었으면.*좋", "기능 추가 요청"),
-    ("강도조절",   r"강도.*쎈|강도.*강하|더.*강하|강도.*높|강도.*세|세게.*해|강하게.*해|강도.*조절|세기.*조절|단계.*세분|미세.*조절|조절.*되면|조절.*됐으면|조절.*가능했으면|강도.*아쉽|약하다|약해요|약함", "강도/세기 조절"),
-    ("무선충전",   r"무선이라면|충전.*되면|무선.*있으면|배터리.*있으면|무선으로.*바꿔|선이.*없었으면|유선.*불편|코드.*불편|충전식.*불편", "무선/충전 개선"),
-    ("소음개선",   r"소음.*줄|소음.*낮|조용했으면|조용하게|소리.*작게|소리.*줄|덜.*시끄|소음.*아쉽|소리.*컸으면|소리.*크다", "소음 개선"),
-    ("조작리모컨", r"리모컨.*있으면|리모컨.*없|리모컨.*추가|별도.*리모컨|버튼.*위치.*불편|조작.*불편|조작.*편했으면|버튼.*불편|작동.*불편", "조작/리모컨 개선"),
-    ("크기높이조절", r"높이.*조절|높이.*다양|높이.*선택|낮은.*버전|사이즈.*다양|크기.*조절|크기.*작았으면|크기.*컸으면|더.*컸으면|더.*작았으면|사이즈.*아쉽|크기.*아쉽|폭.*좁", "크기/높이 조절"),
-    ("AS반품개선", r"AS.*개선|상담원.*연결|전화.*연결|반품.*가능하게|반품.*쉽게|환불.*쉽게|고객센터.*개선|CS.*개선|문의.*안.*됐|연결.*안.*됐으면|반품.*어렵|반품.*곤란", "AS·반품 정책 개선"),
-    ("경량화",     r"가벼웠으면|가볍게.*했|무거워|무겁지.*않았으면|경량|덜.*무겁|무게.*아쉽", "경량화"),
-    ("효과강화",   r"효과.*더|더.*효과|효과.*있었으면|효과.*아쉽|효과.*미흡|시원했으면|시원함.*부족|마사지.*약|마사지.*아쉽|롤링.*있으면|롤링.*부족|온열.*더|발열.*아쉽|기능성.*부족|기능성.*아쉽", "효과/성능 강화 요청"),
-    ("내구성개선", r"내구성.*아쉽|쉽게.*고장|금방.*고장|오래.*못.*쓰|튼튼했으면|마감.*아쉽|품질.*아쉽|내구성.*부족", "내구성 개선 요청"),
+    ("기능추가요청", _imp(r"기능|옵션|모드|선택지"),              "기능 추가 요청"),
+    ("강도조절",   _imp(r"강도|세기|진동"),                     "강도/세기 조절"),
+    ("무선충전",   _imp(r"무선|충전|배터리|유선|코드"),          "무선/충전 개선"),
+    ("소음개선",   _imp(r"소음|소리|시끄"),                     "소음 개선"),
+    ("조작리모컨", _imp(r"리모컨|버튼|조작"),                   "조작/리모컨 개선"),
+    ("크기높이조절", _imp(r"크기|사이즈|높이|폭|길이"),           "크기/높이 조절"),
+    ("AS반품개선", _imp(r"AS|반품|환불|고객센터|CS|상담|문의"),   "AS·반품 정책 개선"),
+    ("경량화",     _imp(r"무게|무거|가벼|경량"),                "경량화"),
+    ("효과강화",   _imp(r"효과|성능|마사지|시원|롤링|기능성|온열|발열"), "효과/성능 강화 요청"),
+    ("내구성개선", _imp(r"내구|고장|품질|마감"),                "내구성 개선 요청"),
 ]
 
 # 패턴 사전 컴파일 (모듈 로드 시 1회만 실행)
@@ -988,17 +1000,17 @@ def extract_keywords_basic(df: pd.DataFrame, top_n: int = 30) -> dict:
     neg_df = df[df["rating"].le(2)].reset_index(drop=True)
     pos_df = df[df["rating"].ge(4)].reset_index(drop=True)
 
-    # 개선요청 풀 — 거짓양성(긍정 리뷰의 '효과가 더 좋다' 류) 차단을 위해 '비긍정'만 사용.
-    # 감성 컬럼이 있으면 sentiment!=positive, 없으면 별점<=3(low_df)로 폴백.
+    # 개선요청 풀 — 칭찬 오포착 차단을 위해 '부정 감성 또는 별점<=3'만 사용.
+    # (★5인데 감성 neutral인 칭찬 리뷰까지 새는 것을 막기 위해 non-positive 보다 강하게 게이트)
     if "sentiment" in df.columns:
-        nonpos_df = df[df["sentiment"].fillna("") != "positive"].reset_index(drop=True)
+        imp_pool = df[(df["sentiment"].fillna("") == "negative") | (df["rating"].le(3))].reset_index(drop=True)
     else:
-        nonpos_df = low_df
-    nonpos_texts = nonpos_df["body"].fillna("").astype(str).tolist()
+        imp_pool = low_df
+    nonpos_texts = imp_pool["body"].fillna("").astype(str).tolist()
     nonpos_ids = (
-        nonpos_df["review_id"].astype(str).tolist()
-        if "review_id" in nonpos_df.columns
-        else [str(i) for i in range(len(nonpos_df))]
+        imp_pool["review_id"].astype(str).tolist()
+        if "review_id" in imp_pool.columns
+        else [str(i) for i in range(len(imp_pool))]
     )
 
     all_texts = df["body"].fillna("").astype(str).tolist()
@@ -1114,7 +1126,7 @@ def extract_keywords_basic(df: pd.DataFrame, top_n: int = 30) -> dict:
     _attach_by_product(improvement_top)
     _attach_review_samples(praise_top, df, max_samples=50)
     _attach_review_samples(complaint_top, low_df, max_samples=50)
-    _attach_review_samples(improvement_top, nonpos_df, max_samples=50)
+    _attach_review_samples(improvement_top, imp_pool, max_samples=50)
 
     return {
         "negative_keywords": _count_keywords(neg_df, top_n),
