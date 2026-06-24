@@ -3237,13 +3237,15 @@ function kwCloud(cid,kws,cls){
 }
 
 function updateActiveNav(){
-  // 특수 페이지(SKU 1vs1·Taxonomy)에선 스크롤 스파이 비활성 — nav active 를 덮어쓰지 않음
-  if(document.body.classList.contains('compare-sku-mode')||document.body.classList.contains('taxonomy-mode')) return;
+  // 특수 페이지(SKU 1vs1·Taxonomy·심층분석)에선 스크롤 스파이 비활성 — nav active 를 덮어쓰지 않음
+  if(document.body.classList.contains('compare-sku-mode')||document.body.classList.contains('taxonomy-mode')||document.body.classList.contains('insights-mode')) return;
   var secs=document.querySelectorAll('section[id]');
   var links=document.querySelectorAll('nav a');
   var sy=window.scrollY+120; var cur='';
   secs.forEach(function(s){if(s.offsetTop<=sy) cur=s.id;});
-  links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+cur);});
+  if(!cur && secs.length) cur=secs[0].id;  // 최상단(어떤 섹션도 안 걸림)이면 첫 섹션으로
+  // 섹션 앵커(#sec…) 링크만 토글 — href="#" 인 페이지 링크(심층분석/Taxonomy/SKU/AI챗)는 건드리지 않음
+  links.forEach(function(a){ var href=a.getAttribute('href')||''; if(href.indexOf('#sec')!==0) return; a.classList.toggle('active', href==='#'+cur); });
 }
 window.addEventListener('scroll',updateActiveNav,{passive:true});
 
