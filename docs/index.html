@@ -2488,7 +2488,7 @@ function populateMonths(){
 
 async function loadData(brand,month){
   var base='data/'+encodeURIComponent(brand)+'/'+month;
-  var res=await Promise.allSettled([fetchJSON(base+'/summary.json'),fetchJSON(base+'/products.json'),fetchJSON(base+'/keywords.json'),fetchJSON(base+'/reviews.json'),fetchJSON(base+'/pvoc_intent.json'),fetchJSON(base+'/keyword_candidates.json')]);
+  var res=await Promise.allSettled([fetchJSON(base+'/summary.json'),fetchJSON(base+'/products.json'),fetchJSON(base+'/keywords.json'),fetchJSON(base+'/reviews.json'),fetchJSON(base+'/pvoc_intent.json'),fetchJSON(base+'/keyword_candidates.json'),fetchJSON(base+'/tx_suggestions.json')]);
   // reviews(4)·pvoc_intent(5)·keyword_candidates(6)는 선택 — 실패해도 배너 안 띄움
   var anyFailed=res.slice(0,3).some(function(r){return r.status==='rejected';});
   STATE.summary  = res[0].status==='fulfilled' ? res[0].value : REAL_DATA.summary;
@@ -2500,6 +2500,8 @@ async function loadData(brand,month){
   STATE.pvocIntent = (res[4] && res[4].status==='fulfilled' && res[4].value && res[4].value.topics) ? res[4].value : null;
   // 신규 키워드 후보(검토형) — 부정 미포착 리뷰에서 발굴, 사람이 채택/무시
   STATE.keywordCandidates = (res[5] && res[5].status==='fulfilled' && res[5].value && Array.isArray(res[5].value.candidates)) ? res[5].value : null;
+  // 파이프라인 Taxonomy 분류 제안(검토형) — [3.9/4] classify_unclassified.py 산출물
+  STATE.txSuggestions = (res[6] && res[6].status==='fulfilled' && res[6].value && Array.isArray(res[6].value.suggestions)) ? res[6].value : null;
   STATE.brand=brand; STATE.month=month;
   // 상품 필터가 현재 월/브랜드에 없는 상품이면 해제 (칩만 남고 데이터는 브랜드로 폴백되는 불일치 방지)
   if(STATE.productFocus && !(STATE.products||[]).some(function(p){return p.name===STATE.productFocus;})){
@@ -6808,6 +6810,30 @@ function txAiApply(){
   else showToast('적용할 항목이 없습니다');
 }
 
+// 파이프라인([3.9/4])이 미리 생성한 제안(tx_suggestions.json)을 검토 패널로
+function txAiPipelineSug(taxonomy){
+  var doc=STATE.txSuggestions; if(!doc || !doc.suggestions || !doc.suggestions.length) return [];
+  var byId=STATE.reviewsById||{};
+  // 아직 미분류인 리뷰 + 현재 존재하는 topic 만 유효
+  var uncSet={}; txGetUnclassified(taxonomy, txGetAllReviews()).forEach(function(r){ uncSet[String(r.review_id)]=1; });
+  var topicSet={}; txAiTopicList().forEach(function(o){ topicSet[o.taxId+'::'+o.topicId]={name:o.name, taxName:o.taxName}; });
+  var out=[];
+  doc.suggestions.forEach(function(s){
+    var rid=String(s.review_id||'');
+    var key=(s.tax_id||'')+'::'+(s.topic_id||'');
+    if(!uncSet[rid] || !topicSet[key]) return;
+    var rv=byId[rid]||{};
+    out.push({rid:rid, text:rv.text||'', rating:rv.rating, taxId:s.tax_id, topicId:s.topic_id, topicName:topicSet[key].name, taxName:topicSet[key].taxName});
+  });
+  return out;
+}
+function txAiOpenPipelineSug(){
+  var tax=TAXONOMIES.find(function(t){return t.id===TX_STATE.activeTaxonomyId;}); if(!tax) return;
+  var sug=txAiPipelineSug(tax);
+  if(!sug.length){ showToast('적용 가능한 파이프라인 제안이 없습니다 (이미 분류됐거나 topic 변경됨)'); return; }
+  TXAI.sug=sug; txAiRenderPanel();
+}
+
 // ── 🔎 신규 키워드 후보 (검토형) — 부정 미포착 리뷰 발굴 → 채택/무시 ──
 var KWCAND_OPEN=false; // 기본 접힘(한 줄 바) — 펼쳐야 상세 표시
 function kwcandDecidedKey(){ return 'kwcand_decided::'+(STATE.brand||'')+'::'+(STATE.month||''); }
@@ -9043,6 +9069,7 @@ function txRenderUnclassified(taxonomy){
     '<div class="txd-stat-card"><div class="txd-stat-val">'+fmt(unclassified.length)+'</div><div class="txd-stat-lbl">미분류 리뷰</div></div>'+
     '<div class="txd-stat-card"><div class="txd-stat-val"><span class="pct">'+(allReviews.length>0?(unclassified.length/allReviews.length*100).toFixed(1):0)+'%</span></div><div class="txd-stat-lbl">전체 대비 ('+fmt(unclassified.length)+' / '+fmt(allReviews.length)+')</div></div>'+
   '</div>'+
+  (function(){ try{ var ps=txAiPipelineSug(taxonomy); if(ps.length) return '<div onclick="txAiOpenPipelineSug()" style="cursor:pointer;margin:0 0 12px;padding:11px 15px;background:var(--accent-bg);border:1px solid var(--accent);border-radius:11px;display:flex;align-items:center;gap:8px;"><span style="font-size:12.5px;font-weight:800;color:var(--accent);">📦 파이프라인 AI 분류 제안 '+ps.length+'건 — 클릭해서 검토·적용</span><span style="margin-left:auto;font-size:11px;color:var(--text-secondary);">업로드 시 자동 생성됨 (검토 전 미반영)</span></div>'; }catch(e){} return ''; })()+
   txRenderBulkBar(taxonomy, true)+
   '<div class="txd-toolbar">'+
     '<label style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--text);cursor:pointer;padding:5px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;">'+

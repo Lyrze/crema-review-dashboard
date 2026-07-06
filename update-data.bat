@@ -71,6 +71,13 @@ if not "!AI_FLAG!"=="--skip-ai" (
   python scripts\discover_keywords.py --brand "!BRAND!" --month "!MONTH!" !AI_FLAG!
 )
 
+:: [3.9/4] Taxonomy 미분류 AI 분류 제안 (검토형) - AI_FLAG 있고 스냅샷 있을 때만
+if not "!AI_FLAG!"=="--skip-ai" (
+  echo.
+  echo  [3.9/4] Taxonomy 미분류 AI 분류 제안 생성 중...
+  python scripts\classify_unclassified.py --brand "!BRAND!" --month "!MONTH!" !AI_FLAG!
+)
+
 :: 처리 결과
 python scripts\show_result.py "!BRAND!" "!MONTH!" 2>nul
 
