@@ -103,8 +103,11 @@ def main():
         else:
             oks.append(f"칭찬 버킷 역감성 정상 ({pr}/{pt})")
         nt, npos = reverse_rate((bi.get("complaint") or []) + (bi.get("improvement") or []), "positive")
-        # 불만·개선은 별점 기반이라 일부 긍정 혼입 가능 → 정보성 표기만
-        oks.append(f"불만·개선 버킷 멤버 {nt} (긍정감성 {npos} — 혼합리뷰 가능)")
+        # 불만·개선에 긍정 혼입이 과하면(>20%) 분류 오염 신호 → WARN
+        if nt and npos / nt * 100 > 20:
+            warns.append(f"불만·개선 버킷에 긍정감성 {npos}/{nt} ({npos/nt*100:.0f}%) — reverify_suspect 재실행 권장")
+        else:
+            oks.append(f"불만·개선 버킷 멤버 {nt} (긍정감성 {npos} — 혼합리뷰 허용 범위)")
 
     # ── 5) 후보 review_id 실재 여부 ──
     if cands is not None and reviews:

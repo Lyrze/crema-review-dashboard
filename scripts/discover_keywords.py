@@ -59,9 +59,12 @@ def main():
     captured = set()
     if kpath.is_file():
         kdata = json.loads(kpath.read_text(encoding="utf-8"))
-        for kw in (kdata.get("by_intent", {}) or {}).get("complaint", []):
-            for rid in (kw.get("all_review_ids") or []):
-                captured.add(str(rid))
+        bi = kdata.get("by_intent", {}) or {}
+        # complaint + improvement 둘 다 이미 잡은 리뷰 → 발굴 대상에서 제외 (중복 후보 방지)
+        for grp in ("complaint", "improvement"):
+            for kw in bi.get(grp, []) or []:
+                for rid in (kw.get("all_review_ids") or []):
+                    captured.add(str(rid))
 
     # 부정 감성인데 미포착 + 본문 있는 리뷰
     uncap = [(rid, (r.get("text") or "").strip(), r.get("rating"))

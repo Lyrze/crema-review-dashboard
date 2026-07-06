@@ -141,8 +141,10 @@ def main():
     ap.add_argument("--base-url", default="http://localhost:11434")
     ap.add_argument(
         "--polarities",
-        default="complaint,improvement",
-        help="재검증 대상 의도 (쉼표구분: complaint,improvement,praise). 기본 complaint,improvement",
+        default="complaint,improvement,praise",
+        help="재검증 대상 의도 (쉼표구분). 기본 complaint,improvement,praise "
+             "(praise 포함 — 7b 재분류가 '추천/만족' 등에 넣은 주제이탈 멤버 제거. "
+             "시간 단축이 필요하면 --polarities complaint,improvement 로 축소)",
     )
     args = ap.parse_args()
     polarities = [p.strip() for p in args.polarities.split(",") if p.strip()]
