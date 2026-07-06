@@ -62,6 +62,8 @@ def main():
     ap.add_argument("--brand", required=True)
     ap.add_argument("--month", required=True)
     ap.add_argument("--model", "--ollama-model", dest="model", default="qwen2.5:7b")
+    ap.add_argument("--verify-model", default="qwen2.5:14b",
+                    help="합의 검증 모델. 7b 제안을 재판정해 통과한 것만 '자동 배정' 등급 (미설치 시 전부 검토 등급)")
     ap.add_argument("--base-url", "--ollama-url", dest="base_url", default="http://localhost:11434")
     ap.add_argument("--cap", type=int, default=300, help="AI에 넣을 미분류 최대 수")
     ap.add_argument("--batch", type=int, default=10)
@@ -91,11 +93,20 @@ def main():
     reviews = json.loads(rpath.read_text(encoding="utf-8")).get("reviews", {})
 
     # 이미 분류된 리뷰: 키워드 매칭(모든 taxonomy) 또는 수동 include
+    # + few-shot: 운영자가 수동 분류한 실제 리뷰를 topic 예시로 주입(분류 기준 학습)
     included = set()
+    topic_examples = {}  # topicId -> [본문]
     for t in taxonomies:
         for rid, cls in (t.get("manualClassifications") or {}).items():
-            if cls and cls.get("include"):
-                included.add(str(rid))
+            if not cls or not cls.get("include"):
+                continue
+            included.add(str(rid))
+            rtext = (reviews.get(str(rid), {}) or {}).get("text", "")
+            if rtext:
+                for tid in cls["include"]:
+                    ex = topic_examples.setdefault(tid, [])
+                    if len(ex) < 2:
+                        ex.append(rtext[:90].replace("\n", " "))
     unclassified = []
     for rid, r in reviews.items():
         text = (r.get("text") or "").strip()
@@ -121,8 +132,13 @@ def main():
     if not analyzer.health_check():
         eprint("  [SKIP] Ollama 무응답 — 제안 생성 건너뜀"); sys.exit(0)
 
-    topic_lines = "\n".join(f"[{i+1}] {o['name']} (키워드: {', '.join(map(str, o['keywords']))})"
-                            for i, o in enumerate(topics))
+    def topic_line(i, o):
+        line = f"[{i+1}] {o['name']} (키워드: {', '.join(map(str, o['keywords']))})"
+        exs = topic_examples.get(o["topicId"]) or []
+        if exs:
+            line += "\n     예시리뷰: " + " / ".join(f'"{e}"' for e in exs)
+        return line
+    topic_lines = "\n".join(topic_line(i, o) for i, o in enumerate(topics))
     target = unclassified[: args.cap]
     if len(unclassified) > args.cap:
         eprint(f"  (상한 {args.cap}건만 분석 — 나머지 {len(unclassified)-args.cap}건은 다음 실행에서)")
@@ -178,9 +194,71 @@ def main():
                              "tax_name": t["taxName"]})
         eprint(f"   배치 {bi//B+1}/{(len(target)+B-1)//B} — 누적 제안 {len(sugs)}건")
 
-    out["suggestions"] = sugs
+    # ── 합의 검증: 제안을 verify-model(14b)이 반대신문 → 통과=자동배정, 거부/불확실=검토 ──
+    auto, review_tier = [], list(sugs)
+    if sugs and args.verify_model and args.verify_model != args.model:
+        v = OllamaAnalyzer(model=args.verify_model, base_url=args.base_url)
+        if v.health_check():
+            eprint(f"  합의 검증({args.verify_model}) — 제안 {len(sugs)}건 재판정...")
+            auto, review_tier = [], []
+            VB = 8
+            ex2 = ThreadPoolExecutor(max_workers=1)
+            consec = 0
+            idx = 0
+            while idx < len(sugs):
+                chunk = sugs[idx:idx + VB]
+                lines = []
+                for i, s in enumerate(chunk):
+                    txt = (reviews.get(str(s["review_id"]), {}) or {}).get("text", "")[:150].replace("\n", " ")
+                    lines.append(f'({i}) Topic="{s["topic_name"]}" / 리뷰="{txt}"')
+                vprompt = ("각 리뷰가 해당 Topic 주제를 실제로 담고 있는지 엄격히 판정하라. "
+                           "주제와 무관하거나 애매하면 false.\n\n" + "\n".join(lines) +
+                           '\n\nJSON 배열로만 답: [{"i":0,"ok":true}]')
+                try:
+                    fut = ex2.submit(v.client.generate, model=v.model, prompt=vprompt,
+                                     system="당신은 한국어 VOC 분류 검증 전문가입니다. JSON으로만 답하세요.",
+                                     temperature=0.0)
+                    raw2 = fut.result(timeout=args.timeout)
+                    consec = 0
+                except FTimeout:
+                    consec += 1
+                    eprint(f"   [TIMEOUT] 검증 배치 — 해당 배치는 검토 등급으로 (연속 {consec})")
+                    try:
+                        ex2.shutdown(wait=False, cancel_futures=True)
+                    except Exception:
+                        pass
+                    ex2 = ThreadPoolExecutor(max_workers=1)
+                    review_tier.extend(chunk)
+                    idx += VB
+                    if consec >= 3:
+                        eprint("   연속 타임아웃 3회 — 남은 제안 전부 검토 등급으로")
+                        review_tier.extend(sugs[idx:])
+                        break
+                    continue
+                except Exception as e:
+                    eprint(f"   [ERR] 검증: {str(e)[:80]} — 검토 등급으로")
+                    review_tier.extend(chunk)
+                    idx += VB
+                    continue
+                okmap = {}
+                m2 = re.search(r"\[[\s\S]*\]", str(raw2 or ""))
+                if m2:
+                    try:
+                        for o in json.loads(m2.group(0)):
+                            okmap[int(o.get("i"))] = bool(o.get("ok"))
+                    except Exception:
+                        pass
+                for i, s in enumerate(chunk):
+                    (auto if okmap.get(i) else review_tier).append(s)
+                idx += VB
+                eprint(f"   검증 {min(idx, len(sugs))}/{len(sugs)} — 자동 {len(auto)} · 검토 {len(review_tier)}")
+        else:
+            eprint(f"  [INFO] 검증 모델({args.verify_model}) 무응답 — 전부 검토 등급으로 저장")
+
+    out["auto"] = auto            # 2모델 합의 → 대시보드가 자동 배정 (↩ 취소 가능)
+    out["suggestions"] = review_tier  # 7b 단독 제안 → 검토 패널
     out_path.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
-    eprint(f"  [OK] AI 분류 제안 {len(sugs)}건 → {out_path.relative_to(ROOT)} (대시보드 미분류 화면에서 검토·적용)")
+    eprint(f"  [OK] 자동배정(2모델 합의) {len(auto)}건 · 검토 제안 {len(review_tier)}건 → {out_path.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

@@ -6834,6 +6834,47 @@ function txAiOpenPipelineSug(){
   TXAI.sug=sug; txAiRenderPanel();
 }
 
+// ── 자동배정 등급(2모델 합의) — Taxonomy 열 때 자동 적용, ↩ 원클릭 취소 ──
+function txAiAutoKey(){ return 'txai_auto::'+(STATE.brand||'')+'::'+(STATE.month||''); }
+function txAiAutoMarker(){ try{ return JSON.parse(localStorage.getItem(txAiAutoKey())||'null')||{pairs:[]}; }catch(e){ return {pairs:[]}; } }
+function txAiAutoApplyPending(){
+  var doc=STATE.txSuggestions; if(!doc || !Array.isArray(doc.auto) || !doc.auto.length) return;
+  if(typeof TAXONOMIES==='undefined' || !TAXONOMIES.length) return;
+  var marker=txAiAutoMarker();
+  var applied={}; marker.pairs.forEach(function(p){ applied[p[0]+'::'+p[1]+'::'+p[2]]=1; });
+  var topicSet={}; txAiTopicList().forEach(function(o){ topicSet[o.taxId+'::'+o.topicId]=1; });
+  var uncSet={}; try{ txGetUnclassified(TAXONOMIES[0], txGetAllReviews()).forEach(function(r){ uncSet[String(r.review_id)]=1; }); }catch(e){ return; }
+  var groups={}, newPairs=[];
+  doc.auto.forEach(function(s){
+    var rid=String(s.review_id||''), key=(s.tax_id||'')+'::'+(s.topic_id||'');
+    if(!topicSet[key] || !uncSet[rid]) return;                        // topic 삭제됨/이미 분류됨 → 무시
+    if(applied[rid+'::'+s.tax_id+'::'+s.topic_id]) return;            // 이미 적용됨
+    (groups[key]=groups[key]||[]).push(rid);
+    newPairs.push([rid, s.tax_id, s.topic_id]);
+  });
+  if(!newPairs.length) return;
+  Object.keys(groups).forEach(function(k){ var p=k.split('::'); txAssignToTopic(p[0], p[1], groups[k]); });
+  marker.pairs=marker.pairs.concat(newPairs);
+  try{ localStorage.setItem(txAiAutoKey(), JSON.stringify(marker)); }catch(e){}
+  showToast('🤖 AI 자동 분류 '+newPairs.length+'건 적용 (2모델 합의) — 미분류 화면에서 ↩ 취소 가능');
+}
+function txAiUndoAuto(){
+  var marker=txAiAutoMarker();
+  if(!marker.pairs.length){ showToast('취소할 자동 분류가 없습니다'); return; }
+  if(!confirm('AI 자동 분류 '+marker.pairs.length+'건을 모두 취소(배정 해제)할까요?')) return;
+  marker.pairs.forEach(function(p){
+    var tax=TAXONOMIES.find(function(t){return t.id===p[1];}); if(!tax || !tax.manualClassifications) return;
+    var cls=tax.manualClassifications[p[0]]; if(!cls || !cls.include) return;
+    cls.include=cls.include.filter(function(id){ return id!==p[2]; });
+    if(!cls.include.length && !(cls.exclude||[]).length) delete tax.manualClassifications[p[0]];
+  });
+  txSave();
+  try{ localStorage.removeItem(txAiAutoKey()); }catch(e){}
+  if(typeof refreshDashboardFromClassification==='function') refreshDashboardFromClassification();
+  showToast('↩ AI 자동 분류 '+marker.pairs.length+'건 취소 완료');
+  try{ txRenderDetail(); }catch(e){}
+}
+
 // ── 🔎 신규 키워드 후보 (검토형) — 부정 미포착 리뷰 발굴 → 채택/무시 ──
 var KWCAND_OPEN=false; // 기본 접힘(한 줄 바) — 펼쳐야 상세 표시
 function kwcandDecidedKey(){ return 'kwcand_decided::'+(STATE.brand||'')+'::'+(STATE.month||''); }
@@ -8721,6 +8762,8 @@ function showTaxonomyPage(){
   $('taxonomy-detail').classList.remove('active');
   TX_STATE.activeTaxonomyId=null;
   txLoad();
+  // 파이프라인 자동배정(2모델 합의) 미적용분 반영 — 멱등, ↩ 취소 가능
+  try{ txAiAutoApplyPending(); }catch(e){ console.warn('txai auto', e); }
   txRenderGrid();
   // sidebar nav active 갱신
   document.querySelectorAll('aside nav a').forEach(function(a){a.classList.remove('active');});
@@ -9069,7 +9112,12 @@ function txRenderUnclassified(taxonomy){
     '<div class="txd-stat-card"><div class="txd-stat-val">'+fmt(unclassified.length)+'</div><div class="txd-stat-lbl">미분류 리뷰</div></div>'+
     '<div class="txd-stat-card"><div class="txd-stat-val"><span class="pct">'+(allReviews.length>0?(unclassified.length/allReviews.length*100).toFixed(1):0)+'%</span></div><div class="txd-stat-lbl">전체 대비 ('+fmt(unclassified.length)+' / '+fmt(allReviews.length)+')</div></div>'+
   '</div>'+
-  (function(){ try{ var ps=txAiPipelineSug(taxonomy); if(ps.length) return '<div onclick="txAiOpenPipelineSug()" style="cursor:pointer;margin:0 0 12px;padding:11px 15px;background:var(--accent-bg);border:1px solid var(--accent);border-radius:11px;display:flex;align-items:center;gap:8px;"><span style="font-size:12.5px;font-weight:800;color:var(--accent);">📦 파이프라인 AI 분류 제안 '+ps.length+'건 — 클릭해서 검토·적용</span><span style="margin-left:auto;font-size:11px;color:var(--text-secondary);">업로드 시 자동 생성됨 (검토 전 미반영)</span></div>'; }catch(e){} return ''; })()+
+  (function(){ var h=''; try{
+    var mk=txAiAutoMarker();
+    if(mk.pairs.length) h+='<div style="margin:0 0 10px;padding:9px 15px;background:var(--positive-bg, rgba(22,163,74,.08));border:1px solid var(--positive);border-radius:11px;display:flex;align-items:center;gap:8px;"><span style="font-size:12px;font-weight:700;color:var(--positive);">🤖 AI 자동 분류 '+mk.pairs.length+'건 적용됨 (2모델 합의)</span><button onclick="txAiUndoAuto()" style="margin-left:auto;padding:4px 11px;background:transparent;color:var(--text-secondary);border:1px solid var(--border);border-radius:7px;font-size:11px;cursor:pointer;font-family:inherit;">↩ 전체 취소</button></div>';
+    var ps=txAiPipelineSug(taxonomy);
+    if(ps.length) h+='<div onclick="txAiOpenPipelineSug()" style="cursor:pointer;margin:0 0 12px;padding:11px 15px;background:var(--accent-bg);border:1px solid var(--accent);border-radius:11px;display:flex;align-items:center;gap:8px;"><span style="font-size:12.5px;font-weight:800;color:var(--accent);">📦 파이프라인 AI 분류 제안 '+ps.length+'건 — 클릭해서 검토·적용</span><span style="margin-left:auto;font-size:11px;color:var(--text-secondary);">업로드 시 자동 생성됨 (검토 전 미반영)</span></div>';
+  }catch(e){} return h; })()+
   txRenderBulkBar(taxonomy, true)+
   '<div class="txd-toolbar">'+
     '<label style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--text);cursor:pointer;padding:5px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;">'+
