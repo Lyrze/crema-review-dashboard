@@ -87,14 +87,12 @@ jobs:
 
             echo "처리 중: 브랜드=$BRAND 월=$MONTH 파일=$FILE"
 
-            # 전월 CSV 자동 탐지 (MoM 비교용)
-            PREV_MONTH=$(python3 -c "
-y, m = '$MONTH'.split('-')
-m = int(m) - 1
-if m < 1:
-    m = 12; y = int(y) - 1
-print(f'{y}-{m:02d}')
-")
+            # 전월 CSV 자동 탐지 (MoM 비교용) — 셸 산술 (다중행 python은 YAML 블록을 깨뜨림)
+            YEAR="${MONTH%-*}"
+            MON="${MONTH#*-}"
+            MON=$((10#$MON - 1))
+            if [ "$MON" -lt 1 ]; then MON=12; YEAR=$((YEAR - 1)); fi
+            PREV_MONTH=$(printf '%s-%02d' "$YEAR" "$MON")
             PREV_FILE="data/raw/$BRAND/$PREV_MONTH/reviews.csv"
             PREV_FLAG=""
             if [ -f "$PREV_FILE" ]; then
