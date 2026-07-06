@@ -6948,11 +6948,13 @@ function renderKeywordCandidates(){
     var samples=(c.samples||[]).slice(0,2).map(function(s){
       return '<div style="font-size:11px;color:var(--text-secondary);margin-top:3px;line-height:1.4;">★'+(s.rating||'')+' '+escapeHtml((s.text||'').slice(0,72))+'</div>';
     }).join('');
-    var viewBtn='<button onclick="kwcandViewReviews('+idx+')" style="margin-top:6px;padding:3px 9px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:6px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit;">📄 전체 '+(c.count||0)+'건 보기</button>';
+    var keptN=kwcandKeptIds(c).length; var exclN=(c.review_ids||[]).length-keptN;
+    var cntTxt=exclN>0?('<b style="color:var(--accent);">'+keptN+'건</b> <s style="opacity:.6;">'+(c.count||0)+'</s> · '+exclN+' 제외'):((c.count||0)+'건');
+    var viewBtn='<button onclick="kwcandViewReviews('+idx+')" style="margin-top:6px;padding:3px 9px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:6px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit;">📄 전체 보기 · 리뷰 제외</button>';
     var sel=kwcandGuessTopic(c);
     return '<div style="padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--card);margin-bottom:8px;">'+
       '<div style="display:flex;justify-content:space-between;gap:12px;">'+
-        '<div style="min-width:0;flex:1;">'+badge+' <b style="font-size:13px;">'+escapeHtml(c.word)+'</b> <span style="color:var(--text-secondary);font-size:11px;">'+(c.count||0)+'건</span>'+samples+viewBtn+'</div>'+
+        '<div style="min-width:0;flex:1;">'+badge+' <b style="font-size:13px;">'+escapeHtml(c.word)+'</b> <span style="color:var(--text-secondary);font-size:11px;">'+cntTxt+'</span>'+samples+viewBtn+'</div>'+
         '<div style="display:flex;gap:6px;flex-shrink:0;align-items:flex-start;">'+
           '<button onclick="kwcandAdopt('+idx+')" style="padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">➕ 채택</button>'+
           '<button onclick="kwcandDismiss('+idx+')" style="padding:6px 10px;background:transparent;color:var(--text-secondary);border:1px solid var(--border);border-radius:7px;font-size:11.5px;cursor:pointer;font-family:inherit;white-space:nowrap;">✕ 무시</button>'+
@@ -6968,19 +6970,53 @@ function renderKeywordCandidates(){
     '<div style="font-size:11.5px;color:var(--text-secondary);margin-bottom:11px;">부정 리뷰 중 <b>기존 불만 키워드에 안 잡힌</b> 것에서 발굴했습니다. 이미 맞는 토픽이 있으면 <b>분류 대상 토픽</b>에서 선택해 거기로 합치고(추천 자동 선택), 없으면 <b>새 토픽으로</b> 두세요. <b>채택</b>하면 해당 리뷰가 그 토픽에 배정됩니다.</div>'+
     rows+'</div>';
 }
-// 후보에 속한 리뷰 전체 보기 — reviews.json(STATE.reviewsById) 본문 조회
+// ── 후보 리뷰 개별 제외 — '효과없음' 후보에 소음/충전 리뷰가 섞이는 경우 걸러내고 채택 ──
+function kwcandExclKey(){ return 'kwcand_excl::'+(STATE.brand||'')+'::'+(STATE.month||''); }
+function kwcandExclMap(){ try{ return JSON.parse(localStorage.getItem(kwcandExclKey())||'{}'); }catch(e){ return {}; } }
+function kwcandSaveExclMap(m){ try{ localStorage.setItem(kwcandExclKey(), JSON.stringify(m)); }catch(e){} }
+function kwcandKeptIds(c){
+  var excl=(kwcandExclMap()[c.word])||{};
+  return (c.review_ids||[]).map(String).filter(function(id){ return !excl[id]; });
+}
+// 모달의 체크 상태를 제외 목록으로 저장 (체크 해제 = 제외)
+function kwcandSaveSelection(idx){
+  var data=STATE.keywordCandidates; if(!data||!data.candidates[idx]) return 0;
+  var c=data.candidates[idx];
+  var excl={};
+  document.querySelectorAll('.kwcand-rck').forEach(function(ck){ if(!ck.checked) excl[ck.getAttribute('data-rid')]=1; });
+  var map=kwcandExclMap();
+  if(Object.keys(excl).length) map[c.word]=excl; else delete map[c.word];
+  kwcandSaveExclMap(map);
+  renderKeywordCandidates();
+  return kwcandKeptIds(c).length;
+}
+function kwcandApplySelection(idx){
+  var kept=kwcandSaveSelection(idx);
+  var m=$('kwcand-rev-modal'); if(m) m.style.display='none';
+  if(typeof showToast==='function') showToast('✓ 선택 저장 — 채택 시 '+kept+'건만 배정됩니다');
+}
+function kwcandAdoptSelection(idx){
+  kwcandSaveSelection(idx);
+  var m=$('kwcand-rev-modal'); if(m) m.style.display='none';
+  kwcandAdopt(idx);
+}
+function kwcandToggleAll(on){ document.querySelectorAll('.kwcand-rck').forEach(function(ck){ ck.checked=!!on; }); }
+
+// 후보에 속한 리뷰 전체 보기 + 개별 제외(체크 해제) — reviews.json(STATE.reviewsById) 본문 조회
 function kwcandViewReviews(idx){
   var data=STATE.keywordCandidates; if(!data||!data.candidates[idx]) return;
   var c=data.candidates[idx];
   var ids=(c.review_ids||[]).map(String);
+  var excl=(kwcandExclMap()[c.word])||{};
   var byId=STATE.reviewsById||{};
   var items=ids.map(function(id){
     var rv=byId[id];
-    if(!rv) return '<div style="border:1px dashed var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:11.5px;color:var(--text-secondary);">#'+escapeHtml(id)+' — 본문 없음(reviews.json 재생성 필요)</div>';
+    var ck='<input type="checkbox" class="kwcand-rck" data-rid="'+escapeHtml(id)+'"'+(excl[id]?'':' checked')+' style="margin-top:3px;flex-shrink:0;width:15px;height:15px;cursor:pointer;" />';
+    if(!rv) return '<label style="display:flex;gap:9px;border:1px dashed var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:11.5px;color:var(--text-secondary);cursor:pointer;">'+ck+'<span>#'+escapeHtml(id)+' — 본문 없음(reviews.json 재생성 필요)</span></label>';
     var stars=''; for(var i=1;i<=5;i++) stars+=(i<=Math.round(rv.rating||0)?'★':'☆');
-    return '<div style="border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:8px;background:var(--card);">'+
-      '<div style="font-size:11px;color:var(--text-secondary);margin-bottom:5px;">'+stars+'  '+escapeHtml(rv.date||'')+'  '+escapeHtml(rv.product||'')+'</div>'+
-      '<div style="font-size:12.5px;line-height:1.6;color:var(--text);">'+escapeHtml(rv.text||'')+'</div></div>';
+    return '<label style="display:flex;gap:9px;border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:8px;background:var(--card);cursor:pointer;align-items:flex-start;">'+ck+
+      '<span style="min-width:0;"><span style="display:block;font-size:11px;color:var(--text-secondary);margin-bottom:5px;">'+stars+'  '+escapeHtml(rv.date||'')+'  '+escapeHtml(rv.product||'')+'</span>'+
+      '<span style="display:block;font-size:12.5px;line-height:1.6;color:var(--text);">'+escapeHtml(rv.text||'')+'</span></span></label>';
   }).join('');
   if(!items) items='<div style="color:var(--text-secondary);font-size:12.5px;">표시할 리뷰 본문이 없습니다.</div>';
   var m=$('kwcand-rev-modal');
@@ -6991,12 +7027,19 @@ function kwcandViewReviews(idx){
     document.body.appendChild(m);
   }
   var isImp=c.type==='improvement';
-  m.innerHTML='<div style="background:var(--card);border-radius:14px;width:100%;max-width:640px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.22);">'+
+  m.innerHTML='<div style="background:var(--card);border-radius:14px;width:100%;max-width:640px;max-height:82vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.22);">'+
     '<div style="padding:15px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;">'+
-      '<div style="font-size:14.5px;font-weight:800;min-width:0;">'+(isImp?'🛠️':'⚠️')+' "'+escapeHtml(c.word)+'" — 리뷰 '+ids.length+'건</div>'+
+      '<div style="min-width:0;"><div style="font-size:14.5px;font-weight:800;">'+(isImp?'🛠️':'⚠️')+' "'+escapeHtml(c.word)+'" — 리뷰 '+ids.length+'건</div>'+
+      '<div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">이 키워드와 무관한 리뷰는 <b>체크 해제</b>하세요 — 채택 시 체크된 리뷰만 배정됩니다.</div></div>'+
       '<button onclick="document.getElementById(\'kwcand-rev-modal\').style.display=\'none\'" style="border:none;background:none;font-size:22px;cursor:pointer;color:var(--text-secondary);flex-shrink:0;">×</button>'+
     '</div>'+
-    '<div style="padding:14px 20px;overflow-y:auto;">'+items+'</div></div>';
+    '<div style="padding:14px 20px;overflow-y:auto;">'+items+'</div>'+
+    '<div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center;">'+
+      '<button onclick="kwcandToggleAll(true)" style="padding:6px 11px;background:transparent;color:var(--text-secondary);border:1px solid var(--border);border-radius:7px;font-size:11px;cursor:pointer;font-family:inherit;">전체 선택</button>'+
+      '<button onclick="kwcandToggleAll(false)" style="padding:6px 11px;background:transparent;color:var(--text-secondary);border:1px solid var(--border);border-radius:7px;font-size:11px;cursor:pointer;font-family:inherit;">전체 해제</button>'+
+      '<button onclick="kwcandApplySelection('+idx+')" style="margin-left:auto;padding:7px 13px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;">✓ 선택 저장</button>'+
+      '<button onclick="kwcandAdoptSelection('+idx+')" style="padding:7px 15px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">➕ 선택 항목만 채택</button>'+
+    '</div></div>';
   m.style.display='flex';
 }
 function kwcandDismiss(idx){
@@ -7007,6 +7050,11 @@ function kwcandDismiss(idx){
 function kwcandAdopt(idx){
   var data=STATE.keywordCandidates; if(!data||!data.candidates[idx]) return;
   var c=data.candidates[idx];
+  var kept=kwcandKeptIds(c);           // 개별 제외 반영 — 체크 해제된 리뷰는 배정 안 함
+  if(!kept.length){
+    if(!confirm('모든 리뷰가 제외되어 배정할 리뷰가 없습니다. 키워드만 추가하고 채택할까요?\n(취소하면 채택하지 않습니다)')) return;
+  }
+  var excluded=(c.review_ids||[]).length-kept.length;
   var selEl=$('kwcand-topic-'+idx);
   var target=selEl?selEl.value:'__new__';
   var dest='';
@@ -7020,8 +7068,8 @@ function kwcandAdopt(idx){
         if(!tp.keywords) tp.keywords=[];
         if(tp.keywords.indexOf(c.word)<0) tp.keywords.push(c.word);
         txSave();
-        if(typeof txAssignToTopic==='function' && (c.review_ids||[]).length){
-          txAssignToTopic(taxId, topicId, c.review_ids.map(String));
+        if(typeof txAssignToTopic==='function' && kept.length){
+          txAssignToTopic(taxId, topicId, kept);
         }
         dest=tp.name;
       }
@@ -7038,8 +7086,8 @@ function kwcandAdopt(idx){
       var icon=c.type==='improvement'?'🛠️':'⚠️';
       disc.topics.push({id:tid, name:icon+' '+c.word, keywords:[c.word], mode:'any'});
       txSave();
-      if(typeof txAssignToTopic==='function' && (c.review_ids||[]).length){
-        txAssignToTopic('tx-discovered', tid, c.review_ids.map(String));
+      if(typeof txAssignToTopic==='function' && kept.length){
+        txAssignToTopic('tx-discovered', tid, kept);
       }
       dest='🔎 발굴 키워드';
     }
@@ -7047,7 +7095,7 @@ function kwcandAdopt(idx){
   var d=kwcandDecided(); d[c.word]='adopt'; kwcandSaveDecided(d);
   renderKeywordCandidates();
   if(typeof txRenderGrid==='function') try{ txRenderGrid(); }catch(e){}
-  if(typeof showToast==='function') showToast('➕ 채택: "'+c.word+'" → '+dest+' ('+((c.review_ids||[]).length)+'건 배정)');
+  if(typeof showToast==='function') showToast('➕ 채택: "'+c.word+'" → '+dest+' ('+kept.length+'건 배정'+(excluded>0?' · '+excluded+'건 제외':'')+')');
 }
 
 // ═══════════════════════════════════════════════
