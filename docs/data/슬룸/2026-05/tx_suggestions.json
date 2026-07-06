@@ -1,0 +1,165 @@
+{
+  "brand": "슬룸",
+  "month": "2026-05",
+  "generated_at": "",
+  "source_snapshot": "docs\\data\\슬룸\\2026-05\\taxonomy\\claude-check__2026-07-06.json",
+  "unclassified_total": 177,
+  "suggestions": [
+    {
+      "review_id": "112322",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-2",
+      "topic_name": "온열 / 발열",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "112662",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "112713",
+      "tax_id": "tx-pvoc-post",
+      "topic_id": "t-pv-post-0",
+      "topic_name": "배송",
+      "tax_name": "📮 구매 후 과정"
+    },
+    {
+      "review_id": "112749",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "113568",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "113317",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "113317",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "113587",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-3",
+      "topic_name": "재구매",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "113606",
+      "tax_id": "tx-pvoc-pre",
+      "topic_id": "t-pv-pre-2",
+      "topic_name": "상담 (구매 전)",
+      "tax_name": "🔍 구매 전 탐색"
+    },
+    {
+      "review_id": "113921",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "113969",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "114826",
+      "tax_id": "tx-pvoc-pre",
+      "topic_id": "t-pv-pre-2",
+      "topic_name": "상담 (구매 전)",
+      "tax_name": "🔍 구매 전 탐색"
+    }
+  ],
+  "auto": [
+    {
+      "review_id": "112290",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "112586",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "113558",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "113564",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "113317",
+      "tax_id": "tx-pvoc-pre",
+      "topic_id": "t-pv-pre-2",
+      "topic_name": "상담 (구매 전)",
+      "tax_name": "🔍 구매 전 탐색"
+    },
+    {
+      "review_id": "113661",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "114281",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "114313",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "114594",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "115113",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    }
+  ]
+}
