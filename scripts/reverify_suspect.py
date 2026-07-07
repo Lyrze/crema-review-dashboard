@@ -32,10 +32,9 @@ def eprint(*a, **k):
     print(*a, file=sys.stderr, flush=True, **k)
 
 
-def reverify_month(brand: str, month: str, model: str, base_url: str, polarities: list) -> bool:
+def reverify_month(brand: str, month: str, model: str, base_url: str, polarities: list,
+                   engine: str = "ollama") -> bool:
     """한 브랜드/월의 keywords.json 을 재검증해 in-place 저장. 성공 시 True."""
-    from ollama_analysis import OllamaAnalyzer  # type: ignore[import]
-
     data_dir = ROOT / "docs" / "data" / brand / month
     kpath = data_dir / "keywords.json"
     rpath = data_dir / "reviews.json"
@@ -46,11 +45,21 @@ def reverify_month(brand: str, month: str, model: str, base_url: str, polarities
         eprint(f"  [ERROR] reviews.json 없음: {rpath} (재검증에는 전체 리뷰 인덱스가 필요)")
         return False
 
-    analyzer = OllamaAnalyzer(model=model, base_url=base_url)
+    # 엔진 선택: claude(구독 CLI) 또는 ollama(로컬)
+    if str(engine).lower() == "claude":
+        from claude_engine import ClaudeAnalyzer  # type: ignore[import]
+        analyzer = ClaudeAnalyzer(model=model or "sonnet")
+        eng_label = f"Claude CLI({analyzer.model})"
+        fail_msg = "  [ERROR] Claude CLI 응답 없음 (로그인 확인) — 재검증 건너뜀"
+    else:
+        from ollama_analysis import OllamaAnalyzer  # type: ignore[import]
+        analyzer = OllamaAnalyzer(model=model, base_url=base_url)
+        eng_label = f"Ollama({model})"
+        fail_msg = f"  [ERROR] Ollama 응답 없음 ({base_url}) — 재검증 건너뜀"
     if not analyzer.health_check():
-        eprint(f"  [ERROR] Ollama 응답 없음 ({base_url}) — 재검증 건너뜀")
+        eprint(fail_msg)
         return False
-    eprint(f"  [OK] Ollama 정상, 정밀 보정 모델={model}")
+    eprint(f"  [OK] 정밀 보정 엔진={eng_label}")
 
     kw = json.loads(kpath.read_text(encoding="utf-8"))
     rv_idx = json.loads(rpath.read_text(encoding="utf-8")).get("reviews", {})
@@ -137,7 +146,10 @@ def main():
     ap = argparse.ArgumentParser(description="의심 키워드 멤버를 더 큰 모델로 재검증(거짓양성 제거)")
     ap.add_argument("--brand", required=True)
     ap.add_argument("--month", required=True)
-    ap.add_argument("--model", default="qwen2.5:14b", help="재검증 모델 (기본 qwen2.5:14b)")
+    ap.add_argument("--engine", default="ollama", choices=["ollama", "claude"],
+                    help="판정 엔진: ollama(로컬) 또는 claude(구독 CLI, API키 불필요). 기본 ollama")
+    ap.add_argument("--model", default=None,
+                    help="재검증 모델. 미지정 시 엔진별 기본값(ollama=qwen2.5:14b, claude=sonnet)")
     ap.add_argument("--base-url", default="http://localhost:11434")
     ap.add_argument(
         "--polarities",
@@ -149,8 +161,8 @@ def main():
     args = ap.parse_args()
     polarities = [p.strip() for p in args.polarities.split(",") if p.strip()]
 
-    eprint(f"  의심 키워드 정밀 보정: {args.brand} / {args.month}  대상={polarities}")
-    ok = reverify_month(args.brand, args.month, args.model, args.base_url, polarities)
+    eprint(f"  의심 키워드 정밀 보정: {args.brand} / {args.month}  대상={polarities}  엔진={args.engine}")
+    ok = reverify_month(args.brand, args.month, args.model, args.base_url, polarities, engine=args.engine)
     sys.exit(0 if ok else 1)
 
 

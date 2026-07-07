@@ -61,9 +61,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--brand", required=True)
     ap.add_argument("--month", required=True)
-    ap.add_argument("--model", "--ollama-model", dest="model", default="qwen2.5:7b")
-    ap.add_argument("--verify-model", default="qwen2.5:14b",
-                    help="합의 검증 모델. 7b 제안을 재판정해 통과한 것만 '자동 배정' 등급 (미설치 시 전부 검토 등급)")
+    ap.add_argument("--engine", default="ollama", choices=["ollama", "claude"],
+                    help="판정 엔진: ollama(로컬) 또는 claude(구독 CLI). 기본 ollama")
+    ap.add_argument("--model", "--ollama-model", dest="model", default=None,
+                    help="제안 모델. 미지정 시 ollama=qwen2.5:7b, claude=sonnet")
+    ap.add_argument("--verify-model", default=None,
+                    help="합의 검증 모델. 미지정 시 ollama=qwen2.5:14b, claude=sonnet. 통과분만 '자동 배정' 등급")
     ap.add_argument("--base-url", "--ollama-url", dest="base_url", default="http://localhost:11434")
     ap.add_argument("--cap", type=int, default=300, help="AI에 넣을 미분류 최대 수")
     ap.add_argument("--batch", type=int, default=10)
@@ -127,8 +130,10 @@ def main():
         out_path.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
         eprint("  미분류 없음 — 빈 제안 저장"); sys.exit(0)
 
-    from ollama_analysis import OllamaAnalyzer  # noqa: E402
-    analyzer = OllamaAnalyzer(model=args.model, base_url=args.base_url)
+    from claude_engine import make_analyzer  # noqa: E402  (ollama/claude 공용 팩토리)
+    prop_model = args.model or ("sonnet" if args.engine == "claude" else "qwen2.5:7b")
+    analyzer = make_analyzer(args.engine, model=prop_model, base_url=args.base_url)
+    eprint(f"  제안 엔진={args.engine}({analyzer.model})")
     if not analyzer.health_check():
         eprint("  [SKIP] Ollama 무응답 — 제안 생성 건너뜀"); sys.exit(0)
 
@@ -196,8 +201,11 @@ def main():
 
     # ── 합의 검증: 제안을 verify-model(14b)이 반대신문 → 통과=자동배정, 거부/불확실=검토 ──
     auto, review_tier = [], list(sugs)
-    if sugs and args.verify_model and args.verify_model != args.model:
-        v = OllamaAnalyzer(model=args.verify_model, base_url=args.base_url)
+    verify_model = args.verify_model or ("sonnet" if args.engine == "claude" else "qwen2.5:14b")
+    # ollama: 제안≠검증 모델일 때만(7b→14b). claude: 동일 sonnet이라도 엄격 프롬프트로 2차 검증 수행
+    do_verify = bool(sugs and verify_model and (args.engine == "claude" or verify_model != prop_model))
+    if do_verify:
+        v = make_analyzer(args.engine, model=verify_model, base_url=args.base_url)
         if v.health_check():
             eprint(f"  합의 검증({args.verify_model}) — 제안 {len(sugs)}건 재판정...")
             auto, review_tier = [], []
