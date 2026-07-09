@@ -78,6 +78,12 @@ if not "!AI_FLAG!"=="--skip-ai" (
   python scripts\classify_unclassified.py --brand "!BRAND!" --month "!MONTH!" !AI_FLAG!
 )
 
+:: [3.95/4] 옵션 기반 상품 매핑 재라벨링 (사은품 제외 + 세트 분해 + 다중 귀속)
+echo.
+echo  [3.95/4] 상품 매핑(유의어/옵션) 재라벨링 중...
+python scripts\patch_product_mapping.py --brand "!BRAND!" --months "!MONTH!" --apply --no-backup
+if errorlevel 1 ( echo  [WARNING] 매핑 재라벨링 실패. 원본 유지하고 계속 진행합니다. )
+
 :: 처리 결과
 python scripts\show_result.py "!BRAND!" "!MONTH!" 2>nul
 

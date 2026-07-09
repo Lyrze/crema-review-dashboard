@@ -53,6 +53,7 @@ class ClaudeClient:
     def __init__(self, timeout: int = 90):
         self.exe = _find_claude()
         self.timeout = timeout
+        self.fail_count = 0   # 누적 호출 실패 수 (한도/과부하 감지 — 재검증 이어받기 판단용)
         # npm 전역 경로를 PATH 에 보강 (subprocess 상속 환경)
         self._env = dict(os.environ)
         npm = os.path.expandvars(r"%APPDATA%\npm")
@@ -83,6 +84,7 @@ class ClaudeClient:
             except Exception as e:  # noqa: BLE001
                 last = e
             time.sleep(2 ** attempt)
+        self.fail_count += 1   # 재시도까지 모두 실패 (rc=1/타임아웃/한도 등)
         raise RuntimeError(f"claude 호출 실패: {last}")
 
 

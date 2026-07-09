@@ -3858,7 +3858,7 @@ function imOpenTopicReviews(taxId, topicId){
   if(!tp) return;
   var p=(typeof IM_CURRENT_PRODUCT!=='undefined')?IM_CURRENT_PRODUCT:null;
   var all=txGetAllReviews();
-  if(p) all=all.filter(function(r){return r.product===p.name;});
+  if(p) all=all.filter(function(r){return inProdFilter(r, p.name);});
   var matched=txMatchTopic(tp, all, tax);
   var reviews=matched.map(function(r){ return {name:r.product||(p?p.name:''), r:{review_id:r.review_id, rating:r.rating, date:r.date, text:r.text}}; });
   scOpenInsight({
@@ -4345,6 +4345,18 @@ function krmSetMode(mode){
   if(modal && modal._ctx) krmRenderList();
 }
 
+// ── 상품 멤버십 헬퍼 (옵션 기반 매핑 — 리뷰 1건이 여러 상품에 귀속될 수 있음) ──
+function rvProdList(o){
+  if(!o) return [];
+  if(o.products && o.products.length) return o.products;
+  if(o.product) return [o.product];
+  return [];
+}
+function inProdFilter(o, f){
+  if(!f) return true;
+  return rvProdList(o).indexOf(f)>=0;
+}
+
 function openKeywordReviewsModal(keyword, productFilter, type, searchTerm, explicitReviews){
   var modal=$('keyword-reviews-modal');
   if(!modal){
@@ -4423,17 +4435,17 @@ function openKeywordReviewsModal(keyword, productFilter, type, searchTerm, expli
     kwObj.all_review_ids.forEach(function(rid){
       var rv=STATE.reviewsById[String(rid)];
       if(!rv) return;
-      if(productFilter && rv.product!==productFilter) return;
+      if(!inProdFilter(rv, productFilter)) return;
       if(seenF[rid]) return; seenF[rid]=true;
-      allReviews.push({name: rv.product||'(상품 미상)', r:{review_id:String(rid), rating:rv.rating, date:rv.date, text:rv.text}});
+      allReviews.push({name: productFilter||rv.product||'(상품 미상)', _set:!!rv.is_set, _prods:rvProdList(rv), r:{review_id:String(rid), rating:rv.rating, date:rv.date, text:rv.text}});
     });
     // Taxonomy 수동 분류 리뷰 병합 (자동 매칭엔 없을 수 있음)
     if(kwObj.review_samples){
       kwObj.review_samples.forEach(function(s){
         if(!s._manual) return;
-        if(productFilter && s.product!==productFilter) return;
+        if(!inProdFilter(s, productFilter)) return;
         if(seenF[s.review_id]) return; seenF[s.review_id]=true;
-        allReviews.push({name:s.product||'(상품 미상)', r:{review_id:s.review_id, rating:s.rating, date:s.date, text:s.text, _manual:s._manual, _manualSource:s._manualSource}});
+        allReviews.push({name:s.product||'(상품 미상)', _set:!!s.is_set, r:{review_id:s.review_id, rating:s.rating, date:s.date, text:s.text, _manual:s._manual, _manualSource:s._manualSource}});
       });
     }
   }
@@ -4442,9 +4454,9 @@ function openKeywordReviewsModal(keyword, productFilter, type, searchTerm, expli
   if(allReviews.length===0 && kwObj && kwObj.review_samples && kwObj.review_samples.length>0){
     dataSource='samples';
     kwObj.review_samples.forEach(function(s){
-      if(productFilter && s.product!==productFilter) return;
+      if(!inProdFilter(s, productFilter)) return;
       allReviews.push({
-        name: s.product || '(상품 미상)',
+        name: s.product || '(상품 미상)', _set:!!s.is_set,
         r: {review_id:s.review_id, rating:s.rating, date:s.date, text:s.text,
             _manual:s._manual, _manualSource:s._manualSource}
       });
@@ -4512,11 +4524,11 @@ function openKeywordReviewsModal(keyword, productFilter, type, searchTerm, expli
     if(STATE.reviewsById){
       Object.keys(STATE.reviewsById).forEach(function(id){
         var rv=STATE.reviewsById[id];
-        if(productFilter && rv.product!==productFilter) return;
+        if(!inProdFilter(rv, productFilter)) return;
         var text=(rv.text||'').toLowerCase();
         for(var i=0;i<expandedTokens.length;i++){
           if(text.indexOf(expandedTokens[i])>=0){
-            allReviews.push({name:rv.product||'(상품 미상)', r:{review_id:String(id), rating:rv.rating, date:rv.date, text:rv.text}, matchedToken:expandedTokens[i]});
+            allReviews.push({name:productFilter||rv.product||'(상품 미상)', _set:!!rv.is_set, _prods:rvProdList(rv), r:{review_id:String(id), rating:rv.rating, date:rv.date, text:rv.text}, matchedToken:expandedTokens[i]});
             return;
           }
         }
@@ -4689,9 +4701,16 @@ function krmRenderList(){
     if(r._manual && r._manualSource){
       manualBadge='<span style="background:rgba(202,138,4,.12);color:#854d0e;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:9px;" title="Taxonomy &quot;'+escapeHtml(r._manualSource.taxonomyName)+' / '+escapeHtml(r._manualSource.topicName)+'&quot;에서 수동 분류됨">📂 수동 분류</span>';
     }
+    // 세트 상품 리뷰 배지 (여러 상품에 중복 집계됨을 표시)
+    var setBadge='';
+    if(item._set){
+      var setTip=(item._prods&&item._prods.length)?('구성품: '+item._prods.map(function(x){return fmtS(x)||x;}).join(' + ')):'세트 구성품 여러 상품에 함께 집계됨';
+      setBadge='<span style="background:rgba(124,58,237,.12);color:#6d28d9;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:9px;" title="'+escapeHtml(setTip)+'">📦 세트</span>';
+    }
     return '<div style="background:'+(r._manual?'rgba(202,138,4,.04)':'var(--surface)')+';border:1px solid '+(r._manual?'rgba(202,138,4,.25)':'var(--border)')+';border-radius:10px;padding:12px 14px;margin-bottom:10px;">'+
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">'+
         '<span style="font-size:11.5px;font-weight:700;color:var(--accent);cursor:pointer;" onclick="closeKeywordReviewsModal();openProductPanel(\''+item.name.replace(/'/g,"\\'")+'\');">'+escapeHtml(fmtS(item.name))+'</span>'+
+        setBadge+
         manualBadge+
         '<span style="font-size:12px;color:#f59e0b;letter-spacing:-1px;">'+stars+'</span>'+
         '<span style="font-size:10.5px;color:var(--text-secondary);">'+(r.date||'')+'</span>'+
@@ -4799,9 +4818,9 @@ function krmApplyReclassCache(){
     var seen={}; var rebuilt=[];
     cached.kept.forEach(function(id){
       var rv=STATE.reviewsById[String(id)]; if(!rv) return;
-      if(ctx.productFilter && rv.product!==ctx.productFilter) return;
+      if(!inProdFilter(rv, ctx.productFilter)) return;
       if(seen[id]) return; seen[id]=true;
-      rebuilt.push({name:rv.product||'(상품 미상)', r:{review_id:String(id), rating:rv.rating, date:rv.date, text:rv.text}});
+      rebuilt.push({name:ctx.productFilter||rv.product||'(상품 미상)', _set:!!rv.is_set, _prods:rvProdList(rv), r:{review_id:String(id), rating:rv.rating, date:rv.date, text:rv.text}});
     });
     ctx.reviews=rebuilt; ctx.totalCount=rebuilt.length;
     if(statusEl) statusEl.innerHTML='✓ 전체 재분류 적용됨 (A 귀속 '+rebuilt.length+'건 · 신규 +'+(cached.added||0)+' · 제외 -'+(cached.removed||0)+')';
@@ -4902,12 +4921,12 @@ function krmBuildFullCandidates(ctx){
       Object.keys(STATE.reviewsById).forEach(function(id){
         if(seen[id]) return;
         var rv=STATE.reviewsById[id];
-        if(ctx.productFilter && rv.product!==ctx.productFilter) return;
+        if(!inProdFilter(rv, ctx.productFilter)) return;
         var txt=(rv.text||'').toLowerCase();
         for(var i=0;i<toks.length;i++){
           if(txt.indexOf(toks[i])>=0){
             seen[id]=true;
-            cands.push({name:rv.product||'(상품 미상)', r:{review_id:id, rating:rv.rating, date:rv.date, text:rv.text}, _isNew:!origIds[id]});
+            cands.push({name:ctx.productFilter||rv.product||'(상품 미상)', _set:!!rv.is_set, _prods:rvProdList(rv), r:{review_id:id, rating:rv.rating, date:rv.date, text:rv.text}, _isNew:!origIds[id]});
             return;
           }
         }
@@ -5047,10 +5066,11 @@ function rebuildKeywordFromIds(kwObj, ids){
   var samples=[]; var perProd={}; var bp={};
   ids.forEach(function(id){
     var rv=STATE.reviewsById[String(id)]; if(!rv) return;
-    if(rv.product) bp[rv.product]=(bp[rv.product]||0)+1;
-    if(samples.length<50 && (perProd[rv.product]||0)<8){
-      perProd[rv.product]=(perProd[rv.product]||0)+1;
-      samples.push({review_id:String(id), rating:rv.rating, date:rv.date, text:(rv.text||'').slice(0,300), product:rv.product});
+    rvProdList(rv).forEach(function(pn){ bp[pn]=(bp[pn]||0)+1; });   // 멤버십 다중귀속
+    var primary=rvProdList(rv)[0]||rv.product;
+    if(samples.length<50 && (perProd[primary]||0)<8){
+      perProd[primary]=(perProd[primary]||0)+1;
+      samples.push({review_id:String(id), rating:rv.rating, date:rv.date, text:(rv.text||'').slice(0,300), product:primary, is_set:!!rv.is_set});
     }
   });
   kwObj.review_samples=samples;
@@ -7103,7 +7123,7 @@ function kwcandAdopt(idx){
 // ═══════════════════════════════════════════════
 var INS_CHART=null, INS_DRIVER_CHART=null, INS_DRIVER_DATA=[], INS_PREVKW=null, INS_TREND=null, INS_SETS={}, INS_SETSEQ=0, INS_PRODUCT='';
 // 상품 필터 헬퍼 — INS_PRODUCT='' 면 전체, 아니면 해당 상품 리뷰만
-function insInProduct(rid){ if(!INS_PRODUCT) return true; var r=(STATE.reviewsById||{})[String(rid)]; return !!(r && r.product===INS_PRODUCT); }
+function insInProduct(rid){ if(!INS_PRODUCT) return true; var r=(STATE.reviewsById||{})[String(rid)]; return inProdFilter(r, INS_PRODUCT); }
 function insIdsForProduct(ids){ return (ids||[]).filter(insInProduct); }
 // 키워드의 상품별 건수 (by_product 사용) — 추세/전월비교용
 function insKwCount(kwObj){ if(!INS_PRODUCT) return kwObj.count||0; var bp=(kwObj.by_product||[]).find(function(p){ return p.product===INS_PRODUCT; }); return bp?bp.count:0; }
@@ -8541,7 +8561,7 @@ function txGetAllReviews(){
   if(STATE.reviewsById){
     Object.keys(STATE.reviewsById).forEach(function(id){
       var r=STATE.reviewsById[id];
-      reviews.push({review_id:String(id), rating:r.rating, date:r.date, text:r.text, product:r.product, sentiment:((r.rating||0)>=4?'pos':'neg')});
+      reviews.push({review_id:String(id), rating:r.rating, date:r.date, text:r.text, product:r.product, products:r.products, is_set:r.is_set, sentiment:((r.rating||0)>=4?'pos':'neg')});
     });
     return reviews;
   }

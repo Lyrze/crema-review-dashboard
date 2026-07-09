@@ -65,16 +65,42 @@ def reverify_month(brand: str, month: str, model: str, base_url: str, polarities
     rv_idx = json.loads(rpath.read_text(encoding="utf-8")).get("reviews", {})
     bi = kw.get("by_intent", {})
 
+    # ── 이어받기(resume) 인프라 ──
+    prog_path = data_dir / ".reverify_progress.json"
+    try:
+        prog = json.loads(prog_path.read_text(encoding="utf-8")) if prog_path.is_file() else {}
+    except Exception:
+        prog = {}
+    done = set(prog.get(engine, []))            # 이 엔진으로 이미 끝낸 (key::word)
+    if done:
+        eprint(f"  [RESUME] 이미 완료된 키워드 {len(done)}개는 건너뜁니다")
+
+    def save_kw():
+        kpath.write_text(json.dumps(kw, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
+
+    def mark(tag):
+        done.add(tag); prog[engine] = sorted(done)
+        prog_path.write_text(json.dumps(prog, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    def is_quota(msg):
+        m = str(msg).lower()
+        return any(k in m for k in ("usage limit", "rate limit", "quota", "limit reached",
+                                    "too many requests", "429", "overloaded"))
+
     changed_total = 0
+    consec_fail = 0
     for key in polarities:
         polarity = POLARITY_MAP.get(key)
         if not polarity:
             continue
         for item in bi.get(key, []):
             word = str(item.get("word", ""))
+            tag = key + "::" + word
+            if tag in done:
+                continue                        # 이어받기: 이미 처리됨
             members = [str(x) for x in item.get("all_review_ids", [])]
             if not members:
-                continue
+                mark(tag); continue
             samples = []
             for rid in members:
                 rv = rv_idx.get(rid)
@@ -86,13 +112,31 @@ def reverify_month(brand: str, month: str, model: str, base_url: str, polarities
                     "rating": rv.get("rating", 0),
                 })
             if not samples:
-                continue
+                mark(tag); continue
             before = len(samples)
+            f0 = getattr(analyzer.client, "fail_count", 0)   # 이 키워드 검증 전 실패 수
             try:
                 kept = analyzer.verify_keyword_reviews(word, polarity, samples, mode="batch")
             except Exception as exc:  # noqa: BLE001
-                eprint(f"  [WARN] '{word}' 재검증 실패, 유지: {exc}")
+                if is_quota(exc) or consec_fail >= 2:
+                    save_kw()
+                    eprint(f"  [STOP] 한도 소진/연속 실패 추정 — 진행분 저장. 완료 {len(done)}개. "
+                           f"같은 명령 재실행 시 이어집니다. ({str(exc)[:80]})")
+                    return "quota"
+                consec_fail += 1
+                eprint(f"  [WARN] '{word}' 재검증 실패, 유지(미완료): {str(exc)[:80]}")
                 continue
+            # 내부 3단계 게이트는 호출 실패를 '보존'으로 삼키므로, 실패 발생 여부를 카운터로 감지
+            df = getattr(analyzer.client, "fail_count", 0) - f0
+            if df > 0:
+                consec_fail += 1
+                eprint(f"  [WARN] '{word}' 검증 중 호출 {df}건 실패 → 신뢰불가, 미완료 처리(재실행 시 재검증)")
+                if consec_fail >= 2:   # 한도 소진 패턴 — 이 키워드는 마크하지 않고 중단
+                    save_kw()
+                    eprint(f"  [STOP] 한도 소진 추정 — 진행분 저장. 완료 {len(done)}개. 같은 명령 재실행 시 이어집니다.")
+                    return "quota"
+                continue               # write-back/mark 하지 않음 → 원본 유지, 다음 실행 때 재검증
+            consec_fail = 0
             kept_ids = [str(s.get("review_id")) for s in kept if s.get("review_id")]
 
             # ── write-back (reclassify_keyword_full 과 동일 포맷) ──
@@ -133,19 +177,25 @@ def reverify_month(brand: str, month: str, model: str, base_url: str, polarities
                 changed_total += 1
             flag = "  <== 제거" if removed else ""
             eprint(f"  [{key}] {word}: {before} -> {len(kept_ids)} (-{removed}){flag}")
+            save_kw()          # 키워드 단위 즉시 저장 (중단돼도 여기까진 보존)
+            mark(tag)          # 완료 표시 (재실행 시 건너뜀)
 
-    kpath.write_text(
-        json.dumps(kw, ensure_ascii=False, indent=2, default=str),
-        encoding="utf-8",
-    )
-    eprint(f"  [OK] 저장 완료: {kpath}  (변경된 키워드 {changed_total}개)")
+    # 월 전체 완료 → 진행 마커 제거
+    save_kw()
+    try:
+        if prog_path.is_file():
+            prog_path.unlink()
+    except Exception:
+        pass
+    eprint(f"  [OK] 저장 완료: {kpath}  (변경된 키워드 {changed_total}개, 월 완료)")
     return True
 
 
 def main():
     ap = argparse.ArgumentParser(description="의심 키워드 멤버를 더 큰 모델로 재검증(거짓양성 제거)")
     ap.add_argument("--brand", required=True)
-    ap.add_argument("--month", required=True)
+    ap.add_argument("--month", help="단일 월 (YYYY-MM)")
+    ap.add_argument("--months", help="여러 월 쉼표구분 (예: 2026-03,2026-04,2026-05) — 순서대로, 이어받기 가능")
     ap.add_argument("--engine", default="ollama", choices=["ollama", "claude"],
                     help="판정 엔진: ollama(로컬) 또는 claude(구독 CLI, API키 불필요). 기본 ollama")
     ap.add_argument("--model", default=None,
@@ -160,10 +210,22 @@ def main():
     )
     args = ap.parse_args()
     polarities = [p.strip() for p in args.polarities.split(",") if p.strip()]
+    months = [m.strip() for m in (args.months or args.month or "").split(",") if m.strip()]
+    if not months:
+        eprint("  [ERROR] --month 또는 --months 필요"); sys.exit(1)
 
-    eprint(f"  의심 키워드 정밀 보정: {args.brand} / {args.month}  대상={polarities}  엔진={args.engine}")
-    ok = reverify_month(args.brand, args.month, args.model, args.base_url, polarities, engine=args.engine)
-    sys.exit(0 if ok else 1)
+    eprint(f"  의심 키워드 정밀 보정: {args.brand}  월={months}  대상={polarities}  엔진={args.engine}")
+    for i, mo in enumerate(months):
+        eprint(f"\n===== [{i+1}/{len(months)}] {mo} =====")
+        res = reverify_month(args.brand, mo, args.model, args.base_url, polarities, engine=args.engine)
+        if res == "quota":
+            eprint(f"\n  [일시중단] 한도 소진 추정 — {mo}까지 부분 완료. "
+                   f"한도 회복 후 '동일 명령'을 다시 실행하면 남은 부분부터 이어서 처리합니다.")
+            sys.exit(3)          # 3 = 이어받기 필요
+        if not res:
+            eprint(f"  [WARN] {mo} 실패/건너뜀");
+    eprint("\n  [완료] 모든 월 재검증 종료")
+    sys.exit(0)
 
 
 if __name__ == "__main__":

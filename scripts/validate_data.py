@@ -57,12 +57,22 @@ def main():
     products = products_raw if isinstance(products_raw, list) else (products_raw or {}).get("products", []) if products_raw else []
     nrev = len(reviews)
 
-    # ── 1) total_reviews 정합성 (KPI = reviews.json = 상품 합계) ──
+    # ── 1) total_reviews 정합성 ──
+    # 옵션 기반 매핑 적용 시:
+    #   · 사은품(비마사지기) 리뷰 제외 → reviews.json(nrev) ≤ KPI(수집 전체)
+    #   · 세트 다중귀속(리뷰 1건 → 여러 상품) → 상품합(psum) ≥ nrev
+    # 매핑 미적용(레거시)이면 셋이 모두 같아야 한다.
     if summary is not None and reviews_doc is not None:
         kpi_tot = (summary.get("kpis", {}) or {}).get("total_reviews")
         psum = sum(p.get("review_count", 0) for p in products)
+        mapped = any((isinstance(r, dict) and ("products" in r or r.get("is_set")))
+                     for r in reviews.values())
         if kpi_tot == nrev == psum:
             oks.append(f"리뷰 수 일치: KPI={kpi_tot} = reviews={nrev} = 상품합={psum}")
+        elif mapped and (kpi_tot is None or nrev <= kpi_tot) and psum >= nrev:
+            gifts = (kpi_tot - nrev) if isinstance(kpi_tot, int) else "?"
+            oks.append(f"리뷰 수 정합(매핑): 수집 {kpi_tot} → 분석 {nrev} "
+                       f"(사은품 제외 {gifts}) · 상품합 {psum}(세트 다중귀속 +{psum - nrev})")
         else:
             fails.append(f"리뷰 수 불일치: KPI={kpi_tot}, reviews.json={nrev}, 상품합={psum}")
 
