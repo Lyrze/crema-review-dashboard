@@ -27,6 +27,17 @@ __all__ = [
 
 logger = logging.getLogger(__name__)
 
+_QUOTA_SIGNALS = ("usage limit", "session limit", "rate limit", "quota", "limit reached",
+                  "too many requests", "429", "overloaded")
+
+
+def _is_quota_exc(exc) -> bool:
+    """한도 소진/과부하성 오류인지 판정 (Claude CLI 구독 한도 등).
+    이런 오류는 '보존하고 계속'이 아니라 즉시 상위로 전파해야 남은 항목에서
+    동일 오류로 재시도를 반복해 호출을 낭비하지 않는다."""
+    m = str(exc).lower()
+    return any(k in m for k in _QUOTA_SIGNALS)
+
 
 # ────────────────────────────────────────────
 # URL 검증 헬퍼
@@ -695,6 +706,8 @@ class OllamaAnalyzer:
                 idx = {int(x) for x in rel if isinstance(x, int) and 0 <= x < len(chunk)}
                 survivors.extend(chunk[j] for j in range(len(chunk)) if j in idx)
             except RuntimeError as exc:
+                if _is_quota_exc(exc):
+                    raise  # 한도 소진 — 남은 청크 낭비 호출 방지, 즉시 상위로 전파
                 logger.warning("재분류 ①관련성 실패, 보존: %s", exc)
                 survivors.extend(chunk)
 
@@ -731,6 +744,8 @@ class OllamaAnalyzer:
                         sm["ai_intent"] = intent_by.get(j, "")
                         stage2.append(sm)
             except RuntimeError as exc:
+                if _is_quota_exc(exc):
+                    raise
                 logger.warning("재분류 ②의도 실패, 보존: %s", exc)
                 stage2.extend(chunk)
 
@@ -755,7 +770,9 @@ class OllamaAnalyzer:
             )
             try:
                 raw = _gen(prompt, "당신은 한국어 리뷰 분석가입니다.")
-            except RuntimeError:
+            except RuntimeError as exc:
+                if _is_quota_exc(exc):
+                    raise
                 final.append(sm)  # 판정 실패 시 보존
                 continue
             last = (raw.strip().splitlines() or [""])[-1]

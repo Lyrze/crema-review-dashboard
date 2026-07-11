@@ -434,6 +434,30 @@ tail -20 scripts/process_data.py  # if __name__ == '__main__' 블록 확인
 
 ---
 
+### 🟠 HIGH: Claude CLI 한도(quota) 자동화 — 예약작업 대신 순수 재시도 루프
+
+**발생**: `reverify_suspect.py --engine claude`가 계정 세션 한도에 걸릴 때, 사람이 리셋 시각까지 기다렸다가 수동으로 재실행해야 했음. Claude Code의 예약작업(scheduled-tasks MCP, `create_scheduled_task`)으로 자동화를 시도했으나 **두 번 모두** 무인 실행 컨텍스트에서 첫 Bash tool_use 직후 무응답으로 멈춤(승인 대기로 추정). "Run now" 사전승인도 실제 예약 발동엔 적용 안 됨.
+
+**증상**: task-notification은 "completed"로 뜨는데 실제로는 아무 명령도 실행되지 않음(데이터/마커 변화 없음).
+
+**규칙**: 특정 시각(한도 리셋 등)에 무인으로 명령을 재시도해야 하면 **Claude Code 예약작업을 쓰지 말고** `scripts/auto_reverify_loop.py`처럼 **순수 프로세스 루프**를 지금 세션에서 `run_in_background`로 직접 띄운다. 이 스크립트는 실패 메시지에서 "resets HH:MMam/pm" 을 정규식으로 파싱해 그 시각까지 sleep 후 재시도한다.
+
+```bash
+python scripts/auto_reverify_loop.py --brand 슬룸 --months 2026-04,2026-05,2026-03 --engine claude
+```
+
+**추가로 발견한 버그(같이 고침)**: 계정 전체가 한도 소진이면 `reverify_month()`의 `analyzer.health_check()`가 실패하는데, 이걸 그냥 "건너뜀(False)"으로 처리하면 남은 모든 월도 연쇄로 스킵되다가 `main()`이 **exit 0("완료")** 로 끝나버려 사실상 아무 것도 처리 못 했는데 성공한 것처럼 보임. → `health_check` 실패 원인이 한도성 메시지(`is_quota()`)면 반드시 `"quota"`를 반환해 `main()`이 `sys.exit(3)`으로 멈추게 해야 한다(그래야 `auto_reverify_loop.py`가 올바르게 재시도 여부를 판단할 수 있음).
+
+**부가 함정**: `python cmd; echo "EXIT=$?" >> log` 처럼 세미콜론/파이프(`| tail`)로 명령을 이어 붙이면, exit code(`$?`)는 **마지막 명령의 것**만 잡힌다(background 도구 알림도 동일). 실제 종료코드는 파이프 없이 `cmd >/dev/null 2>&1; echo $?` 로 확인할 것.
+
+**reverify_suspect.py 종료코드 계약(auto_reverify_loop 이 이 값으로 재시도/중단 판단)**:
+- `0` = 전체 완료(또는 이미 완료돼 스킵). 루프 종료.
+- `3` = 한도(quota) 소진 → 리셋 후 이어받기. 루프가 리셋시각까지 대기 후 재시도.
+- `2` = 비(非)한도 실패로 한 건도 처리 못 함(로그인/파일/환경 등). 루프가 **자동 재시도 없이 중단**, 사람 확인 필요.
+한도 감지는 세 겹: ① `claude_engine`이 stdout·stderr 둘 다 검사해 quota 신호 시 즉시 실패 + `_quota_seen` 기록, ② 회로차단기(연속 2회 완전실패)가 quota면 'quota' 표기/비한도면 '사람 확인' 표기로 구분, ③ `reverify_suspect`가 그 신호로 3(quota) vs 2(비한도)를 분기. 완료 판정 마커는 `__done_pol__`(엔진별 완료 polarity 집합)로 기록 — 요청 polarity가 부분집합일 때만 스킵(축소 실행 후 전체 재실행 시 미검증 polarity가 영구 스킵되던 버그 방지).
+
+---
+
 ### 🟠 HIGH: loadData — 로드 실패 시 사용자에게 반드시 알릴 것
 
 **발생**: `Promise.allSettled` 사용 시 JSON 로드 실패가 조용히 REAL_DATA 폴백으로 처리됨. 사용자가 잘못된 데이터를 보고 있음을 알 수 없었음.

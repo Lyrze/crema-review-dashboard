@@ -27,6 +27,13 @@ def eprint(*a, **k):
     print(*a, file=sys.stderr, flush=True, **k)
 
 
+def is_quota(msg) -> bool:
+    """한도 소진성 오류 판정 (reverify_suspect 와 동일 기준)."""
+    m = str(msg).lower()
+    return any(k in m for k in ("usage limit", "session limit", "rate limit", "quota",
+                                "limit reached", "too many requests", "429", "overloaded"))
+
+
 def latest_snapshot(brand: str):
     """브랜드의 모든 월에서 가장 최신 Taxonomy 스냅샷 경로."""
     files = sorted((ROOT / "docs" / "data" / brand).glob("*/taxonomy/*.json"),
@@ -135,7 +142,29 @@ def main():
     analyzer = make_analyzer(args.engine, model=prop_model, base_url=args.base_url)
     eprint(f"  제안 엔진={args.engine}({analyzer.model})")
     if not analyzer.health_check():
-        eprint("  [SKIP] Ollama 무응답 — 제안 생성 건너뜀"); sys.exit(0)
+        err = getattr(analyzer, "last_error", "") or ""
+        if is_quota(err):
+            # 한도 소진 — quota_retry 루프가 리셋시각 파싱 후 재시도할 수 있게 exit 3
+            eprint(f"  [STOP] 한도 소진 — 리셋 후 재실행 시 이어집니다. ({err[:200]})")
+            sys.exit(3)
+        eprint("  [SKIP] AI 엔진 무응답 — 제안 생성 건너뜀"); sys.exit(0)
+
+    # ── 이어받기(resume) 마커: 한도 중단 시 배치 진행상태 보존 ──
+    prog_path = out_path.parent / ".tx_progress.json"
+    try:
+        prog = json.loads(prog_path.read_text(encoding="utf-8")) if prog_path.is_file() else {}
+    except Exception:
+        prog = {}
+    processed = set(prog.get("processed_ids", []))
+    sugs_saved = prog.get("sugs", [])
+    propose_done = bool(prog.get("propose_done"))
+    v_state = prog.get("verify", {}) or {}
+
+    def save_prog(**kw):
+        prog.update(kw)
+        prog["processed_ids"] = sorted(processed)
+        prog["sugs"] = sugs
+        prog_path.write_text(json.dumps(prog, ensure_ascii=False), encoding="utf-8")
 
     def topic_line(i, o):
         line = f"[{i+1}] {o['name']} (키워드: {', '.join(map(str, o['keywords']))})"
@@ -147,9 +176,16 @@ def main():
     target = unclassified[: args.cap]
     if len(unclassified) > args.cap:
         eprint(f"  (상한 {args.cap}건만 분석 — 나머지 {len(unclassified)-args.cap}건은 다음 실행에서)")
+    sugs = list(sugs_saved)          # 이어받기: 이전 실행의 제안 누적분 복원
+    if processed:
+        before_n = len(target)
+        target = [x for x in target if x[0] not in processed]
+        eprint(f"  [RESUME] 이미 분석한 {before_n - len(target)}건 건너뜀 (남은 {len(target)}건, 누적 제안 {len(sugs)}건)")
+    if propose_done:
+        target = []
+        eprint(f"  [RESUME] 제안 단계 완료 상태 — 합의 검증부터 재개 (제안 {len(sugs)}건)")
     B = max(5, args.batch)
     ex = ThreadPoolExecutor(max_workers=1)
-    sugs = []
     consec_to = 0
     for bi in range(0, len(target), B):
         batch = target[bi:bi + B]
@@ -177,9 +213,18 @@ def main():
                 break
             continue
         except Exception as e:
+            if is_quota(e):
+                save_prog()
+                eprint(f"  [STOP] 한도 소진 — 진행분 저장(분석 {len(processed)}건·제안 {len(sugs)}건). "
+                       f"재실행 시 이어집니다. ({str(e)[:200]})")
+                sys.exit(3)
             eprint(f"   [ERR] 배치 {bi//B+1}: {str(e)[:100]}"); continue
+        # 모델이 응답한 배치는 처리됨으로 기록 (재실행 시 중복 호출 방지)
+        for _rid, _t, _rt in batch:
+            processed.add(_rid)
         m = re.search(r"\[[\s\S]*\]", str(raw or ""))
         if not m:
+            save_prog()
             continue
         try:
             arr = json.loads(m.group(0))
@@ -197,7 +242,10 @@ def main():
                 sugs.append({"review_id": batch[ri][0], "tax_id": t["taxId"],
                              "topic_id": t["topicId"], "topic_name": t["name"],
                              "tax_name": t["taxName"]})
+        save_prog()
         eprint(f"   배치 {bi//B+1}/{(len(target)+B-1)//B} — 누적 제안 {len(sugs)}건")
+
+    save_prog(propose_done=True)     # 제안 단계 완료 — 이후 중단 시 검증부터 재개
 
     # ── 합의 검증: 제안을 verify-model(14b)이 반대신문 → 통과=자동배정, 거부/불확실=검토 ──
     auto, review_tier = [], list(sugs)
@@ -206,13 +254,24 @@ def main():
     do_verify = bool(sugs and verify_model and (args.engine == "claude" or verify_model != prop_model))
     if do_verify:
         v = make_analyzer(args.engine, model=verify_model, base_url=args.base_url)
-        if v.health_check():
-            eprint(f"  합의 검증({args.verify_model}) — 제안 {len(sugs)}건 재판정...")
-            auto, review_tier = [], []
+        if not v.health_check():
+            verr = getattr(v, "last_error", "") or ""
+            if is_quota(verr):
+                save_prog()
+                eprint(f"  [STOP] 한도 소진(검증 단계 진입 전) — 재실행 시 검증부터 재개. ({verr[:200]})")
+                sys.exit(3)
+            eprint(f"  [INFO] 검증 모델({verify_model}) 무응답 — 전부 검토 등급으로 저장")
+        else:
+            eprint(f"  합의 검증({verify_model}) — 제안 {len(sugs)}건 재판정...")
+            # 이어받기: 이전 실행의 검증 진행분 복원
+            idx = int(v_state.get("idx", 0) or 0)
+            auto = list(v_state.get("auto", []))
+            review_tier = list(v_state.get("review", []))
+            if idx:
+                eprint(f"  [RESUME] 검증 {idx}/{len(sugs)}부터 재개 (자동 {len(auto)} · 검토 {len(review_tier)})")
             VB = 8
             ex2 = ThreadPoolExecutor(max_workers=1)
             consec = 0
-            idx = 0
             while idx < len(sugs):
                 chunk = sugs[idx:idx + VB]
                 lines = []
@@ -244,6 +303,11 @@ def main():
                         break
                     continue
                 except Exception as e:
+                    if is_quota(e):
+                        save_prog(verify={"idx": idx, "auto": auto, "review": review_tier})
+                        eprint(f"  [STOP] 한도 소진 — 검증 {idx}/{len(sugs)}에서 저장. "
+                               f"재실행 시 이어집니다. ({str(e)[:200]})")
+                        sys.exit(3)
                     eprint(f"   [ERR] 검증: {str(e)[:80]} — 검토 등급으로")
                     review_tier.extend(chunk)
                     idx += VB
@@ -259,13 +323,17 @@ def main():
                 for i, s in enumerate(chunk):
                     (auto if okmap.get(i) else review_tier).append(s)
                 idx += VB
+                save_prog(verify={"idx": idx, "auto": auto, "review": review_tier})
                 eprint(f"   검증 {min(idx, len(sugs))}/{len(sugs)} — 자동 {len(auto)} · 검토 {len(review_tier)}")
-        else:
-            eprint(f"  [INFO] 검증 모델({args.verify_model}) 무응답 — 전부 검토 등급으로 저장")
 
     out["auto"] = auto            # 2모델 합의 → 대시보드가 자동 배정 (↩ 취소 가능)
     out["suggestions"] = review_tier  # 7b 단독 제안 → 검토 패널
     out_path.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
+    try:
+        if prog_path.is_file():
+            prog_path.unlink()      # 월 완료 — 진행 마커 제거 (산출물은 tx_suggestions.json)
+    except Exception:
+        pass
     eprint(f"  [OK] 자동배정(2모델 합의) {len(auto)}건 · 검토 제안 {len(review_tier)}건 → {out_path.relative_to(ROOT)}")
 
 

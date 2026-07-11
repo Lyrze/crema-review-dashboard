@@ -1,0 +1,536 @@
+{
+  "brand": "슬룸",
+  "month": "2026-03",
+  "generated_at": "",
+  "source_snapshot": "docs\\data\\슬룸\\2026-05\\taxonomy\\claude-check__2026-07-06.json",
+  "unclassified_total": 253,
+  "suggestions": [
+    {
+      "review_id": "89761",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-6",
+      "topic_name": "크기 / 무게",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "96900",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "109900",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "109948",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "110162",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "110427",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-4",
+      "topic_name": "착용감 / 사용 편의",
+      "tax_name": "🧩 제품 경험"
+    }
+  ],
+  "auto": [
+    {
+      "review_id": "89744",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-0",
+      "topic_name": "효과 / 효능",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "89746",
+      "tax_id": "tx-pvoc-post",
+      "topic_id": "t-pv-post-0",
+      "topic_name": "배송",
+      "tax_name": "📮 구매 후 과정"
+    },
+    {
+      "review_id": "89754",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-7",
+      "topic_name": "배터리 / 충전",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "89765",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-7",
+      "topic_name": "배터리 / 충전",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "89831",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "89938",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "96521",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-1",
+      "topic_name": "강도 / 세기",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "96529",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-4",
+      "topic_name": "착용감 / 사용 편의",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "96530",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-1",
+      "topic_name": "강도 / 세기",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "96552",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-1",
+      "topic_name": "효도 / 선물",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "96556",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "96602",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-3",
+      "topic_name": "재구매",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "96623",
+      "tax_id": "tx-pvoc-post",
+      "topic_id": "t-pv-post-0",
+      "topic_name": "배송",
+      "tax_name": "📮 구매 후 과정"
+    },
+    {
+      "review_id": "96624",
+      "tax_id": "tx-pvoc-post",
+      "topic_id": "t-pv-post-0",
+      "topic_name": "배송",
+      "tax_name": "📮 구매 후 과정"
+    },
+    {
+      "review_id": "96626",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-0",
+      "topic_name": "효과 / 효능",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "96636",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-1",
+      "topic_name": "강도 / 세기",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "96668",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "96671",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "96720",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "96725",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-4",
+      "topic_name": "착용감 / 사용 편의",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "96726",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-4",
+      "topic_name": "착용감 / 사용 편의",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "96735",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-2",
+      "topic_name": "온열 / 발열",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "96749",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-0",
+      "topic_name": "효과 / 효능",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "96755",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-3",
+      "topic_name": "소음 / 진동",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "96775",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-0",
+      "topic_name": "효과 / 효능",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "96777",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-0",
+      "topic_name": "효과 / 효능",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "96783",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-0",
+      "topic_name": "효과 / 효능",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "96787",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-3",
+      "topic_name": "재구매",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "96809",
+      "tax_id": "tx-pvoc-post",
+      "topic_id": "t-pv-post-0",
+      "topic_name": "배송",
+      "tax_name": "📮 구매 후 과정"
+    },
+    {
+      "review_id": "96819",
+      "tax_id": "tx-pvoc-post",
+      "topic_id": "t-pv-post-0",
+      "topic_name": "배송",
+      "tax_name": "📮 구매 후 과정"
+    },
+    {
+      "review_id": "96854",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-0",
+      "topic_name": "효과 / 효능",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "96868",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-0",
+      "topic_name": "효과 / 효능",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "108932",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "108967",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-1",
+      "topic_name": "효도 / 선물",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "109061",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-0",
+      "topic_name": "효과 / 효능",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "109593",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-1",
+      "topic_name": "효도 / 선물",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "109756",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-1",
+      "topic_name": "효도 / 선물",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "109772",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-5",
+      "topic_name": "디자인 / 외관",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "109777",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-1",
+      "topic_name": "효도 / 선물",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "109819",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-1",
+      "topic_name": "강도 / 세기",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "109827",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-1",
+      "topic_name": "강도 / 세기",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "109887",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "109888",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "109906",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "109913",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "109917",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-4",
+      "topic_name": "착용감 / 사용 편의",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "109934",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-0",
+      "topic_name": "효과 / 효능",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "109953",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "109964",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-1",
+      "topic_name": "강도 / 세기",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "109972",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "109973",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-0",
+      "topic_name": "효과 / 효능",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "109989",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "110043",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "110072",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-0",
+      "topic_name": "효과 / 효능",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "110107",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "110152",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "110324",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-9",
+      "topic_name": "가격 / 가성비",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "110331",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-1",
+      "topic_name": "강도 / 세기",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "110335",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-1",
+      "topic_name": "강도 / 세기",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "110356",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-8",
+      "topic_name": "내구성 / 품질",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "110387",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-1",
+      "topic_name": "강도 / 세기",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "110389",
+      "tax_id": "tx-pvoc-motive",
+      "topic_id": "t-pv-motive-0",
+      "topic_name": "통증 해결",
+      "tax_name": "💡 구매 동기"
+    },
+    {
+      "review_id": "110390",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-1",
+      "topic_name": "강도 / 세기",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "110393",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-0",
+      "topic_name": "효과 / 효능",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "110402",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-4",
+      "topic_name": "착용감 / 사용 편의",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "110406",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-1",
+      "topic_name": "강도 / 세기",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "110426",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-9",
+      "topic_name": "가격 / 가성비",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "110430",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-4",
+      "topic_name": "착용감 / 사용 편의",
+      "tax_name": "🧩 제품 경험"
+    },
+    {
+      "review_id": "110431",
+      "tax_id": "tx-product",
+      "topic_id": "t-prod-1",
+      "topic_name": "강도 / 세기",
+      "tax_name": "🧩 제품 경험"
+    }
+  ]
+}

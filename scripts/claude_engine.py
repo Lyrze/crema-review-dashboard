@@ -22,6 +22,14 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+_QUOTA_SIGNALS = ("usage limit", "session limit", "rate limit", "quota", "limit reached",
+                  "too many requests", "429", "overloaded")
+
+
+def _looks_like_quota(text) -> bool:
+    m = str(text).lower()
+    return any(k in m for k in _QUOTA_SIGNALS)
+
 # OllamaAnalyzer 상속 (동일 디렉터리)
 try:
     from ollama_analysis import OllamaAnalyzer
@@ -50,10 +58,17 @@ def _find_claude():
 class ClaudeClient:
     """OllamaClient 와 동형의 generate() 를 제공하는 Claude CLI 래퍼."""
 
+    CIRCUIT_THRESHOLD = 2  # 연속 완전실패(재시도 다 소진) 이 횟수 이상이면 회로 차단
+
     def __init__(self, timeout: int = 90):
         self.exe = _find_claude()
         self.timeout = timeout
-        self.fail_count = 0   # 누적 호출 실패 수 (한도/과부하 감지 — 재검증 이어받기 판단용)
+        self.fail_count = 0     # 누적 호출 실패 수 (한도/과부하 감지 — 재검증 이어받기 판단용)
+        self.consec_fail = 0    # 연속 완전실패 카운터 (성공 시 리셋)
+        self._circuit_open = False  # True면 실제 호출 없이 즉시 실패 (텍스트 패턴에 안 잡히는
+                                     # rc=1/빈 stderr·연속 타임아웃 등 '조용한' 한도 소진 방지)
+        self._quota_seen = False    # 실패 중 한도(quota) 신호를 실제로 관측했는가
+                                     # (회로 차단 시 quota vs 비한도 실패를 구분해 상위에 알림)
         # npm 전역 경로를 PATH 에 보강 (subprocess 상속 환경)
         self._env = dict(os.environ)
         npm = os.path.expandvars(r"%APPDATA%\npm")
@@ -63,6 +78,13 @@ class ClaudeClient:
 
     def generate(self, model: str, prompt: str, system: str = "",
                  temperature: float = 0.1, max_retries: int = 3) -> str:
+        if self._circuit_open:
+            # 이미 연속실패로 회로가 열림 — 실제 subprocess 호출 없이 즉시 실패.
+            # 한도(quota)를 실제로 봤을 때만 'quota' 표기 → 상위가 exit 3(리셋 후 재시도)로 처리.
+            # 비한도 연속실패(타임아웃 등)는 quota 표기 안 함 → 상위가 사람 확인 경로로 중단.
+            if self._quota_seen:
+                raise RuntimeError("claude 호출 회로 차단 — quota(한도) 소진 추정. 리셋 후 재시도")
+            raise RuntimeError("claude 호출 회로 차단 — 연속 비한도 실패, 사람 확인 필요")
         # system 은 프롬프트 앞에 결합 (CLI -p 는 단일 프롬프트)
         full = (system.strip() + "\n\n" + prompt) if system else prompt
         args = [self.exe, "-p", "--model", (model or "sonnet")]
@@ -76,15 +98,27 @@ class ClaudeClient:
                     shell=self.exe.lower().endswith(".cmd"),  # .cmd 는 shell 경유
                 )
                 if r.returncode == 0 and (r.stdout or "").strip():
+                    self.consec_fail = 0
                     return r.stdout.strip()
-                last = RuntimeError(f"claude rc={r.returncode}: {(r.stderr or '')[:200]}")
+                err = (r.stderr or "")[:200]
+                out = (r.stdout or "")[:200]
+                # 한도 소진 메시지는 stderr가 아니라 stdout으로 나옴 (예: "You've hit your
+                # session limit · resets 8:20pm") — stderr·stdout 둘 다 메시지에 담아
+                # 상위(reverify_suspect/ollama_analysis)의 한도 감지가 반드시 잡도록 한다.
+                last = RuntimeError(f"claude rc={r.returncode}: {(err + ' ' + out).strip()}")
+                if _looks_like_quota(err) or _looks_like_quota(out):
+                    self._quota_seen = True
+                    break  # 한도 소진 — 재시도로 낭비하지 않고 즉시 실패 처리
             except subprocess.TimeoutExpired as e:
                 last = e
                 logger.warning("claude 타임아웃 (시도 %d/%d)", attempt + 1, max_retries)
             except Exception as e:  # noqa: BLE001
                 last = e
             time.sleep(2 ** attempt)
-        self.fail_count += 1   # 재시도까지 모두 실패 (rc=1/타임아웃/한도 등)
+        self.fail_count += 1    # 재시도까지 모두 실패 (rc=1/타임아웃/한도 등)
+        self.consec_fail += 1
+        if self.consec_fail >= self.CIRCUIT_THRESHOLD:
+            self._circuit_open = True  # 이후 호출은 subprocess 없이 즉시 실패
         raise RuntimeError(f"claude 호출 실패: {last}")
 
 
@@ -95,14 +129,17 @@ class ClaudeAnalyzer(OllamaAnalyzer):
         # base_url 등 Ollama 전용 인자는 무시 (호환용)
         self.model = model or "sonnet"
         self.client = ClaudeClient(timeout=timeout)
+        self.last_error = None  # health_check 실패 시 원인 메시지 (호출측의 한도감지용)
 
     def health_check(self) -> bool:
         try:
             out = self.client.generate(self.model, "핑. 한 글자로만 답: 'ok'", temperature=0.0)
             logger.info("Claude CLI 정상, 모델: %s", self.model)
+            self.last_error = None
             return bool(out)
         except Exception as e:  # noqa: BLE001
             logger.error("Claude CLI 응답 없음: %s", e)
+            self.last_error = str(e)
             return False
 
 
