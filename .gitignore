@@ -167,3 +167,4 @@ reclass_run.log
 # 재검증 진행 마커 (이어받기용, 커밋 불필요)
 **/.reverify_progress.json
 **/.tx_progress.json
+**/.topic_progress.json
