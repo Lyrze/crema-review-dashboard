@@ -8222,13 +8222,15 @@ function txLoad(){
 
 // 구버전 기본 시드 정리:
 //  - 'Saved topics': 연결된 기능이 없는 죽은 시드 → 무조건 제거
-//  - '불량 라벨'(예시): 수동 분류 작업이 없을 때만 제거 (작업물 보존)
+//  - '불량 라벨'(tx-defect, 예시): 무조건 제거. 키워드가 기능어(온열·에어백·진동 등)만이라
+//    "온열 좋아요" 같은 칭찬까지 전부 'X 불량'으로 오분류(오탐 89~99%)됨 → 부정확한 분류라
+//    보존 가치가 없어 수동작업 유무와 무관하게 삭제. (재추가 시 새 id가 부여돼 이 정리에 안 걸림)
 function txCleanupLegacySeeds(){
   var before=TAXONOMIES.length;
   TAXONOMIES=TAXONOMIES.filter(function(t){
     if(t.id==='tx-saved') return false;
+    if(t.id==='tx-defect') return false;               // 예시 불량 라벨 — 무조건 제거
     var noWork=Object.keys(t.manualClassifications||{}).length===0;
-    if(t.id==='tx-defect' && noWork) return false;
     if(t.id==='tx-experience' && noWork) return false; // 구 '구매 전 경험' — 고정 분류로 대체됨
     return true;
   });
