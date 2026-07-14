@@ -15,8 +15,8 @@ from datetime import datetime, timedelta
 
 from auto_reverify_loop import parse_reset_time  # 동일 디렉터리 — resets 시각 파서 재사용
 
-MAX_RETRIES = 8
-MAX_TOTAL_SECONDS = 24 * 3600
+MAX_RETRIES = 20            # 대형 작업(전건 재판정 등)은 여러 리셋 윈도우가 필요 — 넉넉히
+MAX_TOTAL_SECONDS = 48 * 3600
 SLEEP_CAP = 6 * 3600 + 300   # 오파싱으로 익일(+24h)이 잡혀도 최대 6시간만 대기
 
 

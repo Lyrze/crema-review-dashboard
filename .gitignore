@@ -168,3 +168,4 @@ reclass_run.log
 **/.reverify_progress.json
 **/.tx_progress.json
 **/.topic_progress.json
+**/.sentiment_progress.json
