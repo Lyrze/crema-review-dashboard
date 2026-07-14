@@ -450,6 +450,16 @@ python scripts/auto_reverify_loop.py --brand 슬룸 --months 2026-04,2026-05,202
 
 **부가 함정**: `python cmd; echo "EXIT=$?" >> log` 처럼 세미콜론/파이프(`| tail`)로 명령을 이어 붙이면, exit code(`$?`)는 **마지막 명령의 것**만 잡힌다(background 도구 알림도 동일). 실제 종료코드는 파이프 없이 `cmd >/dev/null 2>&1; echo $?` 로 확인할 것.
 
+### 🟠 HIGH: 월간 감성은 Claude가 권위(update-data.bat [4/5])
+
+**설계**: `process_data`는 Ollama로 **빠른 잠정 감성**을 만들고(파이프라인 안 깨지게), 그 뒤 `[4/5]` 단계에서 `recheck_sentiment.py --full`(Claude sonnet)이 **전건 재판정해 덮어쓴다(=권위)**. Ollama 7b는 "아팠는데 풀렸어요"처럼 부정어+긍정결말을 오판(전건 대비 8.7% 라벨 상이, 긍정률 3~4%p 과소보고)하므로 Claude가 최종 기준.
+
+**규칙**:
+- 이 단계는 대량(월 ~2천건)이라 세션 한도로 수 시간~하루 걸릴 수 있고, `quota_retry`가 리셋시각까지 대기 후 자동 재개한다(무인). 중단돼도 `.sentiment_progress.json` 이어받기 + 완료월 스킵.
+- `recheck_sentiment`는 sentiment 만 바꾸고 products/summary 의 긍정률·부정률·감성카운트를 재계산한다(멤버십 review_count·avg_rating 등은 patch 결과 보존 — sentiment 필드만 갱신).
+- **완료월 마커는 삭제 금지**(done=True 보존). 과거 unlink 시 다음 윈도우에 완료월을 처음부터 재판정 → 감성 thrash(temp=0에도 Claude ~2% 비결정) 발생했음.
+- 분석은 CLI(claude) 우선(메모리 규칙). Ollama 두 모델 동시호출 금지는 여전히 유효.
+
 **reverify_suspect.py 종료코드 계약(auto_reverify_loop 이 이 값으로 재시도/중단 판단)**:
 - `0` = 전체 완료(또는 이미 완료돼 스킵). 루프 종료.
 - `3` = 한도(quota) 소진 → 리셋 후 이어받기. 루프가 리셋시각까지 대기 후 재시도.

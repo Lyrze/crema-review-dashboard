@@ -92,10 +92,18 @@ echo.
 echo  익명화 CSV 생성 중...
 python scripts\anonymize_csv.py --input "!CSV!" --output "!ANON_OUT!"
 if errorlevel 1 ( echo  [WARNING] 익명화 실패. 계속 진행합니다. )
-
-:: [4/4] 데이터 정합성 검증 (FAIL 시 푸시 중단 - 잘못된 데이터 배포 차단)
+:: [4/5] Claude 감성 정밀화 (Ollama 잠정감성 → Claude 전건 재판정 = 권위, 한도 자동 재시작)
+::   대량이라 수 시간~하루 걸릴 수 있음. 세션 한도마다 quota_retry가 리셋시각까지 대기 후 자동 재개.
+::   중단돼도 재실행 시 .sentiment_progress.json 이어받기 + 완료월 스킵.
 echo.
-echo  [4/4] 데이터 정합성 검증 중...
+echo  [4/5] Claude 감성 정밀화 중... (한도 시 자동 대기/재개 - 오래 걸릴 수 있음)
+python scripts\quota_retry.py -- python scripts\recheck_sentiment.py --brand "!BRAND!" --months "!MONTH!" --full
+if errorlevel 1 ( echo  [WARNING] 감성 정밀화 미완료 - 잠정 Ollama 감성으로 계속. 한도 회복 후 재실행 권장. )
+
+
+:: [5/5] 데이터 정합성 검증 (FAIL 시 푸시 중단 - 잘못된 데이터 배포 차단)
+echo.
+echo  [5/5] 데이터 정합성 검증 중...
 python scripts\validate_data.py --brand "!BRAND!" --month "!MONTH!"
 if errorlevel 1 (
   echo.
