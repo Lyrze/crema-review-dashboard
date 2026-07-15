@@ -240,6 +240,7 @@ def patch_month(brand, month, resolver, prev_counts, apply, backup):
     for rid, rv in reviews.items():
         rm = raw_map.get(rid)
         prods = rm["products"] if rm else [rv.get("product", "")]
+        prods = [p for p in prods if p]     # 빈 상품명("") 제거 — raw 미존재 엣지에서 [""] 집계오염 방지
         is_set = bool(rm and rm["is_set"])
         if not prods:
             dropped += 1

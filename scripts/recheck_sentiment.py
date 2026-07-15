@@ -111,6 +111,7 @@ def recheck_month(brand, month, cli, include_pos3, full=False):
         prog_path.write_text(json.dumps(prog, ensure_ascii=False), encoding="utf-8")
 
     B = 10
+    consec_err = 0
     for i in range(0, len(ids), B):
         chunk = ids[i:i+B]
         lines = []
@@ -130,8 +131,16 @@ def recheck_month(brand, month, cli, include_pos3, full=False):
                 save_prog()
                 eprint(f"  [STOP] 한도 소진 — 진행분 저장(교정 {len(fixes)}건). 재실행 시 이어집니다. ({str(e)[:200]})")
                 return "quota"
-            eprint(f"   [ERR] 배치: {str(e)[:100]}")
+            # 비한도 오류: 이 배치 rid는 done 에 넣지 않음(미판정으로 남겨 재실행 시 재시도).
+            # 연속 실패가 임계 이상이면(회로차단 등) 조용히 넘기지 말고 중단→상위에서 표면화(exit 2).
+            consec_err += 1
+            eprint(f"   [ERR] 배치: {str(e)[:100]} (연속 {consec_err})")
+            if consec_err >= 3:
+                save_prog()
+                eprint("  [STOP] 비한도 연속 실패 3회 — 미완료로 중단(사람 확인 필요). done 표시 안 함.")
+                return "fail"
             continue
+        consec_err = 0
         m = re.search(r"\[[\s\S]*\]", raw or "")
         jm = {}
         if m:
@@ -167,6 +176,14 @@ def recheck_month(brand, month, cli, include_pos3, full=False):
             sdoc = json.loads(spath.read_text(encoding="utf-8"))
             recompute_summary(reviews, sdoc)
             spath.write_text(json.dumps(sdoc, ensure_ascii=False, indent=2), encoding="utf-8")
+    # 완료 판정: 대상 전부가 실제 판정됨(done 포함)일 때만 done=True.
+    # 비한도 오류로 일부 배치가 건너뛰어졌으면 done 을 세우지 않아 재실행 시 이어받는다.
+    # (과거엔 무조건 done=True → 미판정 리뷰가 Ollama 잠정감성인 채 영구 스킵되는 누수 버그가 있었음)
+    not_processed = [rid for rid in ids if rid not in done]
+    if not_processed:
+        save_prog()
+        eprint(f"  [WARN] {month}: {changed}건 교정했으나 {len(not_processed)}건 미판정 — done 미표시(재실행 시 이어감)")
+        return "incomplete"
     # 완료 표시를 '보존'한다(삭제 금지). 과거엔 unlink 했다가, 다음 윈도우 재실행 시
     # 완료월이 '미시작'으로 보여 처음부터 재판정 → 감성 thrash(요동) 버그가 있었음(2026-07-14).
     prog["done"] = True
@@ -194,16 +211,24 @@ def main():
         eprint(f"  [ERROR] Claude 실패: {str(e)[:120]}"); sys.exit(2)
 
     any_ok = False
+    any_incomplete = False   # 비한도 오류로 일부 미판정된 월이 있는가(→ 표면화)
     total_fix = 0
     for mo in months:
         eprint(f"\n===== {mo} =====")
         res = recheck_month(args.brand, mo, cli, args.include_pos3, full=args.full)
         if res == "quota":
-            sys.exit(3)
+            sys.exit(3)          # 한도 → 리셋 후 재시도
+        if res in ("fail", "incomplete"):
+            any_incomplete = True    # 비한도 미완료 → 조용히 완료로 넘기지 않음
+            continue
         if res is None:
             continue
         any_ok = True
         total_fix += res
+    if any_incomplete:
+        eprint(f"\n  [미완료] 일부 월이 비한도 오류로 미완료 — 완료로 위장하지 않고 종료(exit 2). "
+               f"원인(로그인/타임아웃 등) 확인 후 재실행하면 이어집니다. (교정 {total_fix}건은 반영됨)")
+        sys.exit(2)
     eprint(f"\n  [완료] 총 {total_fix}건 감성 교정")
     sys.exit(0 if any_ok else 2)
 

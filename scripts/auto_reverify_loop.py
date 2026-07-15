@@ -32,7 +32,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 MAX_RETRIES = 8
 MAX_TOTAL_SECONDS = 24 * 3600
-RESET_RE = re.compile(r"resets\s+(\d{1,2}):(\d{2})\s*(am|pm)", re.IGNORECASE)
+# "resets 8:20pm" / "resets 8pm"(분 없음) / "resets at 8:20 PM" 등 허용
+RESET_RE = re.compile(r"resets\s+(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)", re.IGNORECASE)
 
 
 def log(msg):
@@ -45,7 +46,7 @@ def parse_reset_time(text):
     m = RESET_RE.search(text)
     if not m:
         return None
-    hh, mm, ap = int(m.group(1)), int(m.group(2)), m.group(3).lower()
+    hh, mm, ap = int(m.group(1)), int(m.group(2) or 0), m.group(3).lower()
     if ap == "pm" and hh != 12:
         hh += 12
     if ap == "am" and hh == 12:

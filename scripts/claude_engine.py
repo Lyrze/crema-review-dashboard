@@ -58,7 +58,8 @@ def _find_claude():
 class ClaudeClient:
     """OllamaClient 와 동형의 generate() 를 제공하는 Claude CLI 래퍼."""
 
-    CIRCUIT_THRESHOLD = 2  # 연속 완전실패(재시도 다 소진) 이 횟수 이상이면 회로 차단
+    CIRCUIT_THRESHOLD = 3  # 연속 완전실패(재시도 다 소진) 이 횟수 이상이면 회로 차단
+                           # (2는 콜드스타트/일시 타임아웃 2회에 과민 개방 → 3으로 상향)
 
     def __init__(self, timeout: int = 90):
         self.exe = _find_claude()
@@ -80,6 +81,11 @@ class ClaudeClient:
                  temperature: float = 0.1, max_retries: int = 3) -> str:
         if self._circuit_open:
             # 이미 연속실패로 회로가 열림 — 실제 subprocess 호출 없이 즉시 실패.
+            # ★ fail_count 를 반드시 증가시킨다: reverify_suspect 는 fail_count 델타(df)로 실패를
+            #   감지하는데, 여기서 안 올리면 회로개방 후 모든 키워드가 df=0(=성공)으로 보여
+            #   미검증 멤버를 '완료'로 마킹→영구 스킵하는 '조용한 거짓 완료' 버그가 생긴다(2026-07-14 리뷰).
+            self.fail_count += 1
+            self.consec_fail += 1
             # 한도(quota)를 실제로 봤을 때만 'quota' 표기 → 상위가 exit 3(리셋 후 재시도)로 처리.
             # 비한도 연속실패(타임아웃 등)는 quota 표기 안 함 → 상위가 사람 확인 경로로 중단.
             if self._quota_seen:
@@ -99,6 +105,7 @@ class ClaudeClient:
                 )
                 if r.returncode == 0 and (r.stdout or "").strip():
                     self.consec_fail = 0
+                    self._quota_seen = False   # 성공 → quota 관측 플래그 리셋(스티키 오보 방지)
                     return r.stdout.strip()
                 err = (r.stderr or "")[:200]
                 out = (r.stdout or "")[:200]

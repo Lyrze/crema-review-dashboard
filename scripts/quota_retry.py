@@ -34,7 +34,7 @@ def main():
     start = time.time()
     for attempt in range(1, MAX_RETRIES + 1):
         if time.time() - start > MAX_TOTAL_SECONDS:
-            log("최대 누적 대기 시간(24시간) 초과 — 중단")
+            log(f"최대 누적 대기 시간({MAX_TOTAL_SECONDS // 3600}시간) 초과 — 중단")
             sys.exit(1)
         log(f"[시도 {attempt}/{MAX_RETRIES}] 실행: {' '.join(argv)}")
         r = subprocess.run(argv, capture_output=True, text=True,
