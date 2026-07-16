@@ -2909,6 +2909,28 @@ function openKpiReviewInsight(){
   });
 }
 
+// 모달 위에 모달을 띄울 때(예: '전월 대비 리뷰 수 변화'(855)에서 SKU 클릭 → 리뷰 인사이트),
+// 나중에 연 모달이 항상 앞에 오도록 현재 열려있는 모달들의 최상단 z-index 위로 올린다.
+// 정적 z-index 계층만으로는 KIM(855)→insight(800)처럼 뒤에 깔리는 케이스가 생기고,
+// 반대로 insight에서 sc-modal(860)을 열면 그 반대 방향이 깔리므로(imOpenTopicReviews) 동적으로 처리한다.
+// 매 호출마다 '현재 열린 모달'만 보고 다시 계산하므로 값이 무한 증가(drift)하지 않고 자가교정된다.
+function bringModalToFront(el){
+  if(!el) return;
+  var ids=['insight-modal','review-modal','kpi-insight-modal','sc-insight-modal',
+           'keyword-reviews-modal','kwcand-rev-modal','ins-rev-modal','txai-modal',
+           'tx-gh-modal','review-search-modal'];
+  var mx=800;
+  for(var i=0;i<ids.length;i++){
+    var d=document.getElementById(ids[i]);
+    if(!d||d===el) continue;
+    var vis=d.classList.contains('open')||(d.style.display&&d.style.display!=='none');
+    if(!vis) continue;
+    var z=parseInt(d.style.zIndex||getComputedStyle(d).zIndex,10);
+    if(!isNaN(z)) mx=Math.max(mx,z);
+  }
+  el.style.zIndex=(mx+3);
+}
+
 // ── 섹션② KPI 항목별 인사이트 (전월 대비 증감 내역) ──
 var KIM_CTX={metric:null, summary:''};
 
@@ -2941,6 +2963,7 @@ function kimCol(title,color,items,rowFn){
 function openKpiMetricInsight(metric){
   var modal=kimEnsureModal();
   modal.style.display='flex';
+  bringModalToFront(modal);
   $('kim-ai-result').style.display='none';
   var titleEl=$('kim-title'), subEl=$('kim-subtitle'), bodyEl=$('kim-body');
   var prods=(STATE.products||REAL_DATA.products);
@@ -3670,6 +3693,7 @@ function openInsightModal(name){
   $('im-subtitle').textContent='리뷰 '+fmt(p.review_count)+'건 · '+STATE.month+' · ★'+p.avg_rating.toFixed(2)+' · 생성: '+now;
 
   modal.classList.add('open');
+  bringModalToFront(modal);
   // 필터/카운트 기본값 리셋
   IM_REV_FILTER='all'; IM_REV_COUNT=4;
   document.querySelectorAll('.im-rev-filter').forEach(function(b){b.classList.toggle('active', b.getAttribute('data-rev-filter')==='all');});
@@ -4400,6 +4424,7 @@ function openKeywordReviewsModal(keyword, productFilter, type, searchTerm, expli
     document.body.appendChild(modal);
   }
   modal.style.display='flex';
+  bringModalToFront(modal);
 
   // 데이터 준비
   var allProds=STATE.products||REAL_DATA.products;
@@ -8091,6 +8116,7 @@ function scOpenInsight(cfg){
     document.body.appendChild(modal);
   }
   modal.style.display='flex';
+  bringModalToFront(modal);
   $('sci-title').innerHTML=cfg.title;
   $('sci-subtitle').innerHTML=cfg.subtitle||'';
   modal._ctx=cfg;
