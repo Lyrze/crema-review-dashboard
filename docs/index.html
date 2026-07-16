@@ -539,6 +539,7 @@
     .im-review-tag { font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; margin-left:auto; }
     .im-review-tag.pos { background:rgba(22,163,74,.12); color:#16a34a; }
     .im-review-tag.neg { background:rgba(220,38,38,.10); color:#dc2626; }
+    .im-review-tag.neu { background:rgba(100,116,139,.12); color:#64748b; }
     .im-review-text { font-size:12.5px; color:var(--text); line-height:1.6; }
     /* AI 심층분석 결과 */
     .im-ai-result { background:rgba(46,107,230,.06); border:1px solid rgba(46,107,230,.2); border-radius:8px; padding:10px 12px; margin-top:12px; font-size:12px; line-height:1.6; color:var(--text); white-space:pre-wrap; display:none; }
@@ -4139,17 +4140,39 @@ function imRenderReviewSamples(p){
   if(!cont) return;
   cont.innerHTML='';
 
-  var posAll=(p.top_reviews||[]).map(function(r){return {r:r,type:'pos'};});
-  var negAll=(p.bottom_reviews||[]).map(function(r){return {r:r,type:'neg'};});
+  // 전체 리뷰 인덱스(reviews.json)가 로드돼 있으면 그걸로 '진짜 전체'를 구성한다.
+  // (기존엔 top_reviews/bottom_reviews 저장 샘플 10건만 써서 '전체'를 눌러도 review_count보다
+  //  훨씬 적게 나왔음. review_count = 긍정+중립+부정 이므로 중립도 포함해야 수가 맞는다.)
+  var posAll=[], negAll=[], neuAll=[], usingFull=false;
+  if(STATE.reviewsById){
+    var _keys=Object.keys(STATE.reviewsById);
+    for(var _i=0;_i<_keys.length;_i++){
+      var _rid=_keys[_i], _rv=STATE.reviewsById[_rid];
+      if(!inProdFilter(_rv, p.name)) continue;
+      var _r={review_id:_rid, rating:_rv.rating, date:_rv.date, text:_rv.text, product:_rv.product};
+      var _s=_rv.sentiment;
+      var _t=_s==='positive'?'pos':_s==='negative'?'neg':_s==='neutral'?'neu'
+             :(_rv.rating>=4?'pos':_rv.rating<=2?'neg':'neu'); // sentiment 없으면 별점 폴백
+      (_t==='pos'?posAll:_t==='neg'?negAll:neuAll).push({r:_r,type:_t});
+    }
+    usingFull=true;
+    negAll.sort(function(a,b){return (a.r.rating||0)-(b.r.rating||0);}); // 부정: 낮은 별점 먼저
+    posAll.sort(function(a,b){return (b.r.rating||0)-(a.r.rating||0);}); // 긍정: 높은 별점 먼저
+  }else{
+    // 폴백: 저장된 대표/하위 샘플만
+    posAll=(p.top_reviews||[]).map(function(r){return {r:r,type:'pos'};});
+    negAll=(p.bottom_reviews||[]).map(function(r){return {r:r,type:'neg'};});
+  }
 
   var pool=[];
   if(IM_REV_FILTER==='all'){
-    // 긍정/부정 균등 인터리브
+    // 긍정/부정 균등 인터리브 (부정 먼저 — 눈에 띄게), 중립은 뒤에 이어붙임
     var maxLen=Math.max(posAll.length, negAll.length);
     for(var i=0;i<maxLen;i++){
-      if(i<negAll.length) pool.push(negAll[i]); // 부정 먼저 (눈에 띄게)
+      if(i<negAll.length) pool.push(negAll[i]);
       if(i<posAll.length) pool.push(posAll[i]);
     }
+    if(usingFull) pool=pool.concat(neuAll);
   }else if(IM_REV_FILTER==='pos'){
     pool=posAll;
   }else if(IM_REV_FILTER==='neg'){
@@ -4165,10 +4188,10 @@ function imRenderReviewSamples(p){
     var filterLabel=IM_REV_FILTER==='all'?'전체':IM_REV_FILTER==='pos'?'긍정':'부정';
     var brName=fmtS(p.name)||p.name;
     var actualReviewTotal=p.review_count||0;
-    if(IM_REV_COUNT==='all' && total < actualReviewTotal && IM_REV_FILTER==='all'){
-      infoEl.innerHTML='<strong>'+brName+'</strong> · '+filterLabel+' 리뷰 <strong>'+limit+'</strong>건 표시 (저장된 샘플 '+total+'건 / 총 리뷰 '+fmt(actualReviewTotal)+'건) <span style="color:var(--accent);">💡 더 많이 보려면 process_data.py의 top_review_count를 늘리세요</span>';
+    if(!usingFull && IM_REV_COUNT==='all' && total < actualReviewTotal && IM_REV_FILTER==='all'){
+      infoEl.innerHTML='<strong>'+brName+'</strong> · '+filterLabel+' 리뷰 <strong>'+limit+'</strong>건 표시 (저장된 샘플 '+total+'건 / 총 리뷰 '+fmt(actualReviewTotal)+'건) <span style="color:var(--accent);">💡 reviews.json 재생성 시 전체가 표시됩니다</span>';
     }else{
-      infoEl.innerHTML='<strong>'+brName+'</strong> · '+filterLabel+' 리뷰 <strong>'+limit+'</strong> / '+total+'건 표시 (총 리뷰 '+fmt(actualReviewTotal)+'건)';
+      infoEl.innerHTML='<strong>'+brName+'</strong> · '+filterLabel+' 리뷰 <strong>'+limit+'</strong> / '+total+'건 표시'+(IM_REV_FILTER==='all'?' (총 리뷰 '+fmt(actualReviewTotal)+'건)':'');
     }
   }
 
@@ -4193,7 +4216,7 @@ function imBuildReview(r, type){
   div.innerHTML='<div class="im-review-meta">'+
     '<span class="im-review-stars">'+stars+'</span>'+
     '<span class="im-review-date">'+(r.date||'')+'</span>'+
-    '<span class="im-review-tag '+type+'">'+(type==='pos'?'긍정':'부정')+'</span>'+
+    '<span class="im-review-tag '+type+'">'+(type==='pos'?'긍정':type==='neg'?'부정':'중립')+'</span>'+
     '</div>'+
     '<div class="im-review-text" id="'+fullId+'-short">'+displayText+
       (truncated?' <button onclick="imToggleReview(\''+fullId+'\',true)" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:11px;font-weight:700;padding:0;font-family:inherit;">더 보기</button>':'')+
