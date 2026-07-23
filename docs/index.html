@@ -9367,7 +9367,7 @@ function txRenderUnclassified(taxonomy){
   var q=(TX_STATE.fbSearch||'').toLowerCase().trim();
   if(q) sorted=sorted.filter(function(r){return (r.text||'').toLowerCase().indexOf(q)>=0;});
 
-  var shown=sorted.slice(0,50);
+  var shown=sorted; // 전체 표기 — 과거엔 50건 캡 + "검색으로 좁히세요" 안내였음(요청으로 제거)
   var listHtml=shown.map(function(r){return txRenderReviewCard(r, null, true);}).join('');
 
   return '<div class="txd-main-head">'+
@@ -9408,7 +9408,7 @@ function txRenderUnclassified(taxonomy){
       '<h4>모든 리뷰가 분류되었습니다!</h4>'+
       '<p>이 Taxonomy의 모든 리뷰가 최소 1개 이상의 Topic에 매칭되었습니다.</p>'+
     '</div>':
-    '<div class="txd-fb-list">'+listHtml+(sorted.length>50?'<div style="text-align:center;padding:14px;color:var(--text-secondary);font-size:11px;">'+(sorted.length-50)+'건 더 있음 — 검색으로 좁히세요</div>':'')+'</div>'
+    '<div class="txd-fb-list">'+listHtml+'</div>'
   );
 }
 

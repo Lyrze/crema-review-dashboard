@@ -15,13 +15,14 @@ python scripts\interactive_select.py > "%TEMP%\crema_sel.tmp"
 if errorlevel 1 ( echo. & echo [FAILED] & pause & exit /b 1 )
 
 :: 결과 파싱
-set "BRAND=" & set "MONTH=" & set "CSV=" & set "PREV_FLAG=" & set "AI_FLAG=" & set "RECLASS_FLAG=" & set "REVERIFY_FLAG=" & set "PVOC_INTENT_FLAG=" & set "PVOC_REVERIFY_FLAG=" & set "ANON_OUT="
+set "BRAND=" & set "MONTH=" & set "CSV=" & set "PREV_FLAG=" & set "ENGINE=" & set "AI_FLAG=" & set "RECLASS_FLAG=" & set "REVERIFY_FLAG=" & set "PVOC_INTENT_FLAG=" & set "PVOC_REVERIFY_FLAG=" & set "ANON_OUT="
 
 for /f "usebackq tokens=1,* delims==" %%A in ("%TEMP%\crema_sel.tmp") do (
   if "%%A"=="BRAND"         set "BRAND=%%B"
   if "%%A"=="MONTH"         set "MONTH=%%B"
   if "%%A"=="CSV"           set "CSV=%%B"
   if "%%A"=="PREV_FLAG"     set "PREV_FLAG=%%B"
+  if "%%A"=="ENGINE"        set "ENGINE=%%B"
   if "%%A"=="AI_FLAG"       set "AI_FLAG=%%B"
   if "%%A"=="RECLASS_FLAG"  set "RECLASS_FLAG=%%B"
   if "%%A"=="REVERIFY_FLAG" set "REVERIFY_FLAG=%%B"
@@ -32,8 +33,14 @@ for /f "usebackq tokens=1,* delims==" %%A in ("%TEMP%\crema_sel.tmp") do (
 
 if "!BRAND!"=="" ( echo [ERROR] 선택 값 없음. & pause & exit /b 1 )
 
-:: 데이터 처리 (RECLASS_FLAG 있으면 AI 정밀 분류 포함 - 오래 걸림)
-python scripts\process_data.py ^
+:: 모든 AI 호출은 scripts\quota_retry.py 로 감싼다 — engine=ollama 는 한도가 없어 매번
+:: 즉시 성공 통과(오버헤드 없음), engine=claude 일 때만 세션 한도 도달 시 리셋시각까지
+:: 자동 대기 후 재개한다(무인). 각 스크립트는 자체 진행 마커로 이어받기를 지원한다.
+echo.
+echo  AI 엔진: !ENGINE!
+
+:: 데이터 처리 (RECLASS_FLAG 있으면 AI 정밀 분류 포함 - 오래 걸릴 수 있음)
+python scripts\quota_retry.py -- python scripts\process_data.py ^
   --brand "!BRAND!" ^
   --month "!MONTH!" ^
   --input "!CSV!" ^
@@ -47,35 +54,35 @@ if errorlevel 1 ( echo. & echo [ERROR] 데이터 처리 실패. & pause & exit /
 if not "!REVERIFY_FLAG!"=="" (
   echo.
   echo  [3.5/4] AI 정밀 보정 중 - 의심 키워드 재검증...
-  python scripts\reverify_suspect.py --brand "!BRAND!" --month "!MONTH!" !REVERIFY_FLAG!
+  python scripts\quota_retry.py -- python scripts\reverify_suspect.py --brand "!BRAND!" --month "!MONTH!" !REVERIFY_FLAG!
 )
 
 :: [3.6/4] 구매경험 VOC 감성 데이터 (PVOC 토픽별 칭찬/불만) - PVOC_INTENT_FLAG 있을 때만
 if not "!PVOC_INTENT_FLAG!"=="" (
   echo.
   echo  [3.6/4] 구매경험 VOC 감성 데이터 생성 중...
-  python scripts\classify_pvoc_intent.py --brand "!BRAND!" --month "!MONTH!" !PVOC_INTENT_FLAG!
+  python scripts\quota_retry.py -- python scripts\classify_pvoc_intent.py --brand "!BRAND!" --month "!MONTH!" !PVOC_INTENT_FLAG!
 )
 
-:: [3.7/4] PVOC 의도 14b 재검증 (부정 거짓양성 완화) - PVOC_REVERIFY_FLAG 있을 때만
+:: [3.7/4] PVOC 의도 재검증 (부정 거짓양성 완화) - PVOC_REVERIFY_FLAG 있을 때만
 if not "!PVOC_REVERIFY_FLAG!"=="" (
   echo.
-  echo  [3.7/4] PVOC 의도 14b 재검증 중 - 부정 거짓양성 완화...
-  python scripts\reverify_pvoc_intent.py --brand "!BRAND!" --month "!MONTH!" !PVOC_REVERIFY_FLAG!
+  echo  [3.7/4] PVOC 의도 재검증 중 - 부정 거짓양성 완화...
+  python scripts\quota_retry.py -- python scripts\reverify_pvoc_intent.py --brand "!BRAND!" --month "!MONTH!" !PVOC_REVERIFY_FLAG!
 )
 
 :: [3.8/4] 신규 키워드 후보 발굴 (부정 미포착 → 검토형) - AI_FLAG 있을 때만
 if not "!AI_FLAG!"=="--skip-ai" (
   echo.
   echo  [3.8/4] 신규 키워드 후보 발굴 중 - 부정 미포착 리뷰 클러스터링...
-  python scripts\discover_keywords.py --brand "!BRAND!" --month "!MONTH!" !AI_FLAG!
+  python scripts\quota_retry.py -- python scripts\discover_keywords.py --brand "!BRAND!" --month "!MONTH!" !AI_FLAG!
 )
 
 :: [3.9/4] Taxonomy 미분류 AI 분류 제안 (검토형) - AI_FLAG 있고 스냅샷 있을 때만
 if not "!AI_FLAG!"=="--skip-ai" (
   echo.
   echo  [3.9/4] Taxonomy 미분류 AI 분류 제안 생성 중...
-  python scripts\classify_unclassified.py --brand "!BRAND!" --month "!MONTH!" !AI_FLAG!
+  python scripts\quota_retry.py -- python scripts\classify_unclassified.py --brand "!BRAND!" --month "!MONTH!" !AI_FLAG!
 )
 
 :: [3.95/4] 옵션 기반 상품 매핑 재라벨링 (사은품 제외 + 세트 분해 + 다중 귀속)
@@ -92,13 +99,13 @@ echo.
 echo  익명화 CSV 생성 중...
 python scripts\anonymize_csv.py --input "!CSV!" --output "!ANON_OUT!"
 if errorlevel 1 ( echo  [WARNING] 익명화 실패. 계속 진행합니다. )
-:: [4/5] Claude 감성 정밀화 (Ollama 잠정감성 → Claude 전건 재판정 = 권위, 한도 자동 재시작)
+:: [4/5] Claude 감성 정밀화 (엔진 무관 — Claude 전건 재판정 = 권위, 한도 자동 재시작)
 ::   대량이라 수 시간~하루 걸릴 수 있음. 세션 한도마다 quota_retry가 리셋시각까지 대기 후 자동 재개.
 ::   중단돼도 재실행 시 .sentiment_progress.json 이어받기 + 완료월 스킵.
 echo.
 echo  [4/5] Claude 감성 정밀화 중... (한도 시 자동 대기/재개 - 오래 걸릴 수 있음)
 python scripts\quota_retry.py -- python scripts\recheck_sentiment.py --brand "!BRAND!" --months "!MONTH!" --full
-if errorlevel 1 ( echo  [WARNING] 감성 정밀화 미완료 - 잠정 Ollama 감성으로 계속. 한도 회복 후 재실행 권장. )
+if errorlevel 1 ( echo  [WARNING] 감성 정밀화 미완료 - 잠정 감성으로 계속. 한도 회복 후 재실행 권장. )
 
 
 :: [5/5] 데이터 정합성 검증 (FAIL 시 푸시 중단 - 잘못된 데이터 배포 차단)

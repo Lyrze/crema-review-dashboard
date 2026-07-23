@@ -169,3 +169,6 @@ reclass_run.log
 **/.tx_progress.json
 **/.topic_progress.json
 **/.sentiment_progress.json
+**/.reclassify_full_progress.json
+**/.pvoc_intent_progress.json
+**/.pvoc_reverify_progress.json

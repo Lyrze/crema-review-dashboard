@@ -127,7 +127,57 @@ def main():
         eprint("  전월 데이터 없음  [전월 비교 생략]")
         prev_flag = ""
 
-    # 2. Ollama 모델 선택
+    # 1.5 AI 엔진 선택 — Claude(구독 CLI, GPU 불필요, 한도 도달 시 자동 대기/재개) vs Ollama(로컬 GPU 필요)
+    eprint()
+    eprint("  [1.5/4] AI 엔진 선택")
+    eprint("    1. Claude Code CLI (구독 인증 — GPU 불필요. 세션 한도 도달 시 자동 대기 후 재개)")
+    eprint("    2. Ollama (로컬 설치 — GPU 필요, 무료/빠름)")
+    eprint()
+    while True:
+        try:
+            raw_in = ask("  선택 (1~2, Enter=1번): ").strip()
+            engsel = 1 if raw_in == "" else int(raw_in)
+            if engsel in (1, 2):
+                break
+            eprint("  1 또는 2를 입력하세요.")
+        except ValueError:
+            eprint("  1 또는 2를 입력하세요.")
+        except EOFError:
+            engsel = 1
+            break
+    engine = "claude" if engsel == 1 else "ollama"
+
+    if engine == "claude":
+        # Claude 경로 — GPU/모델 스캔 불필요. 세션 한도는 quota_retry.py 가 자동으로 흡수하므로
+        # 매 단계를 굳이 물어보지 않고 전부 포함(품질 우선). 필요하면 update-data.bat 재실행 시
+        # 이미 완료된 항목은 각 스크립트의 진행 마커로 건너뛴다(과금/시간 중복 없음).
+        eprint()
+        eprint("  Claude 선택됨 — 감성분석·키워드 정밀분류·PVOC 감성판정을 모두 Claude로 진행합니다.")
+        eprint("  (세션 한도 도달 시 자동으로 대기했다가 재개 — 창을 닫아도 다음 update-data.bat 실행 시 이어집니다)")
+        ai_flag = "--engine claude"
+        reclass_flag = "--reclassify-full --reclassify-mode batch --engine claude"
+        reverify_flag = "--engine claude"
+        pvoc_intent_flag = "--engine claude"
+        pvoc_reverify_flag = "--engine claude"
+
+        anon_out = f"data/anonymized/{brand}/{month}/reviews_anon.csv"
+        eprint()
+        eprint("  [4/4] 데이터 처리를 시작합니다...")
+        eprint()
+        print(f"BRAND={brand}")
+        print(f"MONTH={month}")
+        print(f"CSV={csv_path}")
+        print(f"PREV_FLAG={prev_flag}")
+        print(f"ENGINE={engine}")
+        print(f"AI_FLAG={ai_flag}")
+        print(f"RECLASS_FLAG={reclass_flag}")
+        print(f"REVERIFY_FLAG={reverify_flag}")
+        print(f"PVOC_INTENT_FLAG={pvoc_intent_flag}")
+        print(f"PVOC_REVERIFY_FLAG={pvoc_reverify_flag}")
+        print(f"ANON_OUT={anon_out}")
+        return
+
+    # ── 이하 Ollama 경로 (기존 로직 그대로) ──
     eprint()
     eprint("  [2/4] AI 분석 설정 (리뷰별 감성분석 — 긍정/중립/부정 라벨 생성)")
     eprint("        ※ 모델을 고르면 리뷰마다 AI 감성이 reviews.json 에 기록되어")
@@ -284,6 +334,7 @@ def main():
     print(f"MONTH={month}")
     print(f"CSV={csv_path}")
     print(f"PREV_FLAG={prev_flag}")
+    print(f"ENGINE={engine}")
     print(f"AI_FLAG={ai_flag}")
     print(f"RECLASS_FLAG={reclass_flag}")
     print(f"REVERIFY_FLAG={reverify_flag}")

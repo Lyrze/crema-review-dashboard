@@ -39,14 +39,21 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--brand", required=True)
     ap.add_argument("--month", required=True)
-    ap.add_argument("--model", "--ollama-model", dest="model", default="qwen2.5:7b")
+    ap.add_argument("--engine", default="ollama", choices=["ollama", "claude"])
+    ap.add_argument("--model", "--ollama-model", dest="model", default=None)
     ap.add_argument("--base-url", "--ollama-url", dest="base_url", default="http://localhost:11434")
     ap.add_argument("--max-samples", type=int, default=400, help="AI에 넣을 미포착 리뷰 최대 수(상한)")
     ap.add_argument("--batch-size", type=int, default=50, help="배치당 리뷰 수(순차 처리 단위)")
     ap.add_argument("--timeout", type=int, default=150, help="배치 1개당 하드 타임아웃(초)")
     args = ap.parse_args()
+    model = args.model or ("sonnet" if args.engine == "claude" else "qwen2.5:7b")
 
-    from ollama_analysis import OllamaAnalyzer, extract_json_from_response  # noqa: E402
+    from ollama_analysis import extract_json_from_response  # noqa: E402
+    from claude_engine import make_analyzer  # noqa: E402  (ollama/claude 공용 팩토리)
+    if args.engine == "claude":
+        from classify_unclassified import is_quota  # noqa: E402
+    else:
+        def is_quota(_): return False
 
     d = ROOT / "docs" / "data" / args.brand / args.month
     rpath = d / "reviews.json"
@@ -79,14 +86,17 @@ def main():
         (d / "keyword_candidates.json").write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
         sys.exit(0)
 
-    analyzer = OllamaAnalyzer(model=args.model, base_url=args.base_url)
+    analyzer = make_analyzer(args.engine, model=model, base_url=args.base_url)
     if not analyzer.health_check():
-        eprint("[ERROR] Ollama 무응답"); sys.exit(2)
+        err = str(getattr(analyzer, "last_error", "") or "")
+        if is_quota(err):
+            eprint(f"[STOP] 한도 소진 — 재실행 시 이어집니다. ({err[:200]})"); sys.exit(3)
+        eprint(f"[ERROR] AI 무응답 ({err or 'ollama serve 확인'})"); sys.exit(2)
 
     pool = uncap[: args.max_samples]
     B = max(10, args.batch_size)
     nb = (len(pool) + B - 1) // B
-    eprint(f"  AI 클러스터링({args.model}) — {len(pool)}건 / {nb}배치(배치당 {B}건) 순차 분석...")
+    eprint(f"  AI 클러스터링({model}) — {len(pool)}건 / {nb}배치(배치당 {B}건) 순차 분석...")
 
     def _ctype(raw_type, word, texts):
         ct = str(raw_type or "complaint").strip().lower()
@@ -127,6 +137,9 @@ def main():
             ex = ThreadPoolExecutor(max_workers=1)
             continue
         except Exception as e:
+            if is_quota(e):
+                eprint(f"   · [STOP] 한도 소진(배치 {bi + 1}/{nb}) — 재실행 시 처음부터 다시 돕니다(발굴은 저비용). ({str(e)[:150]})")
+                sys.exit(3)
             eprint(f"   · [ERR] 배치 {bi + 1}: {str(e)[:100]}")
             continue
         done_batches += 1

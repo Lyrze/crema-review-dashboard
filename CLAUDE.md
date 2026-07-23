@@ -483,6 +483,61 @@ if(banner) banner.style.display = anyFailed ? 'block' : 'none';
 
 ---
 
+### 🟠 HIGH: 파이프라인 전체를 Claude로 돌리는 엔진(--engine) 아키텍처 (2026-07-23)
+
+**배경**: 담당자 PC가 GPU 4GB(GTX 1650 Ti, 노트북)라 로컬 Ollama(qwen2.5:7b/14b)를 쓰기엔
+너무 느림/저품질. 그래서 월간 파이프라인의 **모든** AI 호출 지점에 `--engine {ollama,claude}`
+를 추가해 Claude Code CLI(구독 인증)로 전부 돌릴 수 있게 했다. `recheck_sentiment.py`(감성,
+Claude 고정)는 이미 그랬고, 이번에 `process_data.py`(키워드 재분류) / `discover_keywords.py`
+/ `classify_pvoc_intent.py` / `reverify_pvoc_intent.py` 에도 확장했다
+(`reverify_suspect.py`/`classify_unclassified.py` 는 이미 지원하고 있었음).
+
+**설계 원칙**:
+- `make_analyzer(engine, model, base_url)` (`claude_engine.py`) 를 모든 스크립트가 공용으로 사용.
+  `--model` 미지정 시 engine=claude 면 `sonnet`, engine=ollama 면 기존 기본값(스크립트별 상이) 자동 선택.
+- `update-data.bat` 는 **모든 AI 호출을 예외 없이 `quota_retry.py` 로 감싼다.** engine=ollama
+  일 땐 한도가 없어 즉시 통과(오버헤드 없음), engine=claude 일 때만 세션 한도 도달 시
+  리셋시각까지 자동 대기 후 재개한다. 브랜치 분기 없이 항상 감싸는 게 더 단순하고 안전.
+- `process_data.py`(engine=claude): 로컬 1차 감성분석 + `ai_analysis.json` 생성을 **생략**한다
+  (내부적으로 `skip_ai=True` 강제). 이유: ①감성은 파이프라인 뒷단 `recheck_sentiment.py --full`
+  이 어차피 전건 재판정해 덮어씀(중복 호출은 한도만 낭비) ②`ai_analysis.json`은 대시보드
+  `index.html` 어디서도 안 읽는 죽은 파일(AI 브리프는 STATE KPI 데이터로 직접 템플릿 생성하도록
+  이미 교체됨, 같은 날 세션 참고). 키워드 정규식 추출(`extract_keywords_basic`)은 sentiment
+  컬럼 없이도 기존 `--skip-ai` 폴백 경로(별점 기반)로 동일하게 동작 — 새 코드 아님, 검증된 기존 경로 재사용.
+- **호출량이 큰 재분류/분류 단계는 항목(키워드/토픽) 단위 진행 마커로 이어받는다** — 세션 한도가
+  자주 걸릴 걸 전제로 설계함. 마커는 `docs/data/{brand}/{month}/.*_progress.json` (모두
+  gitignore), 완료된 항목은 재호출 없이 저장된 결과를 그대로 적용하고, 정상 완료 시 마커 삭제
+  (다음 달 CSV 재처리 때 stale 진행분이 남지 않도록 — `recheck_sentiment`의 "완료월 마커 보존"과는
+  반대 판단이다: 그쪽은 여러 달을 넘나드는 장기 스킵 목적이라 보존이 맞고, 이쪽은 "이번 1회 실행이
+  한도로 끊겼다가 재개"하는 단기 용도라 완료 후엔 삭제가 맞음 — 혼동 주의).
+  - `process_data.py` `reclassify_keyword_full`: `.reclassify_full_progress.json` (호출량 최대 — 키워드×후보 배치)
+  - `classify_pvoc_intent.py`: `.pvoc_intent_progress.json` (토픽 단위)
+  - `reverify_pvoc_intent.py`: `.pvoc_reverify_progress.json` (토픽 단위)
+  - `discover_keywords.py`: 마커 없음(발굴 대상 최대 400건/배치 50 = 8배치뿐이라 통째 재시도가 더 쌈)
+
+**같이 고친 잠재 버그**: `classify_pvoc_intent.py`의 `classify_chunk()`가 **모든 예외**(quota 포함)를
+`items=None` → "미판정분은 긍정" 처리로 조용히 삼키고 있었다. Claude 엔진 도입 전엔 Ollama라
+quota 개념이 없어 문제가 안 됐지만, 그대로 뒀으면 Claude 한도 소진 시 **남은 모든 리뷰가 자동으로
+"긍정"으로 잘못 기록**되는 사고였다(불만 대량 누락). `is_quota()` 감지 시 삼키지 않고 상위로
+전파해 진행분 저장 후 `exit(3)`으로 멈추게 고쳤다.
+
+**검증**: `process_data.reclassify_keyword_full`(quota 시뮬레이션으로 진행마커 저장→재개 확인,
+실제 Claude 호출로 3단계 게이트 정상 동작 확인) · `classify_pvoc_intent.py`(임시 브랜드/월 데이터로
+실제 Claude 호출 — "배송 늦어서 짜증" → 부정, "배송 빨랐고 포장 꼼꼼" → 긍정 정확 분류 확인) ·
+`interactive_select.py`(engine 선택 분기 + 기존 Ollama 경로 회귀 없음 확인).
+
+**신규 CLI 플래그 요약**:
+```bash
+# 예: 월 전체를 Claude로 처리(4GB VRAM 등 GPU가 약한 새 PC)
+python scripts\quota_retry.py -- python scripts\process_data.py --brand 슬룸 --month 2026-05 --input data\raw\슬룸\2026-05\reviews.csv --reclassify-full --reclassify-mode batch --engine claude
+python scripts\quota_retry.py -- python scripts\discover_keywords.py --brand 슬룸 --month 2026-05 --engine claude
+python scripts\quota_retry.py -- python scripts\classify_pvoc_intent.py --brand 슬룸 --month 2026-05 --engine claude
+python scripts\quota_retry.py -- python scripts\reverify_pvoc_intent.py --brand 슬룸 --month 2026-05 --engine claude
+# update-data.bat 실행 시 [1.5/4]에서 "1. Claude / 2. Ollama" 선택 — 위 전부 자동 적용
+```
+
+---
+
 ## 자주 쓰는 명령어
 
 ```bash
