@@ -7095,6 +7095,70 @@ function txAiUndoAuto(){
   try{ txRenderDetail(); }catch(e){}
 }
 
+// 자동배정을 Topic(=자동분류가 적용된 분류 단위) 별로 묶어서 보여주기 위한 집계.
+// marker.pairs = [[review_id, tax_id, topic_id], ...] 를 tax_id::topic_id 로 그룹핑하고
+// 현재 TAXONOMIES 에서 실시간으로 이름을 조회한다(나중에 토픽명이 바뀌어도 최신 이름 표시).
+function txAiAutoBreakdown(){
+  var marker=txAiAutoMarker();
+  var groups={};
+  marker.pairs.forEach(function(p){
+    var rid=p[0], taxId=p[1], topicId=p[2], key=taxId+'::'+topicId;
+    if(!groups[key]){
+      var tax=(typeof TAXONOMIES!=='undefined'?TAXONOMIES:[]).find(function(t){return t.id===taxId;});
+      var tp=tax?(tax.topics||[]).find(function(x){return x.id===topicId;}):null;
+      groups[key]={taxId:taxId, topicId:topicId, taxName:tax?tax.name:taxId, topicName:tp?tp.name:'(삭제된 토픽)', reviewIds:[]};
+    }
+    groups[key].reviewIds.push(rid);
+  });
+  return Object.keys(groups).map(function(k){return groups[k];}).sort(function(a,b){return b.reviewIds.length-a.reviewIds.length;});
+}
+
+// 특정 Topic으로 자동 배정된 리뷰만 모달로 보기 ("실제로 어떤 게 반영됐는지" 확인용)
+function txAiOpenAutoTopicReviews(taxId, topicId){
+  var marker=txAiAutoMarker();
+  var ids=marker.pairs.filter(function(p){return p[1]===taxId && p[2]===topicId;}).map(function(p){return String(p[0]);});
+  var byId={}; txGetAllReviews().forEach(function(r){byId[String(r.review_id)]=r;});
+  var reviews=ids.map(function(rid){
+    var r=byId[rid]; if(!r) return null;
+    return {name:r.product||'', r:{review_id:rid, rating:r.rating, date:r.date, text:r.text}};
+  }).filter(Boolean);
+  var tax=(typeof TAXONOMIES!=='undefined'?TAXONOMIES:[]).find(function(t){return t.id===taxId;});
+  var tp=tax?(tax.topics||[]).find(function(x){return x.id===topicId;}):null;
+  var topicName=tp?tp.name:'(삭제된 토픽)';
+  scOpenInsight({
+    title:'🤖 AI 자동 분류 — "'+escapeHtml(topicName)+'"',
+    subtitle:(tax?escapeHtml(tax.name)+' · ':'')+reviews.length+'건 (2모델 합의로 자동 배정됨, 리뷰 클릭 없이 목록만 확인)',
+    reviews:reviews, highlight:[],
+    aiLabel:'AI 자동 분류 "'+topicName+'"'
+  });
+}
+
+// 특정 Topic 그룹만 취소(배정 해제) — 전체 취소와 별개로 항목 단위 취소 지원
+function txAiUndoAutoTopic(taxId, topicId){
+  var marker=txAiAutoMarker();
+  var toUndo=marker.pairs.filter(function(p){return p[1]===taxId && p[2]===topicId;});
+  if(!toUndo.length){ showToast('취소할 자동 분류가 없습니다'); return; }
+  var tax=(typeof TAXONOMIES!=='undefined'?TAXONOMIES:[]).find(function(t){return t.id===taxId;});
+  var tp=tax?(tax.topics||[]).find(function(x){return x.id===topicId;}):null;
+  var topicName=tp?tp.name:'(삭제된 토픽)';
+  if(!confirm('"'+topicName+'" 자동 분류 '+toUndo.length+'건을 취소(배정 해제)할까요?')) return;
+  toUndo.forEach(function(p){
+    var t=(typeof TAXONOMIES!=='undefined'?TAXONOMIES:[]).find(function(x){return x.id===p[1];}); if(!t || !t.manualClassifications) return;
+    var cls=t.manualClassifications[p[0]]; if(!cls || !cls.include) return;
+    cls.include=cls.include.filter(function(id){ return id!==p[2]; });
+    if(!cls.include.length && !(cls.exclude||[]).length) delete t.manualClassifications[p[0]];
+  });
+  txSave();
+  marker.pairs=marker.pairs.filter(function(p){ return !(p[1]===taxId && p[2]===topicId); });
+  try{
+    if(marker.pairs.length) localStorage.setItem(txAiAutoKey(), JSON.stringify(marker));
+    else localStorage.removeItem(txAiAutoKey());
+  }catch(e){}
+  if(typeof refreshDashboardFromClassification==='function') refreshDashboardFromClassification();
+  showToast('↩ "'+topicName+'" 자동 분류 '+toUndo.length+'건 취소 완료');
+  try{ txRenderDetail(); }catch(e){}
+}
+
 // ── 🔎 신규 키워드 후보 (검토형) — 부정 미포착 리뷰 발굴 → 채택/무시 ──
 var KWCAND_OPEN=false; // 기본 접힘(한 줄 바) — 펼쳐야 상세 표시
 function kwcandDecidedKey(){ return 'kwcand_decided::'+(STATE.brand||'')+'::'+(STATE.month||''); }
@@ -9385,7 +9449,24 @@ function txRenderUnclassified(taxonomy){
   '</div>'+
   (function(){ var h=''; try{
     var mk=txAiAutoMarker();
-    if(mk.pairs.length) h+='<div style="margin:0 0 10px;padding:9px 15px;background:var(--positive-bg, rgba(22,163,74,.08));border:1px solid var(--positive);border-radius:11px;display:flex;align-items:center;gap:8px;"><span style="font-size:12px;font-weight:700;color:var(--positive);">🤖 AI 자동 분류 '+mk.pairs.length+'건 적용됨 (2모델 합의)</span><button onclick="txAiUndoAuto()" style="margin-left:auto;padding:4px 11px;background:transparent;color:var(--text-secondary);border:1px solid var(--border);border-radius:7px;font-size:11px;cursor:pointer;font-family:inherit;">↩ 전체 취소</button></div>';
+    if(mk.pairs.length){
+      var bd=txAiAutoBreakdown();
+      h+='<div style="margin:0 0 10px;padding:11px 15px;background:var(--positive-bg, rgba(22,163,74,.08));border:1px solid var(--positive);border-radius:11px;">'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'+
+          '<span style="font-size:12px;font-weight:700;color:var(--positive);">🤖 AI 자동 분류 '+mk.pairs.length+'건 적용됨 (2모델 합의)</span>'+
+          '<button onclick="txAiUndoAuto()" style="margin-left:auto;padding:4px 11px;background:transparent;color:var(--text-secondary);border:1px solid var(--border);border-radius:7px;font-size:11px;cursor:pointer;font-family:inherit;">↩ 전체 취소</button>'+
+        '</div>'+
+        '<div style="display:flex;flex-direction:column;gap:5px;">'+
+          bd.map(function(g){
+            var safeTax=g.taxId.replace(/'/g,"\\'"), safeTopic=g.topicId.replace(/'/g,"\\'");
+            return '<div style="display:flex;align-items:center;gap:8px;padding:6px 9px;background:var(--card);border:1px solid var(--border);border-radius:8px;">'+
+              '<span onclick="txAiOpenAutoTopicReviews(\''+safeTax+'\',\''+safeTopic+'\')" title="클릭 → 배정된 리뷰 보기" style="cursor:pointer;font-size:11.5px;font-weight:600;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(g.topicName)+' <span style="color:var(--text-secondary);font-weight:400;">('+g.reviewIds.length+'건)</span></span>'+
+              '<button onclick="txAiUndoAutoTopic(\''+safeTax+'\',\''+safeTopic+'\')" style="flex-shrink:0;padding:3px 9px;background:transparent;color:var(--text-secondary);border:1px solid var(--border);border-radius:6px;font-size:10.5px;cursor:pointer;font-family:inherit;">취소</button>'+
+            '</div>';
+          }).join('')+
+        '</div>'+
+      '</div>';
+    }
     var ps=txAiPipelineSug(taxonomy);
     if(ps.length) h+='<div onclick="txAiOpenPipelineSug()" style="cursor:pointer;margin:0 0 12px;padding:11px 15px;background:var(--accent-bg);border:1px solid var(--accent);border-radius:11px;display:flex;align-items:center;gap:8px;"><span style="font-size:12.5px;font-weight:800;color:var(--accent);">📦 파이프라인 AI 분류 제안 '+ps.length+'건 — 클릭해서 검토·적용</span><span style="margin-left:auto;font-size:11px;color:var(--text-secondary);">업로드 시 자동 생성됨 (검토 전 미반영)</span></div>';
   }catch(e){} return h; })()+
@@ -9458,7 +9539,7 @@ function txRenderTopicDetail(taxonomy){
   var q=(TX_STATE.fbSearch||'').toLowerCase().trim();
   if(q) sorted=sorted.filter(function(r){return (r.text||'').toLowerCase().indexOf(q)>=0;});
 
-  var shown=sorted.slice(0,50);
+  var shown=sorted; // 전체 표기 — 과거엔 50건 캡 + "검색으로 좁히기" 안내였음(요청으로 제거)
   var listHtml=shown.map(function(r){return txRenderReviewCard(r, topic, false);}).join('');
 
   return '<div class="txd-main-head">'+
@@ -9500,7 +9581,7 @@ function txRenderTopicDetail(taxonomy){
       '<p>'+(hasRule?'키워드와 매칭되는 리뷰가 없습니다. 키워드를 추가하거나 매칭 모드를 변경해보세요.':'먼저 매칭 규칙(키워드)을 설정해주세요.')+'</p>'+
       '<button onclick="txEditTopic(\''+topic.id.replace(/\'/g,"\\\'")+'\')">✎ 규칙 편집</button>'+
     '</div>':
-    '<div class="txd-fb-list">'+listHtml+(matched.length>50?'<div style="text-align:center;padding:14px;color:var(--text-secondary);font-size:11px;">'+(matched.length-50)+'건 더 있음 — CSV로 내보내기 또는 검색으로 좁히기</div>':'')+'</div>'
+    '<div class="txd-fb-list">'+listHtml+'</div>'
   );
 }
 
