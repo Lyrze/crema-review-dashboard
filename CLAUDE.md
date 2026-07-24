@@ -599,6 +599,58 @@ cd docs && python3 -m http.server 8080
 
 ---
 
+### 🟠 HIGH: 대시보드 라이브 AI 기능도 Ollama 대신 Claude CLI로 — local_proxy.py AI_BACKEND (2026-07-24)
+
+**배경**: 앞선 `--engine claude` 작업은 **월간 파이프라인(백엔드 스크립트)** 만 Claude로 돌게 했다.
+그런데 `docs/index.html`에는 이와 완전히 별개인 **브라우저 라이브 AI 기능 15개**가 있다 — AI
+커스텀 질문(⑧)/각 섹션 "AI 분석"/KPI 인사이트 "AI 요약"/SKU 인사이트 "AI 심층분석"/키워드
+리뷰 모달 "AI 요약"·"AI 재분류"/SKU 1vs1 "AI 비교 브리프"/AI 채팅 패널("Hey Sloom")/Taxonomy의
+"🤖 AI 자동 분류(검토형)"·신규 키워드 후보 검증·키워드 학습·Topic 자동 생성·전체 재분류 — 이들은
+전부 브라우저가 사이드바 "AI 서버 URL"(기본 Ollama `localhost:11434`, 또는 Cloudflare Tunnel URL)로
+직접 `fetch()`를 날려 실행되는 **파이프라인과 무관한 별도 시스템**이라, 백엔드를 Claude로 바꿔도
+이 15개는 여전히 Ollama가 있어야 동작했다(GPU 약한 PC의 진짜 걸림돌).
+
+**해결**: `scripts/local_proxy.py`(기존에 Ollama 중계 + GitHub 업로드를 하던 로컬 프록시)에
+`AI_BACKEND=claude` 모드를 추가했다. 대시보드는 Ollama 고유 API 3개(`GET /`, `GET /api/tags`,
+`POST /api/generate`)로만 말을 걸므로, 프록시가 **같은 모양**으로 응답하돼 내부적으로
+`claude_engine.ClaudeClient`(백엔드에서 이미 쓰던 것 재사용)를 호출하게 만들면 **`docs/index.html`
+JS는 한 줄도 안 건드리고** 그대로 동작한다.
+
+```bash
+# GPU 약한 PC — Ollama 설치 없이 Claude로 라이브 AI 기능 사용
+set AI_BACKEND=claude
+python scripts/local_proxy.py
+# → 대시보드 사이드바 "AI 서버 URL"에 http://localhost:8799 (또는 Cloudflare Tunnel URL) 입력
+```
+
+`start-tunnel.bat`도 실행 시 "1.Ollama / 2.Claude" 선택 프롬프트를 추가해 `AI_BACKEND`를
+설정하고 `start_tunnel.py`로 상속한다. **주의**: `start_tunnel.py`는 원래 Ollama(11434) 미실행 시
+무조건 중단했는데, `AI_BACKEND=claude`일 땐 이 체크를 건너뛰도록 고쳐야 한다(안 그러면 Ollama
+없는 PC에서 애초에 터널이 안 열림).
+
+**설계 포인트**:
+- `GET /`(온라인 점검)은 **로그인 여부와 무관하게 즉시 200**을 반환한다. 대시보드의 `pingOllama()`가
+  이 요청에 3초 타임아웃을 걸어두므로, 여기서 `claude auth login`(브라우저 로그인, 최대 3분 대기)을
+  타면 항상 타임아웃 → "오프라인"으로 잘못 표시된다. 로그인 체크/유도는 타임아웃 없는
+  `POST /api/generate`에서만 한다.
+- `GET /api/tags`는 Ollama처럼 "설치된 모델 목록"이 없으므로 `["sonnet","opus","haiku"]` 고정 반환.
+- `POST /api/generate`: `claude auth status`(빠름·비파괴적)로 로그인 확인 → 안 돼있으면
+  `claude auth login` 실행(브라우저 로그인 창이 뜸, 최대 3분 대기) → 로그인 후 정상 처리.
+  세션 한도 소진(`_looks_like_quota`)이나 로그인 실패는 예외를 던지는 대신 `{"response": "⏳/⚠️ 안내 문구"}`
+  로 반환해, 기존 AI 요약/분석 UI가 그 문구를 그대로 답변 자리에 표시하게 한다(별도 에러 처리 UI 불필요).
+- Claude CLI는 실시간 토큰 스트리밍이 없다(`-p`는 완료 후 전체 텍스트 반환). `stream:true` 요청엔
+  전체 응답을 받은 뒤 6자 단위로 잘라 Ollama와 동일한 NDJSON(`{"response":"...","done":false}` 줄들 +
+  마지막 `{"done":true}`)으로 흘려보내 타이핑 효과를 흉내낸다(실제 스트리밍 아님, 체감 UX만 동일).
+- **세션 한도 공유 주의**: 이 라이브 기능들과 월간 파이프라인(`--engine claude`)이 같은 Claude
+  계정 한도를 나눠 쓴다. 대시보드에서 AI 버튼을 많이 누르면 파이프라인 처리용 한도가 줄어든다.
+
+**검증**: 실제로 로컬에서 `AI_BACKEND=claude`로 프록시를 띄워 `GET /`·`GET /api/tags`·
+`POST /api/generate`(스트리밍/논스트리밍 둘 다) 를 curl로 호출해 확인 — 논스트리밍은
+`{"response":"2","done":true}`(1+1 질문), 스트리밍은 Ollama와 동일한 NDJSON 청크로 정상 응답함을 확인.
+이전 Ollama 전용 버전은 `backup/pre-claude-live-proxy-2026-07-24` 브랜치에 보존.
+
+---
+
 ## Ollama 설정
 
 - 모델: `exaone3.5:7.8b` (기본값, 대시보드에서 변경 가능)

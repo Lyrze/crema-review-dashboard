@@ -1,5 +1,5 @@
 """
-Ollama Cloudflare Quick Tunnel 자동 실행 스크립트
+AI 서버 Cloudflare Quick Tunnel 자동 실행 스크립트
 
 기능:
   1. cloudflared tunnel을 실행하고 stdout 캡처
@@ -13,9 +13,15 @@ Ollama Cloudflare Quick Tunnel 자동 실행 스크립트
   python start_tunnel.py
   또는 같은 폴더의 start-tunnel.bat 더블클릭
 
+  AI_BACKEND=claude 를 설정하면 로컬 Ollama 없이 Claude Code CLI로 대시보드의
+  라이브 AI 기능(AI 요약/자동 분류 등)을 처리한다 — GPU 불필요. 이 경우 Ollama
+  실행 여부를 확인하지 않는다(local_proxy.py 가 Claude CLI로 직접 처리).
+
 요구:
   - cloudflared (winget install Cloudflare.cloudflared)
-  - Ollama 환경변수: OLLAMA_HOST=0.0.0.0:11434
+  - AI_BACKEND=ollama(기본): Ollama 환경변수 OLLAMA_HOST=0.0.0.0:11434 로 실행 중이어야 함
+  - AI_BACKEND=claude: Claude Code CLI 로그인만 되어 있으면 됨(미로그인 시 첫 AI 호출 때
+    local_proxy.py 가 자동으로 브라우저 로그인 창을 띄움)
 """
 
 import subprocess
@@ -86,27 +92,34 @@ def check_ollama_running() -> bool:
 
 
 def main() -> int:
-    # 1. Ollama 실행 여부 확인
+    ai_backend = os.environ.get("AI_BACKEND", "ollama").strip().lower()
+
+    # 1. Ollama 실행 여부 확인 (AI_BACKEND=claude 면 Ollama가 필요 없으므로 건너뜀)
     print("=" * 70)
-    print("   Ollama Cloudflare Quick Tunnel")
+    print("   AI 서버 Cloudflare Quick Tunnel (백엔드: %s)" % ai_backend)
     print("=" * 70)
     print()
 
-    if not check_ollama_running():
+    if ai_backend == "claude":
+        print("[OK] AI_BACKEND=claude — Ollama 실행 여부 확인 생략 (Claude Code CLI 사용)")
+        print()
+    elif not check_ollama_running():
         print("[X] Ollama가 실행 중이 아닙니다.")
         print("    시작 메뉴에서 Ollama를 먼저 실행한 뒤 다시 시도해주세요.")
+        print("    (GPU가 약해 Ollama 대신 Claude를 쓰려면 AI_BACKEND=claude 로 설정)")
         print()
         show_notification(
             "Ollama 미실행",
             "Ollama가 실행 중이 아닙니다.\n\n"
             "시작 메뉴에서 Ollama를 실행한 뒤\n"
-            "이 배치파일을 다시 실행해주세요.",
+            "이 배치파일을 다시 실행해주세요.\n\n"
+            "(Ollama 대신 Claude를 쓰려면 AI_BACKEND=claude 환경변수 설정)",
         )
         input("\n[Enter] 키를 눌러 종료...")
         return 1
-
-    print("[OK] Ollama 실행 중 (127.0.0.1:11434)")
-    print()
+    else:
+        print("[OK] Ollama 실행 중 (127.0.0.1:11434)")
+        print()
 
     # 1-b. 로컬 프록시 실행 (Ollama 중계 + GitHub 저장소 업로드)
     proxy_port = os.environ.get("PROXY_PORT", "8799")

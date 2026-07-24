@@ -15,6 +15,13 @@
 - **무료** · HTTPS 자동 적용 · 방화벽 통과
 - 매번 같은 URL 사용 가능 (고정 도메인 옵션)
 
+> 💡 **GPU가 약해 Ollama를 못 쓰는 PC라면?** `scripts/local_proxy.py`(또는
+> `start-tunnel.bat`)를 `AI_BACKEND=claude`로 실행하면 Ollama 없이 Claude Code CLI
+> 구독 인증으로 대시보드의 라이브 AI 기능(AI 요약·자동 분류 등)이 그대로 동작합니다.
+> 이 문서의 1단계(Ollama 환경변수 설정)는 건너뛰고, 2~5단계는 그대로 따라가면 됩니다
+> (터널은 `local_proxy.py`가 뜬 포트를 그대로 가리키면 됨). Claude 로그인이 안 돼 있으면
+> 대시보드에서 첫 AI 기능을 사용할 때 자동으로 브라우저 로그인 창이 뜹니다.
+
 ---
 
 ## ✅ 사전 준비
