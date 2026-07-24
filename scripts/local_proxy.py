@@ -55,7 +55,7 @@ PORT = int(os.environ.get("PROXY_PORT", "8799"))
 GH_API = "https://api.github.com"
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from claude_engine import ClaudeClient, _find_claude, _looks_like_quota  # noqa: E402
+from claude_engine import ClaudeClient, _find_claude, is_quota  # noqa: E402
 
 CLAUDE_MODELS = ["sonnet", "opus", "haiku"]  # /api/tags 가 대시보드 모델 드롭다운에 제공하는 고정 목록
 _claude_client = None  # 지연 생성
@@ -219,7 +219,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             text = _get_claude_client().generate(model, prompt, system=system, temperature=temperature)
         except Exception as exc:  # noqa: BLE001
             msg = str(exc)
-            if _looks_like_quota(msg):
+            if is_quota(msg):
                 return self._respond_text(
                     stream, "⏳ Claude 세션 사용량 한도에 도달했습니다. 잠시 후(리셋 시각 이후) 다시 시도해주세요.",
                 )

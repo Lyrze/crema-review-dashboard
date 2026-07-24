@@ -651,7 +651,7 @@ python scripts/local_proxy.py
 - `GET /api/tags`는 로컬 모델 목록 개념이 없으므로 `["sonnet","opus","haiku"]` 고정 반환.
 - `POST /api/generate`: `claude auth status`(빠름·비파괴적)로 로그인 확인 → 안 돼있으면
   `claude auth login` 실행(브라우저 로그인 창이 뜸, 최대 3분 대기) → 로그인 후 정상 처리.
-  세션 한도 소진(`_looks_like_quota`)이나 로그인 실패는 예외를 던지는 대신 `{"response": "⏳/⚠️ 안내 문구"}`
+  세션 한도 소진(`is_quota`)이나 로그인 실패는 예외를 던지는 대신 `{"response": "⏳/⚠️ 안내 문구"}`
   로 반환해, 기존 AI 요약/분석 UI가 그 문구를 그대로 답변 자리에 표시하게 한다(별도 에러 처리 UI 불필요).
 - Claude CLI는 실시간 토큰 스트리밍이 없다(`-p`는 완료 후 전체 텍스트 반환). `stream:true` 요청엔
   전체 응답을 받은 뒤 6자 단위로 잘라 Ollama와 동일한 NDJSON(`{"response":"...","done":false}` 줄들 +
