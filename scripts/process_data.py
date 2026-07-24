@@ -1154,36 +1154,29 @@ class QuotaExhaustedError(RuntimeError):
 def reclassify_keyword_samples(
     keywords_data: dict,
     model: str,
-    base_url: str,
     mode: str = "batch",
-    engine: str = "ollama",
 ) -> None:
-    """by_intent 각 키워드의 review_samples를 LLM으로 재검증해 오매칭 제거 (in-place).
+    """by_intent 각 키워드의 review_samples를 Claude로 재검증해 오매칭 제거 (in-place).
 
     어휘(정규식) 매칭은 "강도가 적당하다"(긍정)를 "강도 불량"(부정) 키워드에
     잘못 붙이는 등 false positive가 잦다. AI로 각 샘플이 실제 그 키워드
     주제를 (해당 극성으로) 다루는지 판별해 통과한 것만 남긴다.
 
-    --skip-ai 와 무관하게 동작하도록 자체 analyzer를 초기화한다.
-    engine='claude' 면 claude_engine.make_analyzer 로 Claude CLI 사용(호출량이 적어
-    resume 마커 없이 한도 소진 시 exit(3)로 전체 재시도해도 비용이 크지 않음).
+    --skip-ai 와 무관하게 동작하도록 자체 analyzer를 초기화한다. 호출량이 적어
+    resume 마커 없이 한도 소진 시 exit(3)로 전체 재시도해도 비용이 크지 않다.
     """
     try:
-        if engine == "claude":
-            from claude_engine import make_analyzer  # type: ignore[import]
-            from classify_unclassified import is_quota  # type: ignore[import]
-        else:
-            from ollama_analysis import OllamaAnalyzer  # type: ignore[import]
+        from claude_engine import ClaudeAnalyzer, is_quota  # type: ignore[import]
     except ImportError:
-        logger.warning("분석 모듈 없음 → 재분류 건너뜀")
+        logger.warning("claude_engine 모듈 없음 → 재분류 건너뜀")
         return
 
-    analyzer = OllamaAnalyzer(model=model, base_url=base_url) if engine != "claude" else make_analyzer(engine, model=model, base_url=base_url)
+    analyzer = ClaudeAnalyzer(model=model)
     if not analyzer.health_check():
         err = str(getattr(analyzer, "last_error", "") or "")
-        if engine == "claude" and is_quota(err):
+        if is_quota(err):
             raise QuotaExhaustedError(err)
-        logger.warning("AI 응답 없음 → 재분류 건너뜀 (%s)", err or "ollama serve 확인")
+        logger.warning("Claude 응답 없음 → 재분류 건너뜀 (%s)", err)
         return
 
     bi = keywords_data.get("by_intent", {})
@@ -1205,7 +1198,7 @@ def reclassify_keyword_samples(
                     mode=mode,
                 )
             except Exception as exc:  # noqa: BLE001
-                if engine == "claude" and is_quota(exc):
+                if is_quota(exc):
                     raise QuotaExhaustedError(str(exc)) from exc
                 logger.warning("재분류 실패('%s'), 원본 유지: %s", item.get("word", ""), exc)
                 continue
@@ -1229,10 +1222,8 @@ def reclassify_keyword_full(
     keywords_data: dict,
     df: pd.DataFrame,
     model: str,
-    base_url: str,
     mode: str = "batch",
     cand_cap: int = 400,
-    engine: str = "ollama",
     progress_path: Optional[Path] = None,
 ) -> None:
     """전체 리뷰에서 각 키워드 멤버십을 재도출 (재할당 + 카운트 재계산, in-place).
@@ -1243,28 +1234,24 @@ def reclassify_keyword_full(
       count·all_review_ids·review_samples·by_product 를 다시 계산한다.
 
     비용이 크므로(키워드×후보) cand_cap 으로 키워드별 후보 상한을 둔다.
-    engine='claude' 일 때는 키워드당 3단계 게이트가 후보 수십~수백 건을 배치
-    호출하므로 한 달 전체로는 수백~수천 건의 Claude CLI 호출이 발생할 수 있다.
-    세션 한도에 걸리면 지금까지 완료된 키워드를 progress_path 에 저장하고
-    QuotaExhaustedError 를 던진다 — run_pipeline 이 이를 받아 exit(3) 하면
-    quota_retry.py 가 리셋 후 이 함수를 재호출하고, 이미 끝난 키워드는
-    재호출 없이 저장된 결과를 그대로 적용해 건너뛴다(중복 과금/시간 낭비 방지).
+    키워드당 3단계 게이트가 후보 수십~수백 건을 배치 호출하므로 한 달 전체로는
+    수백~수천 건의 Claude CLI 호출이 발생할 수 있다. 세션 한도에 걸리면 지금까지
+    완료된 키워드를 progress_path 에 저장하고 QuotaExhaustedError 를 던진다 —
+    run_pipeline 이 이를 받아 exit(3) 하면 quota_retry.py 가 리셋 후 이 함수를
+    재호출하고, 이미 끝난 키워드는 재호출 없이 저장된 결과를 그대로 적용해
+    건너뛴다(중복 과금/시간 낭비 방지).
     """
     try:
-        if engine == "claude":
-            from claude_engine import make_analyzer  # type: ignore[import]
-            from classify_unclassified import is_quota  # type: ignore[import]
-        else:
-            from ollama_analysis import OllamaAnalyzer  # type: ignore[import]
+        from claude_engine import ClaudeAnalyzer, is_quota  # type: ignore[import]
     except ImportError:
-        logger.warning("분석 모듈 없음 → 전체 재분류 건너뜀")
+        logger.warning("claude_engine 모듈 없음 → 전체 재분류 건너뜀")
         return
-    analyzer = OllamaAnalyzer(model=model, base_url=base_url) if engine != "claude" else make_analyzer(engine, model=model, base_url=base_url)
+    analyzer = ClaudeAnalyzer(model=model)
     if not analyzer.health_check():
         err = str(getattr(analyzer, "last_error", "") or "")
-        if engine == "claude" and is_quota(err):
+        if is_quota(err):
             raise QuotaExhaustedError(err)
-        logger.warning("AI 응답 없음 → 전체 재분류 건너뜀 (%s)", err or "ollama serve 확인")
+        logger.warning("Claude 응답 없음 → 전체 재분류 건너뜀 (%s)", err)
         return
 
     # 이전 실행에서 한도로 중단됐던 진행분(완료된 키워드의 결과) 이어받기
@@ -1344,7 +1331,7 @@ def reclassify_keyword_full(
             try:
                 kept = analyzer.verify_keyword_reviews(word, polarity, samples, mode)
             except Exception as exc:  # noqa: BLE001
-                if engine == "claude" and is_quota(exc):
+                if is_quota(exc):
                     logger.warning("  [STOP] 한도 소진 — 완료 %d개 키워드 진행분 저장. 재실행 시 이어집니다.", len(done))
                     _save_progress()
                     raise QuotaExhaustedError(str(exc)) from exc
@@ -1384,8 +1371,7 @@ def reclassify_keyword_full(
                 "all_review_ids": kept_ids, "count": len(kept_ids),
                 "review_samples": new_samples, "by_product": item["by_product"],
             }
-            if engine == "claude":
-                _save_progress()  # 대량 호출이라 항목 단위로 저장(중간에 한도 걸려도 유실 없음)
+            _save_progress()  # 대량 호출이라 항목 단위로 저장(중간에 한도 걸려도 유실 없음)
             added = len([r for r in kept_ids if r not in cur])
             removed = len([r for r in cur if r not in set(kept_ids)])
             logger.info(
@@ -1442,7 +1428,7 @@ def build_reviews_index(df: pd.DataFrame, max_body: int = 600) -> dict:
             if sv is not None and pd.notna(sv):
                 s = str(sv).strip().lower()
                 rec["sentiment"] = s if s in ("positive", "neutral", "negative") else "neutral"
-                # 타임아웃으로 별점 폴백된 건만 표시 → 나중에 patch_sentiment 로 재처리 대상
+                # 타임아웃으로 별점 폴백된 건만 표시 → 나중에 recheck_sentiment.py --full 로 재처리 대상
                 if has_src and str(getattr(row, "sentiment_src", "")) == "rating":
                     rec["sentiment_src"] = "rating"
         # 세그먼트 분석용 메타 (회원등급·옵션·채널) — 심층분석 탭에서 사용
@@ -1504,42 +1490,6 @@ def update_index_json(brand: str, month: str, docs_root: Path) -> None:
     save_json(index, index_path)
 
 
-# ────────────────────────────────────────────
-# 진행률 표시 헬퍼
-# ────────────────────────────────────────────
-
-class Progress:
-    """tqdm 없이 동작하는 간단한 진행률 표시기. 컨텍스트 매니저로도 사용 가능."""
-
-    def __init__(self, total: int, desc: str = "처리 중") -> None:
-        self.total = total
-        self.desc = desc
-        self.current = 0
-        self.start = time.monotonic()
-
-    def __enter__(self) -> "Progress":
-        return self
-
-    def __exit__(self, exc_type: object, exc_val: object, exc_tb: object) -> None:
-        # 완료 처리 — 진행 중 예외 발생 시에도 줄바꿈 보장
-        if self.current < self.total:
-            print()
-
-    def update(self, n: int = 1) -> None:
-        self.current = min(self.current + n, self.total)
-        pct = self.current / self.total * 100 if self.total else 0.0
-        elapsed = time.monotonic() - self.start
-        bar_len = 30
-        filled = int(bar_len * self.current / self.total) if self.total else 0
-        bar = "=" * filled + "-" * (bar_len - filled)
-        print(
-            f"\r  {self.desc} [{bar}] {self.current}/{self.total} ({pct:.0f}%) {elapsed:.1f}s",
-            end="",
-            flush=True,
-        )
-        if self.current >= self.total:
-            print()
-
 
 # ────────────────────────────────────────────
 # 메인 파이프라인
@@ -1595,104 +1545,15 @@ def run_pipeline(args: argparse.Namespace) -> None:
         else:
             logger.warning("전월 CSV 없음: %s", prev_path)
 
-    # engine='claude' 해석: --ollama-model 이 명시적으로 주어지지 않았으면 'sonnet' 사용
-    # (reverify_suspect.py/classify_unclassified.py 와 동일한 model-or-default 관례)
-    engine: str = getattr(args, "engine", "ollama") or "ollama"
-    resolved_model: str = args.ollama_model or ("sonnet" if engine == "claude" else "exaone3.5:7.8b")
+    # --model 미지정 시 'sonnet' 사용(reverify_suspect.py/classify_unclassified.py 와 동일 관례)
+    resolved_model: str = args.model or "sonnet"
 
-    # ── 3. AI 감성 분석 (--skip-ai 없을 때)
-    skip_ai: bool = args.skip_ai
-    if engine == "claude" and not skip_ai:
-        # 로컬 1차 감성분석은 Ollama 전용 대량 배치라 여기서 생략한다 — 어차피 update-data.bat
-        # [4/5] recheck_sentiment.py --full(Claude 전건 재판정, 권위)가 뒤에서 전부 덮어쓰므로
-        # Claude로 여기까지 중복 처리하면 세션 한도만 낭비된다. 별점 폴백 사용(기존 --skip-ai 경로와 동일).
-        # ai_analysis.json(미사용 — 대시보드가 안 읽음) 생성도 같이 생략됨(아래 skip_ai 게이트 공유).
-        logger.info("engine=claude → 로컬 1차 감성분석 생략(별점 폴백, [4/5] recheck_sentiment --full 이 전건 재판정) · ai_analysis.json(미사용) 생성도 생략")
-        skip_ai = True
-    analyzer = None
-    if not skip_ai:
-        logger.info("AI 분석: Ollama 감성 분석 시작...")
-        try:
-            from ollama_analysis import OllamaAnalyzer  # type: ignore[import]
-
-            analyzer = OllamaAnalyzer(model=resolved_model, base_url=args.ollama_url)
-            if analyzer.health_check():
-                # 배치당 하드 타임아웃 — Ollama 가 hang 해도 무한 대기 방지(과거 7시간 멈춤 재발 방지).
-                # 연속 타임아웃 N회면 감성분석 중단 → 나머지는 라벨 없음(대시보드 별점 폴백).
-                from concurrent.futures import ThreadPoolExecutor, TimeoutError as _FT
-                SENT_BATCH_TIMEOUT = 60   # 초/배치
-                SENT_MAX_CONSEC = 3       # 연속 타임아웃 허용 횟수 → 초과 시 중단
-
-                def _rating_sent(rt):
-                    """타임아웃/오류 시 그 리뷰의 별점으로 감성 폴백(집계 일관성 유지)."""
-                    try: rt = int(rt)
-                    except Exception: rt = 0
-                    return {"sentiment": "positive" if rt >= 4 else ("neutral" if rt == 3 else "negative"),
-                            "score": 0.5, "reason": "별점 폴백(감성 타임아웃)", "src": "rating"}
-
-                progress = Progress(len(df), desc="감성 분석")
-                sentiments: List[dict] = []
-                batch_size = 5
-                _ex = ThreadPoolExecutor(max_workers=1)
-                _consec = 0
-                _aborted = False
-                _fallback_cnt = 0
-
-                for i in range(0, len(df), batch_size):
-                    batch = df.iloc[i: i + batch_size]
-                    ratings = batch["rating"].tolist()
-                    if _aborted:
-                        sentiments.extend([_rating_sent(rt) for rt in ratings])  # 나머지는 별점 폴백
-                        _fallback_cnt += len(batch)
-                        progress.update(len(batch))
-                        continue
-                    _fut = _ex.submit(analyzer.analyze_sentiment_batch, batch["body"].tolist())
-                    try:
-                        results = _fut.result(timeout=SENT_BATCH_TIMEOUT)
-                        sentiments.extend(results)
-                        _consec = 0
-                    except _FT:
-                        _consec += 1
-                        logger.warning("  감성 배치 타임아웃 (연속 %d) @%d — 별점 폴백", _consec, i)
-                        try: _ex.shutdown(wait=False, cancel_futures=True)
-                        except Exception: pass
-                        _ex = ThreadPoolExecutor(max_workers=1)   # 멈춘 스레드 버리고 새 실행기
-                        try: analyzer = OllamaAnalyzer(model=resolved_model, base_url=args.ollama_url)
-                        except Exception: pass
-                        sentiments.extend([_rating_sent(rt) for rt in ratings])
-                        _fallback_cnt += len(batch)
-                        if _consec >= SENT_MAX_CONSEC:
-                            logger.warning("  감성 연속 타임아웃 %d회 → 감성분석 중단, 나머지는 별점 폴백", SENT_MAX_CONSEC)
-                            _aborted = True
-                    except Exception as exc:  # noqa: BLE001
-                        logger.warning("  감성 배치 오류 @%d: %s — 별점 폴백", i, exc)
-                        sentiments.extend([_rating_sent(rt) for rt in ratings])
-                        _fallback_cnt += len(batch)
-                    progress.update(len(batch))
-
-                try: _ex.shutdown(wait=False)
-                except Exception: pass
-                df["sentiment"] = [r.get("sentiment", "neutral") for r in sentiments]
-                df["sentiment_score"] = [r.get("score", 0.5) for r in sentiments]
-                df["sentiment_reason"] = [r.get("reason", "") for r in sentiments]
-                df["sentiment_src"] = [r.get("src", "ai") for r in sentiments]  # 'rating'=폴백(재처리 대상)
-                if _fallback_cnt:
-                    logger.warning("  감성 분석 완료(%d건) — 그중 %d건은 타임아웃으로 별점 폴백", len(sentiments), _fallback_cnt)
-                else:
-                    logger.info("  감성 분석 완료: %d건", len(sentiments))
-            else:
-                logger.warning("Ollama 서버 응답 없음 → 별점 기반 감성 추정으로 대체")
-                skip_ai = True
-
-        except ImportError:
-            logger.warning("ollama_analysis 모듈 없음 → AI 분석 건너뜀")
-            skip_ai = True
-        except RuntimeError as exc:
-            logger.error("AI 분석 실패: %s → 별점 기반 추정으로 대체", exc)
-            skip_ai = True
-        except Exception as exc:  # noqa: BLE001
-            logger.error("AI 분석 중 예상치 못한 오류: %s → 별점 기반 추정으로 대체", exc)
-            skip_ai = True
+    # ── 3. 리뷰별 잠정 감성 — 별점 폴백만 사용한다.
+    # 과거엔 여기서 로컬 Ollama로 1차 감성분석을 돌렸으나, 어차피 update-data.bat [4/5]
+    # recheck_sentiment.py --full(Claude 전건 재판정, 권위)이 뒤에서 전부 덮어쓰므로
+    # 여기서 AI를 또 호출하면 세션 한도만 낭비된다("sentiment" 컬럼 자체를 만들지 않음 —
+    # 아래 집계 함수들은 컬럼이 없으면 이미 별점 기반 폴백을 쓰도록 되어 있다).
+    skip_ai: bool = True
 
     # ── 4. KPI 계산
     logger.info("KPI 계산 중...")
@@ -1721,104 +1582,31 @@ def run_pipeline(args: argparse.Namespace) -> None:
     # ── 6-b. AI 재분류
     if getattr(args, "reclassify_full", False):
         # 전체 리뷰에서 재도출 (재할당 + 카운트 재계산) — 정확하지만 느림
-        logger.info("AI 전체 재분류 시작 (engine=%s, mode=%s)...", engine, args.reclassify_mode)
+        logger.info("AI 전체 재분류 시작 (mode=%s)...", args.reclassify_mode)
         try:
             reclassify_keyword_full(
                 keywords_data, df,
-                model=resolved_model, base_url=args.ollama_url,
+                model=resolved_model,
                 mode=args.reclassify_mode,
-                engine=engine,
-                progress_path=(out_dir / ".reclassify_full_progress.json") if engine == "claude" else None,
+                progress_path=out_dir / ".reclassify_full_progress.json",
             )
         except QuotaExhaustedError:
             logger.warning("한도 소진 — quota_retry.py 로 재실행하면 완료분부터 이어집니다.")
             sys.exit(3)
     elif getattr(args, "reclassify", False):
         # 저장된 샘플 검증 (오매칭 제거만) — 빠름
-        logger.info("AI 재분류 시작 (engine=%s, mode=%s)...", engine, args.reclassify_mode)
+        logger.info("AI 재분류 시작 (mode=%s)...", args.reclassify_mode)
         try:
             reclassify_keyword_samples(
                 keywords_data,
-                model=resolved_model, base_url=args.ollama_url,
-                mode=args.reclassify_mode, engine=engine,
+                model=resolved_model,
+                mode=args.reclassify_mode,
             )
         except QuotaExhaustedError:
             logger.warning("한도 소진 — quota_retry.py 로 재실행하면 이어집니다.")
             sys.exit(3)
 
-    # ── 7. AI 분석 JSON (AI 실행된 경우)
-    ai_analysis: Optional[dict] = None
-    if not skip_ai and analyzer is not None:
-        try:
-            logger.info("AI 분석: 키워드 추출 및 Smart Brief 생성 중...")
-
-            neg_texts = df[df["rating"].le(2)]["body"].tolist()
-            ai_keywords = analyzer.extract_keywords(neg_texts, top_n=30)
-
-            product_briefs: List[dict] = []
-            with Progress(min(10, len(products_list)), desc="상품 브리프") as prog:
-                for prod in products_list[:10]:
-                    prod_df = df[df["product_name"] == prod["name"]]
-                    sample_texts = prod_df["body"].dropna().tolist()[:20]
-                    brief = analyzer.generate_product_brief(
-                        product_name=prod["name"],
-                        reviews=sample_texts,
-                        avg_rating=prod["avg_rating"],
-                        sentiment=prod["sentiment"],
-                    )
-                    product_briefs.append({
-                        "product_id": prod["id"],
-                        "product_name": prod["name"],
-                        "brief": brief.get("brief", ""),
-                        "key_insights": brief.get("key_insights", []),
-                    })
-                    prog.update(1)
-
-            smart_brief = analyzer.generate_smart_brief(
-                brand=brand,
-                month=month,
-                kpis=kpis,
-                top_products=products_list[:5],
-                neg_keywords=ai_keywords.get("complaint", [])[:10],
-            )
-
-            # by_intent 덮어쓰기 가드: 패턴 기반 항목은 review_samples·all_review_ids·
-            # by_product 를 갖고 있어 대시보드 '전체 보기'·재분류에 필수.
-            # AI 키워드(맨 단어만)로 덮어쓰면 이 정보가 소실되므로,
-            # 재분류를 했거나 기존 항목이 이미 풍부하면 덮어쓰지 않는다.
-            did_reclassify = getattr(args, "reclassify", False) or getattr(args, "reclassify_full", False)
-            existing_rich = any(
-                it.get("all_review_ids") or it.get("review_samples")
-                for grp in ("praise", "complaint", "improvement")
-                for it in keywords_data["by_intent"].get(grp, [])
-            )
-            if ai_keywords and not did_reclassify and not existing_rich:
-                keywords_data["by_intent"]["praise"] = ai_keywords.get("praise", [])
-                keywords_data["by_intent"]["complaint"] = ai_keywords.get("complaint", [])
-                keywords_data["by_intent"]["improvement"] = ai_keywords.get("improvement", [])
-            elif ai_keywords:
-                # AI 키워드는 ai_analysis 에만 보존 (by_intent 는 패턴/재분류 결과 유지)
-                logger.info("by_intent 덮어쓰기 생략 (review_samples/all_review_ids 보존) — AI 키워드는 ai_analysis 에 기록")
-
-            ai_analysis = {
-                "smart_brief": smart_brief,
-                "product_briefs": product_briefs,
-                "ai_keywords": ai_keywords,
-                "sentiment_summary": {
-                    "positive": kpis.get("positive_count", 0),
-                    "neutral": kpis.get("neutral_count", 0),
-                    "negative": kpis.get("negative_count", 0),
-                    "positive_rate": kpis.get("positive_rate", 0),
-                    "negative_rate": kpis.get("negative_rate", 0),
-                },
-                "generated_at": datetime.now().isoformat(),
-                "model": resolved_model,
-            }
-
-        except Exception as exc:  # noqa: BLE001
-            logger.error("AI 분석 JSON 생성 실패: %s", exc)
-
-    # ── 8. JSON 저장
+    # ── 7. JSON 저장
     # ── 전체 리뷰 인덱스 (대시보드 '전체 보기' + 재분류용)
     reviews_index = build_reviews_index(df)
 
@@ -1827,8 +1615,6 @@ def run_pipeline(args: argparse.Namespace) -> None:
     save_json(products_data, out_dir / "products.json")
     save_json(keywords_data, out_dir / "keywords.json")
     save_json(reviews_index, out_dir / "reviews.json")
-    if ai_analysis is not None:
-        save_json(ai_analysis, out_dir / "ai_analysis.json")
 
     # ── index.json 업데이트
     update_index_json(brand, month, docs_root)
@@ -1857,27 +1643,9 @@ def parse_args() -> argparse.Namespace:
         help="전월 CSV 경로 (MoM 비교용, 선택)",
     )
     p.add_argument(
-        "--skip-ai",
-        action="store_true",
-        default=False,
-        help="Ollama AI 분석 건너뜀",
-    )
-    p.add_argument(
-        "--engine",
-        default="ollama",
-        choices=["ollama", "claude"],
-        help="AI 엔진 — ollama(기본, 로컬) | claude(Claude Code CLI, 구독 인증, GPU 불필요)",
-    )
-    p.add_argument(
-        "--ollama-model", "--model",
-        dest="ollama_model",
+        "--model",
         default=None,
-        help="모델명 (기본: engine=ollama면 exaone3.5:7.8b, engine=claude면 sonnet)",
-    )
-    p.add_argument(
-        "--ollama-url",
-        default="http://localhost:11434",
-        help="Ollama 엔드포인트 URL (engine=claude 일 때는 무시됨, 기본: http://localhost:11434)",
+        help="Claude 모델명 (기본: sonnet)",
     )
     p.add_argument(
         "--top-n-keywords",
@@ -1890,7 +1658,7 @@ def parse_args() -> argparse.Namespace:
         "--reclassify",
         action="store_true",
         default=False,
-        help="AI(--engine)로 키워드↔리뷰 매칭을 재검증해 오매칭 샘플 제거 (--skip-ai 와 무관하게 동작)",
+        help="Claude로 키워드↔리뷰 매칭을 재검증해 오매칭 샘플 제거",
     )
     p.add_argument(
         "--reclassify-mode",

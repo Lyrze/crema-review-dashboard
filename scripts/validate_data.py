@@ -93,7 +93,7 @@ def main():
         if pct >= 100 and fb == 0:
             oks.append(f"감성 커버리지 100% (폴백 0)")
         else:
-            warns.append(f"감성 커버리지 {pct:.0f}% · 별점폴백 {fb}건 (patch_sentiment.py 로 보완 권장)")
+            warns.append(f"감성 커버리지 {pct:.0f}% · 별점폴백 {fb}건 (recheck_sentiment.py --full 로 보완 권장)")
 
     # ── 4) 버킷 감성 정합성 (칭찬=긍정?, 불만·개선=부정?) ──
     if keywords and reviews:

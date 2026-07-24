@@ -1,7 +1,7 @@
 """recheck_sentiment.py — 감성 오판 의심 리뷰를 Claude로 재판정해 교정
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Ollama 7b 감성판정 중 '부정어 포함하지만 결말은 긍정'류(예: "아팠는데 풀렸어요")를
-부정으로 오판하는 케이스를 Claude가 재판정해 reviews.json 의 sentiment 만 교정한다.
+별점 폴백 감성('부정어 포함하지만 결말은 긍정'류, 예: "아팠는데 풀렸어요")처럼
+오판 소지가 큰 케이스를 Claude가 재판정해 reviews.json 의 sentiment 만 교정한다.
 
 대상(의심 모집단): 기본 = ★4~5인데 sentiment='negative' (오판이 몰린 구간).
   --include-pos3 지정 시 ★3인데 sentiment='positive' 도 포함.

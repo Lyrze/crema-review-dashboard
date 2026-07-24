@@ -7,7 +7,7 @@
 ## 프로젝트 소개
 
 - 크리마에서 내보낸 리뷰 CSV 파일을 `data/raw/`에 넣으면 자동으로 처리됩니다.
-- AI 감성 분석(Ollama) 또는 규칙 기반 분석을 선택할 수 있습니다.
+- AI 감성 분석(Claude Code CLI) 또는 규칙 기반 분석을 선택할 수 있습니다.
 - 처리된 결과는 `docs/data/`에 JSON으로 저장되며, GitHub Pages로 대시보드가 서빙됩니다.
 
 ---
@@ -81,7 +81,7 @@ pip install pandas requests
 # AI 분석 없이 실행 (기본 규칙 기반)
 python scripts/process_reviews.py --skip-ai
 
-# AI 분석 포함 실행 (Ollama 필요)
+# AI 분석 포함 실행 (Claude Code CLI 로그인 필요)
 python scripts/process_reviews.py
 
 # 특정 파일만 처리
@@ -92,39 +92,18 @@ python scripts/process_reviews.py --file data/raw/sloom_2026-05.csv
 
 ---
 
-## Ollama 설정 방법
+## Claude Code CLI 설정 방법
 
-AI 기반 감성 분석을 사용하려면 [Ollama](https://ollama.com)가 필요합니다.
-
-### 설치
-
-```bash
-# macOS
-brew install ollama
-
-# Linux
-curl -fsSL https://ollama.com/install.sh | sh
-```
-
-### 모델 다운로드 및 실행
+AI 기반 감성 분석을 사용하려면 [Claude Code CLI](https://docs.claude.com/en/docs/claude-code)가
+설치되어 있고 구독 계정으로 로그인되어 있어야 합니다(GPU 불필요).
 
 ```bash
-# 한국어 지원 모델 다운로드 (약 4GB)
-ollama pull llama3
-
-# Ollama 서버 실행
-ollama serve
+npm install -g @anthropic-ai/claude-code
+claude auth login
 ```
 
-### 환경변수 설정 (선택사항)
-
-```bash
-# .env 파일 생성
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=llama3
-```
-
-기본값은 `http://localhost:11434`와 `llama3` 모델입니다.
+로그인 후에는 별도 설정 없이 각 스크립트가 기본 모델(`sonnet`)로 자동 동작합니다.
+필요 시 `--model` 옵션으로 다른 모델(`opus`, `haiku`)을 지정할 수 있습니다.
 
 ---
 

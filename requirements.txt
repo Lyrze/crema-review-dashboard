@@ -4,10 +4,10 @@
 # 핵심 데이터 처리
 pandas>=2.0.0
 
-# HTTP 요청 (Ollama API)
+# HTTP 요청 (local_proxy.py의 GitHub Contents API 호출)
 requests>=2.31.0
 
-# 선택적: 진행률 표시 (없어도 동작, 내장 Progress 클래스로 대체됨)
+# 선택적: 진행률 표시 (없어도 동작)
 # tqdm>=4.66.0
 
 # 선택적: 형태소 분석 (설치 시 더 정확한 키워드 추출 가능)

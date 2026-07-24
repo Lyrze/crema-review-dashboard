@@ -15,75 +15,58 @@ python scripts\interactive_select.py > "%TEMP%\crema_sel.tmp"
 if errorlevel 1 ( echo. & echo [FAILED] & pause & exit /b 1 )
 
 :: 결과 파싱
-set "BRAND=" & set "MONTH=" & set "CSV=" & set "PREV_FLAG=" & set "ENGINE=" & set "AI_FLAG=" & set "RECLASS_FLAG=" & set "REVERIFY_FLAG=" & set "PVOC_INTENT_FLAG=" & set "PVOC_REVERIFY_FLAG=" & set "ANON_OUT="
+set "BRAND=" & set "MONTH=" & set "CSV=" & set "PREV_FLAG=" & set "RECLASS_FLAG=" & set "ANON_OUT="
 
 for /f "usebackq tokens=1,* delims==" %%A in ("%TEMP%\crema_sel.tmp") do (
   if "%%A"=="BRAND"         set "BRAND=%%B"
   if "%%A"=="MONTH"         set "MONTH=%%B"
   if "%%A"=="CSV"           set "CSV=%%B"
   if "%%A"=="PREV_FLAG"     set "PREV_FLAG=%%B"
-  if "%%A"=="ENGINE"        set "ENGINE=%%B"
-  if "%%A"=="AI_FLAG"       set "AI_FLAG=%%B"
   if "%%A"=="RECLASS_FLAG"  set "RECLASS_FLAG=%%B"
-  if "%%A"=="REVERIFY_FLAG" set "REVERIFY_FLAG=%%B"
-  if "%%A"=="PVOC_INTENT_FLAG" set "PVOC_INTENT_FLAG=%%B"
-  if "%%A"=="PVOC_REVERIFY_FLAG" set "PVOC_REVERIFY_FLAG=%%B"
   if "%%A"=="ANON_OUT"      set "ANON_OUT=%%B"
 )
 
 if "!BRAND!"=="" ( echo [ERROR] 선택 값 없음. & pause & exit /b 1 )
 
-:: 모든 AI 호출은 scripts\quota_retry.py 로 감싼다 — engine=ollama 는 한도가 없어 매번
-:: 즉시 성공 통과(오버헤드 없음), engine=claude 일 때만 세션 한도 도달 시 리셋시각까지
-:: 자동 대기 후 재개한다(무인). 각 스크립트는 자체 진행 마커로 이어받기를 지원한다.
+:: 모든 AI 호출은 scripts\quota_retry.py 로 감싼다 — Claude 세션 한도 도달 시
+:: 리셋시각까지 자동 대기 후 재개한다(무인). 각 스크립트는 자체 진행 마커로 이어받기를 지원한다.
 echo.
-echo  AI 엔진: !ENGINE!
+echo  AI 엔진: Claude Code CLI
 
-:: 데이터 처리 (RECLASS_FLAG 있으면 AI 정밀 분류 포함 - 오래 걸릴 수 있음)
+:: 데이터 처리 (RECLASS_FLAG로 AI 정밀 분류 포함 - 오래 걸릴 수 있음)
 python scripts\quota_retry.py -- python scripts\process_data.py ^
   --brand "!BRAND!" ^
   --month "!MONTH!" ^
   --input "!CSV!" ^
   !PREV_FLAG! ^
-  !AI_FLAG! ^
   !RECLASS_FLAG!
 
 if errorlevel 1 ( echo. & echo [ERROR] 데이터 처리 실패. & pause & exit /b 1 )
 
-:: [3.5/4] AI 정밀 보정 (의심 키워드를 더 큰 모델로 재검증) - REVERIFY_FLAG 있을 때만
-if not "!REVERIFY_FLAG!"=="" (
-  echo.
-  echo  [3.5/4] AI 정밀 보정 중 - 의심 키워드 재검증...
-  python scripts\quota_retry.py -- python scripts\reverify_suspect.py --brand "!BRAND!" --month "!MONTH!" !REVERIFY_FLAG!
-)
+:: [3.5/4] AI 정밀 보정 (의심 키워드 재검증)
+echo.
+echo  [3.5/4] AI 정밀 보정 중 - 의심 키워드 재검증...
+python scripts\quota_retry.py -- python scripts\reverify_suspect.py --brand "!BRAND!" --month "!MONTH!"
 
-:: [3.6/4] 구매경험 VOC 감성 데이터 (PVOC 토픽별 칭찬/불만) - PVOC_INTENT_FLAG 있을 때만
-if not "!PVOC_INTENT_FLAG!"=="" (
-  echo.
-  echo  [3.6/4] 구매경험 VOC 감성 데이터 생성 중...
-  python scripts\quota_retry.py -- python scripts\classify_pvoc_intent.py --brand "!BRAND!" --month "!MONTH!" !PVOC_INTENT_FLAG!
-)
+:: [3.6/4] 구매경험 VOC 감성 데이터 (PVOC 토픽별 칭찬/불만)
+echo.
+echo  [3.6/4] 구매경험 VOC 감성 데이터 생성 중...
+python scripts\quota_retry.py -- python scripts\classify_pvoc_intent.py --brand "!BRAND!" --month "!MONTH!"
 
-:: [3.7/4] PVOC 의도 재검증 (부정 거짓양성 완화) - PVOC_REVERIFY_FLAG 있을 때만
-if not "!PVOC_REVERIFY_FLAG!"=="" (
-  echo.
-  echo  [3.7/4] PVOC 의도 재검증 중 - 부정 거짓양성 완화...
-  python scripts\quota_retry.py -- python scripts\reverify_pvoc_intent.py --brand "!BRAND!" --month "!MONTH!" !PVOC_REVERIFY_FLAG!
-)
+:: [3.7/4] PVOC 의도 재검증 (부정 거짓양성 완화)
+echo.
+echo  [3.7/4] PVOC 의도 재검증 중 - 부정 거짓양성 완화...
+python scripts\quota_retry.py -- python scripts\reverify_pvoc_intent.py --brand "!BRAND!" --month "!MONTH!"
 
-:: [3.8/4] 신규 키워드 후보 발굴 (부정 미포착 → 검토형) - AI_FLAG 있을 때만
-if not "!AI_FLAG!"=="--skip-ai" (
-  echo.
-  echo  [3.8/4] 신규 키워드 후보 발굴 중 - 부정 미포착 리뷰 클러스터링...
-  python scripts\quota_retry.py -- python scripts\discover_keywords.py --brand "!BRAND!" --month "!MONTH!" !AI_FLAG!
-)
+:: [3.8/4] 신규 키워드 후보 발굴 (부정 미포착 → 검토형)
+echo.
+echo  [3.8/4] 신규 키워드 후보 발굴 중 - 부정 미포착 리뷰 클러스터링...
+python scripts\quota_retry.py -- python scripts\discover_keywords.py --brand "!BRAND!" --month "!MONTH!"
 
-:: [3.9/4] Taxonomy 미분류 AI 분류 제안 (검토형) - AI_FLAG 있고 스냅샷 있을 때만
-if not "!AI_FLAG!"=="--skip-ai" (
-  echo.
-  echo  [3.9/4] Taxonomy 미분류 AI 분류 제안 생성 중...
-  python scripts\quota_retry.py -- python scripts\classify_unclassified.py --brand "!BRAND!" --month "!MONTH!" !AI_FLAG!
-)
+:: [3.9/4] Taxonomy 미분류 AI 분류 제안 (검토형)
+echo.
+echo  [3.9/4] Taxonomy 미분류 AI 분류 제안 생성 중...
+python scripts\quota_retry.py -- python scripts\classify_unclassified.py --brand "!BRAND!" --month "!MONTH!"
 
 :: [3.95/4] 옵션 기반 상품 매핑 재라벨링 (사은품 제외 + 세트 분해 + 다중 귀속)
 echo.

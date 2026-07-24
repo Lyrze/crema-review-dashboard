@@ -7,10 +7,10 @@ docs/data/{brand}/{month}/pvoc_intent.json 을 생성한다.
 
 - 패턴 출처: scripts/pvoc_patterns.json (index.html PVOC_TAXONOMY 에서 추출, 동일)
 - 매칭 규칙: 대시보드 pvjMatchText 와 동일(짧은 영문은 경계, 한글은 부분문자열)
-- 의도 판정: ollama_analysis 의 3단계 ②의도 프롬프트와 동일 취지 (배치)
+- 의도 판정: claude_engine 의 3단계 ②의도 프롬프트와 동일 취지 (배치)
 
 사용:
-    python scripts/classify_pvoc_intent.py --brand 슬룸 --month 2026-05 --model qwen2.5:7b
+    python scripts/classify_pvoc_intent.py --brand 슬룸 --month 2026-05
 
 출력 형식: {"topics": {토픽명: {"pos": [review_id...], "neg": [review_id...]}}, "model":..., "generated_at":...}
   pos = 그 토픽을 칭찬/만족, neg = 그 토픽에 불만/불편/문제제기 (중립·단순언급은 pos 처리)
@@ -46,18 +46,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--brand", required=True)
     ap.add_argument("--month", required=True)
-    ap.add_argument("--engine", default="ollama", choices=["ollama", "claude"])
-    ap.add_argument("--model", "--ollama-model", dest="model", default=None)
-    ap.add_argument("--base-url", "--ollama-url", dest="base_url", default="http://localhost:11434")
+    ap.add_argument("--model", default=None)
     args = ap.parse_args()
-    model = args.model or ("sonnet" if args.engine == "claude" else "qwen2.5:7b")
+    model = args.model or "sonnet"
 
-    from ollama_analysis import extract_json_from_response  # noqa: E402
-    from claude_engine import make_analyzer  # noqa: E402  (ollama/claude 공용 팩토리)
-    if args.engine == "claude":
-        from classify_unclassified import is_quota  # noqa: E402
-    else:
-        def is_quota(_): return False  # Ollama 는 한도 개념 없음
+    from claude_engine import ClaudeAnalyzer, is_quota, extract_json_from_response  # noqa: E402
 
     pats_path = ROOT / "scripts" / "pvoc_patterns.json"
     data_dir = ROOT / "docs" / "data" / args.brand / args.month
@@ -69,21 +62,21 @@ def main():
 
     columns = json.loads(pats_path.read_text(encoding="utf-8"))
     reviews = json.loads(rpath.read_text(encoding="utf-8")).get("reviews", {})
-    eprint(f"  PVOC 의도 분류: {args.brand}/{args.month} · 리뷰 {len(reviews)}건 · 엔진 {args.engine} · 모델 {model}")
+    eprint(f"  PVOC 의도 분류: {args.brand}/{args.month} · 리뷰 {len(reviews)}건 · 모델 {model}")
 
-    analyzer = make_analyzer(args.engine, model=model, base_url=args.base_url)
+    analyzer = ClaudeAnalyzer(model=model)
     if not analyzer.health_check():
         err = str(getattr(analyzer, "last_error", "") or "")
         if is_quota(err):
             eprint(f"  [STOP] 한도 소진 — 재실행 시 이어집니다. ({err[:200]})"); sys.exit(3)
-        eprint(f"[ERROR] AI 응답 없음 — 중단 ({err or 'ollama serve 확인'})"); sys.exit(1)
+        eprint(f"[ERROR] Claude 응답 없음 — 중단 ({err})"); sys.exit(1)
 
     # 이전 실행에서 한도로 중단된 진행분(완료된 토픽의 pos/neg) 이어받기.
     # 토픽마다 매칭 리뷰 수가 크게 달라 전체로는 수백 건의 배치 호출이 될 수 있어(신규 발견),
     # 완료 토픽 단위로 저장해 재실행 시 처음부터 다시 돌지 않게 한다.
     prog_path = data_dir / ".pvoc_intent_progress.json"
     done_topics = {}
-    if args.engine == "claude" and prog_path.is_file():
+    if prog_path.is_file():
         try:
             done_topics = json.loads(prog_path.read_text(encoding="utf-8")).get("done", {})
             if done_topics:
@@ -92,8 +85,6 @@ def main():
             done_topics = {}
 
     def save_progress():
-        if args.engine != "claude":
-            return
         try:
             prog_path.write_text(json.dumps({"done": done_topics}, ensure_ascii=False), encoding="utf-8")
         except Exception as exc:

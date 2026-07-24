@@ -13,14 +13,11 @@ AI 서버 Cloudflare Quick Tunnel 자동 실행 스크립트
   python start_tunnel.py
   또는 같은 폴더의 start-tunnel.bat 더블클릭
 
-  AI_BACKEND=claude 를 설정하면 로컬 Ollama 없이 Claude Code CLI로 대시보드의
-  라이브 AI 기능(AI 요약/자동 분류 등)을 처리한다 — GPU 불필요. 이 경우 Ollama
-  실행 여부를 확인하지 않는다(local_proxy.py 가 Claude CLI로 직접 처리).
+  대시보드의 라이브 AI 기능(AI 요약/자동 분류 등)은 Claude Code CLI로 처리한다 — GPU 불필요.
 
 요구:
   - cloudflared (winget install Cloudflare.cloudflared)
-  - AI_BACKEND=ollama(기본): Ollama 환경변수 OLLAMA_HOST=0.0.0.0:11434 로 실행 중이어야 함
-  - AI_BACKEND=claude: Claude Code CLI 로그인만 되어 있으면 됨(미로그인 시 첫 AI 호출 때
+  - Claude Code CLI 로그인만 되어 있으면 됨(미로그인 시 첫 AI 호출 때
     local_proxy.py 가 자동으로 브라우저 로그인 창을 띄움)
 """
 
@@ -85,75 +82,13 @@ def open_dashboard() -> None:
         print(f"[경고] 브라우저 오픈 실패: {exc}")
 
 
-def check_ollama_running() -> bool:
-    """Ollama가 11434 포트에서 작동 중인지 빠르게 확인."""
-    import socket
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.settimeout(2)
-    try:
-        # 0.0.0.0 대신 127.0.0.1로 체크 (외부 노출과 무관하게 로컬에서 응답하는지)
-        s.connect(("127.0.0.1", 11434))
-        s.close()
-        return True
-    except (socket.timeout, ConnectionRefusedError, OSError):
-        return False
-
-
-def pick_ai_backend() -> str:
-    """AI_BACKEND 환경변수가 없으면 대화형으로 물어본다.
-
-    이 선택 프롬프트를 .bat 파일의 echo/set-p 로 하지 않고 여기(Python)서 처리하는 이유:
-    title/chcp/color/set 조합에 한글 echo 가 섞이면 cmd.exe 파서가 이후 줄을 깨뜨리는
-    재현 가능한 버그가 있었다(예: 멀쩡한 문장 중 특정 단어가 "내부/외부 명령이 아닙니다"로
-    오인식됨 — CLAUDE.md 참고). 이 프로젝트는 이미 복잡한/한글 대화형 로직을 전부
-    interactive_select.py 같은 파이썬으로 옮기는 관례가 있어, 여기서도 동일하게 적용한다.
-    """
-    env = os.environ.get("AI_BACKEND", "").strip().lower()
-    if env in ("ollama", "claude"):
-        return env
-    print("  AI 백엔드 선택")
-    print("    1. Ollama (로컬 GPU 필요, 기본)")
-    print("    2. Claude Code CLI (GPU 불필요 - 구독 인증, 미로그인 시 자동 로그인창)")
-    print()
-    try:
-        sel = input("  선택 (1~2, Enter=1번): ").strip()
-    except EOFError:
-        sel = ""
-    return "claude" if sel == "2" else "ollama"
-
-
 def main() -> int:
-    ai_backend = pick_ai_backend()
-    os.environ["AI_BACKEND"] = ai_backend  # local_proxy.py 자식 프로세스가 상속받도록 명시
-
-    # 1. Ollama 실행 여부 확인 (AI_BACKEND=claude 면 Ollama가 필요 없으므로 건너뜀)
     print("=" * 70)
-    print("   AI 서버 Cloudflare Quick Tunnel (백엔드: %s)" % ai_backend)
+    print("   AI 서버 Cloudflare Quick Tunnel (백엔드: Claude Code CLI)")
     print("=" * 70)
     print()
 
-    if ai_backend == "claude":
-        print("[OK] AI_BACKEND=claude — Ollama 실행 여부 확인 생략 (Claude Code CLI 사용)")
-        print()
-    elif not check_ollama_running():
-        print("[X] Ollama가 실행 중이 아닙니다.")
-        print("    시작 메뉴에서 Ollama를 먼저 실행한 뒤 다시 시도해주세요.")
-        print("    (GPU가 약해 Ollama 대신 Claude를 쓰려면 AI_BACKEND=claude 로 설정)")
-        print()
-        show_notification(
-            "Ollama 미실행",
-            "Ollama가 실행 중이 아닙니다.\n\n"
-            "시작 메뉴에서 Ollama를 실행한 뒤\n"
-            "이 배치파일을 다시 실행해주세요.\n\n"
-            "(Ollama 대신 Claude를 쓰려면 AI_BACKEND=claude 환경변수 설정)",
-        )
-        input("\n[Enter] 키를 눌러 종료...")
-        return 1
-    else:
-        print("[OK] Ollama 실행 중 (127.0.0.1:11434)")
-        print()
-
-    # 1-b. 로컬 프록시 실행 (Ollama 중계 + GitHub 저장소 업로드)
+    # 로컬 프록시 실행 (Claude CLI 중계 + GitHub 저장소 업로드)
     proxy_port = os.environ.get("PROXY_PORT", "8799")
     proxy_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "local_proxy.py")
     proxy_proc = None
@@ -173,16 +108,16 @@ def main() -> int:
                 print("[!] GitHub 토큰 미설정 → 업로드는 비활성(불러오기는 가능). "
                       "scripts/.gh_token 파일에 토큰을 넣으면 업로드됩니다.")
         except Exception as exc:  # noqa: BLE001
-            print("[!] 로컬 프록시 시작 실패 (%s) — AI는 직접 11434로 연결됩니다." % exc)
+            print("[!] 로컬 프록시 시작 실패 (%s) — AI 기능을 쓸 수 없습니다." % exc)
             proxy_proc = None
     print()
     print("Cloudflare Tunnel 시작 중...")
     print("(잠시만 기다려주세요, 약 3~10초 소요)")
     print()
 
-    # 2. cloudflared 실행 — 프록시가 떴으면 프록시 포트, 아니면 Ollama 직결
+    # 2. cloudflared 실행 — 항상 로컬 프록시 포트를 대상으로 한다(AI 처리는 프록시가 전담)
     # localhost는 Windows에서 IPv6(::1)로 먼저 해석되어 프록시(127.0.0.1 바인딩)에 못 붙는다 → 127.0.0.1 명시
-    tunnel_target = ("http://127.0.0.1:%s" % proxy_port) if proxy_proc else "http://127.0.0.1:11434"
+    tunnel_target = "http://127.0.0.1:%s" % proxy_port
     try:
         proc = subprocess.Popen(
             ["cloudflared", "tunnel", "--url", tunnel_target],
@@ -234,21 +169,19 @@ def main() -> int:
                         print("  [O] 클립보드에 URL 복사 완료")
                     print()
 
-                    if ai_backend == "claude":
-                        print("  ⚠️  이 URL은 '이 PC에 로그인된 Claude 계정'을 그대로 씁니다.")
-                        print("      팀원과 공유하면 그 팀원도 당신의 계정/한도를 쓰게 됩니다!")
-                        print("      팀원은 각자 자기 PC에서 start-ai-local.bat(또는 이 터널)을")
-                        print("      직접 실행해 자기 계정으로 쓰게 하세요. 이 URL은 '내가 다른")
-                        print("      기기(폰 등)에서 내 PC로 접속'하는 용도로만 쓰는 걸 권장합니다.")
-                        print()
+                    print("  ⚠️  이 URL은 '이 PC에 로그인된 Claude 계정'을 그대로 씁니다.")
+                    print("      팀원과 공유하면 그 팀원도 당신의 계정/한도를 쓰게 됩니다!")
+                    print("      팀원은 각자 자기 PC에서 start-ai-local.bat(또는 이 터널)을")
+                    print("      직접 실행해 자기 계정으로 쓰게 하세요. 이 URL은 '내가 다른")
+                    print("      기기(폰 등)에서 내 PC로 접속'하는 용도로만 쓰는 걸 권장합니다.")
+                    print()
 
                     # 별도 스레드에서 알림 + 대시보드 오픈
                     def notify_thread():
                         time.sleep(1.5)  # 터널 안정화 대기
                         open_dashboard()
                         warn = ("\n\n⚠️ 팀원과 공유 금지: 이 URL은 이 PC의 Claude 계정을 그대로 씁니다.\n"
-                                "팀원은 각자 자기 PC에서 실행하세요."
-                                if ai_backend == "claude" else "")
+                                "팀원은 각자 자기 PC에서 실행하세요.")
                         show_notification(
                             "AI Tunnel 시작됨 ✓",
                             f"터널 URL이 클립보드에 복사되었습니다:\n\n"

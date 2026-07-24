@@ -4,7 +4,7 @@ Taxonomy 수동 분류 결과를 **GitHub 저장소에 저장**하고 팀원이 
 기존 `start-tunnel.bat`(Cloudflare 터널)에 통합되어 있습니다.
 
 ```
-[대시보드] ──터널──> [내 PC: 로컬 프록시] ──> Ollama(AI) + GitHub(분류 저장)
+[대시보드] ──터널──> [내 PC: 로컬 프록시] ──> Claude Code CLI(AI) + GitHub(분류 저장)
                                             토큰은 내 PC에만 보관 (공개 저장소·브라우저에 노출 X)
 ```
 

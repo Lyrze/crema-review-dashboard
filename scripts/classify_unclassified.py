@@ -6,14 +6,14 @@
   1. repo의 Taxonomy 스냅샷(docs/data/{브랜드}/*/taxonomy/*.json 중 최신)을 읽어
      Topic 목록 + 키워드 규칙 + 수동분류를 확보. (스냅샷 없으면 건너뜀 — exit 0)
   2. 대시보드와 동일한 매칭 규칙(any/all/regex + include)으로 미분류 리뷰 산출.
-  3. Ollama가 미분류를 배치(10건)로 읽고 명확한 Topic 배정만 제안.
+  3. Claude가 미분류를 배치(10건)로 읽고 명확한 Topic 배정만 제안.
   4. docs/data/{브랜드}/{월}/tx_suggestions.json 저장 —
      대시보드 미분류 화면에서 '검토 후 적용'(자동 반영 없음).
 
 주의: keywords.json/Taxonomy 원본은 절대 수정하지 않음. 제안 파일만 생성.
 
 사용:
-  python scripts/classify_unclassified.py --brand 슬룸 --month 2026-05 --model qwen2.5:7b
+  python scripts/classify_unclassified.py --brand 슬룸 --month 2026-05
 """
 import argparse, json, re, sys
 from pathlib import Path
@@ -68,13 +68,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--brand", required=True)
     ap.add_argument("--month", required=True)
-    ap.add_argument("--engine", default="ollama", choices=["ollama", "claude"],
-                    help="판정 엔진: ollama(로컬) 또는 claude(구독 CLI). 기본 ollama")
-    ap.add_argument("--model", "--ollama-model", dest="model", default=None,
-                    help="제안 모델. 미지정 시 ollama=qwen2.5:7b, claude=sonnet")
+    ap.add_argument("--model", default=None, help="제안 모델 (기본: sonnet)")
     ap.add_argument("--verify-model", default=None,
-                    help="합의 검증 모델. 미지정 시 ollama=qwen2.5:14b, claude=sonnet. 통과분만 '자동 배정' 등급")
-    ap.add_argument("--base-url", "--ollama-url", dest="base_url", default="http://localhost:11434")
+                    help="합의 검증 모델 (기본: sonnet). 통과분만 '자동 배정' 등급")
     ap.add_argument("--cap", type=int, default=300, help="AI에 넣을 미분류 최대 수")
     ap.add_argument("--batch", type=int, default=10)
     ap.add_argument("--timeout", type=int, default=90, help="배치당 하드 타임아웃(초)")
@@ -137,10 +133,10 @@ def main():
         out_path.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
         eprint("  미분류 없음 — 빈 제안 저장"); sys.exit(0)
 
-    from claude_engine import make_analyzer  # noqa: E402  (ollama/claude 공용 팩토리)
-    prop_model = args.model or ("sonnet" if args.engine == "claude" else "qwen2.5:7b")
-    analyzer = make_analyzer(args.engine, model=prop_model, base_url=args.base_url)
-    eprint(f"  제안 엔진={args.engine}({analyzer.model})")
+    from claude_engine import ClaudeAnalyzer  # noqa: E402
+    prop_model = args.model or "sonnet"
+    analyzer = ClaudeAnalyzer(model=prop_model)
+    eprint(f"  제안 모델={analyzer.model}")
     if not analyzer.health_check():
         err = getattr(analyzer, "last_error", "") or ""
         if is_quota(err):
@@ -247,13 +243,13 @@ def main():
 
     save_prog(propose_done=True)     # 제안 단계 완료 — 이후 중단 시 검증부터 재개
 
-    # ── 합의 검증: 제안을 verify-model(14b)이 반대신문 → 통과=자동배정, 거부/불확실=검토 ──
+    # ── 합의 검증: 제안을 verify-model이 반대신문 → 통과=자동배정, 거부/불확실=검토 ──
     auto, review_tier = [], list(sugs)
-    verify_model = args.verify_model or ("sonnet" if args.engine == "claude" else "qwen2.5:14b")
-    # ollama: 제안≠검증 모델일 때만(7b→14b). claude: 동일 sonnet이라도 엄격 프롬프트로 2차 검증 수행
-    do_verify = bool(sugs and verify_model and (args.engine == "claude" or verify_model != prop_model))
+    verify_model = args.verify_model or "sonnet"
+    # 동일 sonnet이라도 엄격 프롬프트로 2차 검증을 항상 수행한다
+    do_verify = bool(sugs and verify_model)
     if do_verify:
-        v = make_analyzer(args.engine, model=verify_model, base_url=args.base_url)
+        v = ClaudeAnalyzer(model=verify_model)
         if not v.health_check():
             verr = getattr(v, "last_error", "") or ""
             if is_quota(verr):
@@ -326,8 +322,8 @@ def main():
                 save_prog(verify={"idx": idx, "auto": auto, "review": review_tier})
                 eprint(f"   검증 {min(idx, len(sugs))}/{len(sugs)} — 자동 {len(auto)} · 검토 {len(review_tier)}")
 
-    out["auto"] = auto            # 2모델 합의 → 대시보드가 자동 배정 (↩ 취소 가능)
-    out["suggestions"] = review_tier  # 7b 단독 제안 → 검토 패널
+    out["auto"] = auto            # 2단계 합의(제안+검증) → 대시보드가 자동 배정 (↩ 취소 가능)
+    out["suggestions"] = review_tier  # 제안 단독(검증 미통과) → 검토 패널
     out_path.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
     try:
         if prog_path.is_file():

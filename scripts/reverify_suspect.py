@@ -7,13 +7,13 @@
 ----
 - 후보 재확장 없음: keywords.json 의 현재 all_review_ids 멤버만 재판정 → 제거만 발생(추가 X).
   따라서 안전하고 빠르다(키워드당 수 건 수준).
-- 검증 로직은 ollama_analysis.verify_keyword_reviews 의 3단계 게이트를 그대로 사용.
+- 검증 로직은 claude_engine.ClaudeAnalyzer.verify_keyword_reviews 의 3단계 게이트를 그대로 사용.
 - write-back 포맷은 process_data.reclassify_keyword_full 과 동일
   (all_review_ids / count / review_samples / by_product / ai_reclassified).
 
 사용
 ----
-    python scripts/reverify_suspect.py --brand 슬룸 --month 2026-04 --model qwen2.5:14b
+    python scripts/reverify_suspect.py --brand 슬룸 --month 2026-04
 
 update-data.bat 의 [3.5/4] 단계에서 자동 호출된다.
 """
@@ -23,17 +23,17 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(Path(__file__).resolve().parent))  # ollama_analysis 임포트용
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # claude_engine 임포트용
 
 POLARITY_MAP = {"complaint": "부정", "improvement": "개선", "praise": "긍정"}
+_ENGINE = "claude"  # 진행 마커 키(.reverify_progress.json 의 {"claude": [...]}), 하위호환용 고정값
 
 
 def eprint(*a, **k):
     print(*a, file=sys.stderr, flush=True, **k)
 
 
-def reverify_month(brand: str, month: str, model: str, base_url: str, polarities: list,
-                   engine: str = "ollama") -> bool:
+def reverify_month(brand: str, month: str, model: str, polarities: list) -> bool:
     """한 브랜드/월의 keywords.json 을 재검증해 in-place 저장. 성공 시 True."""
     data_dir = ROOT / "docs" / "data" / brand / month
     kpath = data_dir / "keywords.json"
@@ -45,7 +45,8 @@ def reverify_month(brand: str, month: str, model: str, base_url: str, polarities
         eprint(f"  [ERROR] reviews.json 없음: {rpath} (재검증에는 전체 리뷰 인덱스가 필요)")
         return False
 
-    # 이미 이 엔진으로 완전히 끝난 월이면 API 호출 없이 즉시 스킵
+    engine = _ENGINE
+    # 이미 완전히 끝난 월이면 API 호출 없이 즉시 스킵
     # (과거엔 완료 시 마커 파일을 통째로 지웠는데, 그러면 "완료"와 "미시작"을 구분할 수 없어
     #  --months 를 여러 월 묶어 재실행할 때마다 이미 끝난 월을 처음부터 다시 돌리는 낭비가 있었음
     #  — 2026-07-10, auto_reverify_loop.py 재시도 중 04월을 계속 처음부터 재검증하다 한도만 또 소진)
@@ -55,25 +56,18 @@ def reverify_month(brand: str, month: str, model: str, base_url: str, polarities
     except Exception:
         prog0 = {}
     # 완료 판정은 '완료한 polarity 집합' 기준. 요청 polarity가 모두 완료돼 있어야 스킵.
-    # (엔진 단위 __done__ 만 쓰면 --polarities 축소 실행 후 전체 재실행 시 미완 polarity가 영구 스킵됨)
     done_pol = set((prog0.get("__done_pol__", {}) or {}).get(engine, []))
     if engine in (prog0.get("__done__", []) or []):     # 구버전 마커 하위호환
         done_pol |= set(POLARITY_MAP.keys())
     if done_pol and set(polarities).issubset(done_pol):
-        eprint(f"  [SKIP] {month} 은(는) 이미 {engine}로 요청 polarity({','.join(polarities)}) 재검증 완료 — 스킵")
+        eprint(f"  [SKIP] {month} 은(는) 이미 요청 polarity({','.join(polarities)}) 재검증 완료 — 스킵")
         return True
 
-    # 엔진 선택: claude(구독 CLI) 또는 ollama(로컬)
-    if str(engine).lower() == "claude":
-        from claude_engine import ClaudeAnalyzer  # type: ignore[import]
-        analyzer = ClaudeAnalyzer(model=model or "sonnet")
-        eng_label = f"Claude CLI({analyzer.model})"
-        fail_msg = "  [ERROR] Claude CLI 응답 없음 (로그인 확인) — 재검증 건너뜀"
-    else:
-        from ollama_analysis import OllamaAnalyzer  # type: ignore[import]
-        analyzer = OllamaAnalyzer(model=model, base_url=base_url)
-        eng_label = f"Ollama({model})"
-        fail_msg = f"  [ERROR] Ollama 응답 없음 ({base_url}) — 재검증 건너뜀"
+    from claude_engine import ClaudeAnalyzer  # type: ignore[import]
+    analyzer = ClaudeAnalyzer(model=model or "sonnet")
+    eng_label = f"Claude CLI({analyzer.model})"
+    fail_msg = "  [ERROR] Claude CLI 응답 없음 (로그인 확인) — 재검증 건너뜀"
+
     def is_quota(msg):
         m = str(msg).lower()
         return any(k in m for k in ("usage limit", "session limit", "rate limit", "quota",
@@ -251,11 +245,7 @@ def main():
     ap.add_argument("--brand", required=True)
     ap.add_argument("--month", help="단일 월 (YYYY-MM)")
     ap.add_argument("--months", help="여러 월 쉼표구분 (예: 2026-03,2026-04,2026-05) — 순서대로, 이어받기 가능")
-    ap.add_argument("--engine", default="ollama", choices=["ollama", "claude"],
-                    help="판정 엔진: ollama(로컬) 또는 claude(구독 CLI, API키 불필요). 기본 ollama")
-    ap.add_argument("--model", default=None,
-                    help="재검증 모델. 미지정 시 엔진별 기본값(ollama=qwen2.5:14b, claude=sonnet)")
-    ap.add_argument("--base-url", default="http://localhost:11434")
+    ap.add_argument("--model", default=None, help="재검증 모델 (기본: sonnet)")
     ap.add_argument(
         "--polarities",
         default="complaint,improvement,praise",
@@ -269,12 +259,12 @@ def main():
     if not months:
         eprint("  [ERROR] --month 또는 --months 필요"); sys.exit(1)
 
-    eprint(f"  의심 키워드 정밀 보정: {args.brand}  월={months}  대상={polarities}  엔진={args.engine}")
+    eprint(f"  의심 키워드 정밀 보정: {args.brand}  월={months}  대상={polarities}")
     any_ok = False       # 하나라도 성공/완료/스킵된 월이 있는가
     any_fail = False     # 비한도 오류로 실패한 월이 있는가
     for i, mo in enumerate(months):
         eprint(f"\n===== [{i+1}/{len(months)}] {mo} =====")
-        res = reverify_month(args.brand, mo, args.model, args.base_url, polarities, engine=args.engine)
+        res = reverify_month(args.brand, mo, args.model, polarities)
         if res == "quota":
             eprint(f"\n  [일시중단] 한도 소진 추정 — {mo}까지 부분 완료. "
                    f"한도 회복 후 '동일 명령'을 다시 실행하면 남은 부분부터 이어서 처리합니다.")

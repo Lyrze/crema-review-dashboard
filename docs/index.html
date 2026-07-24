@@ -1001,7 +1001,7 @@
   </nav>
   <div class="sb-footer">
     <div class="sb-footer-row">
-      <div class="ollama-badge"><div class="ollama-dot" id="ollama-dot"></div><span id="ollama-status">Ollama 확인 중</span></div>
+      <div class="ollama-badge"><div class="ollama-dot" id="ollama-dot"></div><span id="ollama-status">AI 서버 확인 중</span></div>
       <div style="display:flex;gap:4px;">
         <div class="export-wrap">
           <button class="export-btn" onclick="toggleExportMenu()" title="보고서 내보내기">⬇</button>
@@ -1015,14 +1015,14 @@
     </div>
     <div class="ollama-model-row" id="ollama-model-row">
       <label>AI 모델</label>
-      <select id="ollama-model-select" onchange="onModelChange(this.value)" title="Ollama 모델 선택"></select>
+      <select id="ollama-model-select" onchange="onModelChange(this.value)" title="AI 모델 선택"></select>
     </div>
     <div class="ollama-url-row" id="ollama-url-row">
       <label style="display:flex;justify-content:space-between;align-items:center;">
         <span>AI 서버 URL</span>
         <button onclick="resetOllamaUrl()" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:10px;padding:0;font-family:inherit;" title="localhost로 초기화">↺ 로컬</button>
       </label>
-      <input type="text" id="ollama-url-input" placeholder="https://tunnel.example.com 또는 http://localhost:11434" title="Ollama 엔드포인트 URL" />
+      <input type="text" id="ollama-url-input" placeholder="https://tunnel.example.com 또는 http://localhost:11434" title="AI 서버 엔드포인트 URL" />
       <div style="font-size:9.5px;color:var(--text-secondary);margin-top:4px;line-height:1.4;">💡 Cloudflare Tunnel URL 입력 시 외부 PC에서도 AI 사용 가능</div>
     </div>
   </div>
@@ -2153,7 +2153,7 @@ async function aiPopupSend(){
   var inputEl=$('ai-popup-input'), ansEl=$('ai-popup-answer');
   if(!inputEl||!ansEl) return;
   var q=inputEl.value.trim(); if(!q){ alert('질문을 입력해주세요.'); return; }
-  if($('ollama-dot').className.indexOf('online')<0){ alert('Ollama 오프라인'); return; }
+  if($('ollama-dot').className.indexOf('online')<0){ alert('AI 서버 오프라인'); return; }
   var prev=($('ai-popup-body')||{}).textContent||'';
   ansEl.style.display='block'; ansEl.innerHTML='답변 생성 중... <span class="aic-cursor">▍</span>';
   var ctx=buildDashboardContext();
@@ -2226,13 +2226,13 @@ async function pingOllama(){
     var r=await fetch(getOllamaUrl()+'/',{signal:AbortSignal.timeout(3000)});
     if(r.ok){
       $('ollama-dot').className='ollama-dot online';
-      $('ollama-status').textContent='Ollama 연결됨';
+      $('ollama-status').textContent='AI 서버 연결됨';
       await fetchOllamaModels();
       return;
     }
   }catch(e){}
   $('ollama-dot').className='ollama-dot offline';
-  $('ollama-status').textContent='Ollama 오프라인';
+  $('ollama-status').textContent='AI 서버 오프라인';
   $('ollama-model-row').classList.remove('visible');
 }
 
@@ -2289,7 +2289,7 @@ function resetOllamaUrl(){
   localStorage.removeItem('ollamaUrl');
   var inputEl=$('ollama-url-input');
   if(inputEl){ inputEl.value=STATE.ollamaUrl; inputEl.classList.remove('error'); }
-  showToast('↺ 로컬 Ollama로 초기화');
+  showToast('↺ 로컬 AI 서버로 초기화');
   pingOllama();
 }
 
@@ -2320,7 +2320,7 @@ function toggleAIPanel(key){
 async function aiAnalyzeSection(key){
   var btn=$('btn-ai-'+key); if(!btn) return;
   if($('ollama-dot').className.indexOf('online')<0){
-    alert('Ollama가 오프라인 상태입니다. ollama serve 실행 후 재시도하세요.'); return;
+    alert('AI 서버가 오프라인입니다. 좌측 AI 서버 URL을 확인한 뒤 재시도하세요.'); return;
   }
   var origText=btn.textContent;
   AI_POPUP_KEY=key;
@@ -2404,7 +2404,7 @@ async function aiAnalyzeSection(key){
       btn.disabled=false; btn.textContent=origText;
     },
     function(err){
-      if(popBody) popBody.innerHTML='[오류] '+escapeHtml(err.message)+'<br>Ollama가 실행 중인지 확인하세요.';
+      if(popBody) popBody.innerHTML='[오류] '+escapeHtml(err.message)+'<br>AI 서버가 실행 중인지 확인하세요.';
       btn.disabled=false; btn.textContent=origText;
     },
     {system:sysPrompt, temperature:0.2}
@@ -3169,7 +3169,7 @@ function openKpiMetricInsight(metric){
 
 async function kimAskAI(){
   var btn=$('kim-ai-btn'), res=$('kim-ai-result');
-  if($('ollama-dot').className.indexOf('online')<0){ res.style.display='block'; res.innerHTML='⚠️ Ollama가 오프라인입니다.'; return; }
+  if($('ollama-dot').className.indexOf('online')<0){ res.style.display='block'; res.innerHTML='⚠️ AI 서버가 오프라인입니다.'; return; }
   btn.disabled=true; btn.textContent='✦ 분석 중...'; res.style.display='block'; res.innerHTML='분석 중... <span class="aic-cursor">▍</span>';
   var label=KIM_CTX.metric==='reviews'?'전월 대비 리뷰 수 변화':KIM_CTX.metric==='rating'?'전월 대비 별점 변화':'전월 대비 감성 키워드 변화';
   var prompt='['+label+' 요약]\n'+(KIM_CTX.summary||'')+'\n\n[대시보드 전체 데이터]\n'+buildDashboardContext()+'\n\n위 데이터에 근거해 '+label+'의 핵심을 한국어로 분석하세요. 주목할 상품/키워드와 그 의미·대응 방향을 구체적 수치와 함께 3~5줄로 정리하세요.';
@@ -3556,7 +3556,7 @@ async function aiInlineQuestion(panelBodyId, sectionType) {
   if(!question){alert('질문을 입력해주세요.');return;}
 
   if($('ollama-dot').className.indexOf('online')<0){
-    alert('Ollama가 오프라인입니다. ollama serve 실행 후 재시도하세요.');return;
+    alert('AI 서버가 오프라인입니다. 좌측 AI 서버 URL을 확인한 뒤 재시도하세요.');return;
   }
 
   var body=document.getElementById(panelBodyId);
@@ -4085,7 +4085,7 @@ function imBuildCard(opts){
     '<div class="im-card-question">'+opts.question+'</div>'+
     '<div class="im-card-summary">'+opts.summary+'</div>'+
     blocksHtml+
-    (cached?'':'<button class="im-ai-trigger" onclick="imAskAIForCard(this,\''+opts.cls+'\')">✦ AI 심층 분석 (Ollama)</button>')+
+    (cached?'':'<button class="im-ai-trigger" onclick="imAskAIForCard(this,\''+opts.cls+'\')">✦ AI 심층 분석</button>')+
     (cached?cachedHtml:'<div class="im-ai-result"></div>')+
     '<div class="im-card-footer">'+
       '<span class="im-card-ts">Updated on '+ts+'</span>'+
@@ -4102,7 +4102,7 @@ function imClearCardCache(btn, cacheKey, category){
   // AI 분석 버튼 복원
   var trigger=document.createElement('button');
   trigger.className='im-ai-trigger';
-  trigger.textContent='✦ AI 심층 분석 (Ollama)';
+  trigger.textContent='✦ AI 심층 분석';
   trigger.onclick=function(){ imAskAIForCard(this, category); };
   resultEl.parentNode.insertBefore(trigger, resultEl);
   // 자동 재분석 시작
@@ -4384,12 +4384,12 @@ async function imAskAIForCard(btn, category){
   var online=$('ollama-dot').className.indexOf('online')>=0;
   if(!online){
     resultEl.classList.add('show');
-    resultEl.textContent='⚠️ Ollama가 오프라인입니다. `ollama serve` 실행 후 다시 시도해주세요.';
+    resultEl.textContent='⚠️ AI 서버가 오프라인입니다. 좌측 AI 서버 URL을 확인한 뒤 다시 시도해주세요.';
     return;
   }
   btn.disabled=true; btn.textContent='✦ 분석 중...';
   resultEl.classList.add('show');
-  resultEl.textContent='Ollama로 심층 분석 중...';
+  resultEl.textContent='AI로 심층 분석 중...';
 
   var p=IM_CURRENT_PRODUCT;
   var kw=STATE.keywords||REAL_DATA.keywords||{};
@@ -4403,7 +4403,7 @@ async function imAskAIForCard(btn, category){
     '[대표 '+label+' 리뷰]\n'+reviews+'\n\n'+
     '위 데이터로 '+label+' 측면 심층 분석을 한국어로 3-5줄로 요약하세요. **핵심 원인**과 패턴을 분석하고, 액션 인사이트를 - 리스트로 제시하세요.';
 
-  resultEl.innerHTML='Ollama로 심층 분석 중... <span class="aic-cursor">▍</span>';
+  resultEl.innerHTML='AI로 심층 분석 중... <span class="aic-cursor">▍</span>';
   await ollamaStream(prompt,
     function(_t, full){ resultEl.innerHTML=mdToHtml(full)+'<span class="aic-cursor">▍</span>'; },
     function(full){
@@ -4411,11 +4411,11 @@ async function imAskAIForCard(btn, category){
       // 카드별 AI 결과 캐시 (개선8)
       var cacheKey='imAI:'+p.name+':'+category;
       try{ localStorage.setItem(cacheKey, full); localStorage.setItem(cacheKey+':ts', String(Date.now())); }catch(_){}
-      btn.disabled=false; btn.textContent='✦ AI 심층 분석 (Ollama)';
+      btn.disabled=false; btn.textContent='✦ AI 심층 분석';
     },
     function(err){
       resultEl.textContent='❌ 오류: '+err.message;
-      btn.disabled=false; btn.textContent='✦ AI 심층 분석 (Ollama)';
+      btn.disabled=false; btn.textContent='✦ AI 심층 분석';
     }
   );
 }
@@ -4933,7 +4933,7 @@ async function krmAskAI(){
   var online=$('ollama-dot').className.indexOf('online')>=0;
   if(!online){
     resultEl.style.display='block';
-    resultEl.innerHTML='⚠️ Ollama가 오프라인입니다. AI 서버 URL을 확인해주세요.';
+    resultEl.innerHTML='⚠️ AI 서버가 오프라인입니다. AI 서버 URL을 확인해주세요.';
     return;
   }
   btn.disabled=true; btn.textContent='✦ 분석 중...';
@@ -5049,7 +5049,7 @@ async function krmReclassify(){
   var ctx=modal._ctx;
   var runBtn=$('krm-rc-run'), statusEl=$('krm-rc-status'), resetEl=$('krm-rc-reset');
   var online=$('ollama-dot').className.indexOf('online')>=0;
-  if(!online){ if(statusEl) statusEl.innerHTML='<span style="color:var(--negative);">⚠️ Ollama 오프라인 — AI 서버 URL 확인</span>'; return; }
+  if(!online){ if(statusEl) statusEl.innerHTML='<span style="color:var(--negative);">⚠️ AI 서버 오프라인 — AI 서버 URL 확인</span>'; return; }
 
   // 전체 리뷰에서 후보 수집 (현재 매칭 ∪ 키워드 토큰 lexical net) → 재할당
   var built=krmBuildFullCandidates(ctx);
@@ -5432,7 +5432,7 @@ async function refreshDashboardFromClassification(){
 async function runFullReclassifyAll(){
   if(FRC_STATE.running) return;
   var online=$('ollama-dot').className.indexOf('online')>=0;
-  if(!online){ alert('Ollama가 오프라인입니다. 좌측 AI 서버 URL을 확인한 뒤 다시 시도하세요.'); return; }
+  if(!online){ alert('AI 서버가 오프라인입니다. 좌측 AI 서버 URL을 확인한 뒤 다시 시도하세요.'); return; }
   if(!STATE.reviewsById){ alert('전체 리뷰 데이터(reviews.json)가 없어 실행할 수 없습니다. 데이터를 최신으로 재생성하세요.'); return; }
   // 시작 시점 brand/month 캡처 — 진행 중 월 전환 시 잘못된 키로 저장 방지
   var startKey=fullReclassCacheKey();
@@ -6345,7 +6345,7 @@ async function aicSend(){
 
   var online=$('ollama-dot').className.indexOf('online')>=0;
   if(!online){
-    bubble.textContent='⚠️ Ollama가 오프라인입니다. `ollama serve` 실행 후 다시 시도해주세요.';
+    bubble.textContent='⚠️ AI 서버가 오프라인입니다. 좌측 AI 서버 URL을 확인한 뒤 다시 시도해주세요.';
     botMsg.classList.remove('thinking');
     $('aic-send-btn').disabled=false;
     return;
@@ -6951,7 +6951,7 @@ function txAiExtractArr(raw){
 async function txAiClassifyUnclassified(){
   if(TXAI.running){ TXAI.cancel=true; return; }
   var dot=$('ollama-dot');
-  if(!dot || dot.className.indexOf('online')<0){ alert('Ollama가 오프라인입니다. AI 서버 연결 후 다시 시도하세요.'); return; }
+  if(!dot || dot.className.indexOf('online')<0){ alert('AI 서버가 오프라인입니다. AI 서버 연결 후 다시 시도하세요.'); return; }
   var tax=TAXONOMIES.find(function(t){return t.id===TX_STATE.activeTaxonomyId;});
   if(!tax) return;
   var unc=txGetUnclassified(tax, txGetAllReviews());
@@ -8147,7 +8147,7 @@ async function scGenerateBrief(force){
   if(!p1||!p2) return;
   var online=$('ollama-dot').className.indexOf('online')>=0;
   if(!online){
-    body.innerHTML='<div style="color:var(--negative);font-size:12px;">⚠️ Ollama가 오프라인입니다. 좌측 사이드바에서 <strong>AI 서버 URL</strong>을 확인한 뒤 다시 시도하세요.</div>';
+    body.innerHTML='<div style="color:var(--negative);font-size:12px;">⚠️ AI 서버가 오프라인입니다. 좌측 사이드바에서 <strong>AI 서버 URL</strong>을 확인한 뒤 다시 시도하세요.</div>';
     if(btn){ btn.disabled=false; btn.textContent='브리프 생성'; btn.style.display='inline-block'; }
     return;
   }
@@ -8188,7 +8188,7 @@ async function scGenerateBrief(force){
       if(rf) rf.style.display='inline-block';
     },
     function(err){
-      body.innerHTML='<div style="color:var(--negative);font-size:12px;">❌ 오류: '+escapeHtml(err.message)+'<br>Ollama 실행 상태를 확인하세요.</div>';
+      body.innerHTML='<div style="color:var(--negative);font-size:12px;">❌ 오류: '+escapeHtml(err.message)+'<br>AI 서버 실행 상태를 확인하세요.</div>';
       if(btn){ btn.disabled=false; btn.textContent='브리프 생성'; }
     }
   );
@@ -8428,7 +8428,7 @@ async function scInsightAskAI(){
   var ctx=modal._ctx;
   var resultEl=$('sci-ai-result'); var btn=$('sci-ai-btn');
   var online=$('ollama-dot').className.indexOf('online')>=0;
-  if(!online){ resultEl.style.display='block'; resultEl.innerHTML='⚠️ Ollama가 오프라인입니다. AI 서버 URL을 확인해주세요.'; return; }
+  if(!online){ resultEl.style.display='block'; resultEl.innerHTML='⚠️ AI 서버가 오프라인입니다. AI 서버 URL을 확인해주세요.'; return; }
   if(!ctx.reviews||ctx.reviews.length===0){ resultEl.style.display='block'; resultEl.innerHTML='분석할 리뷰 본문이 없습니다.'; return; }
   btn.disabled=true; btn.textContent='✦ 분석 중...';
   resultEl.style.display='block';
@@ -9798,9 +9798,9 @@ function txOpenTopicInsights(topicId){
 async function txAutoGroupAI(){
   var t=TAXONOMIES.find(function(x){return x.id===TX_STATE.activeTaxonomyId;});
   if(!t) return;
-  if(!confirm('AI(Ollama)로 리뷰를 분석하여 Topic을 자동 생성합니다. 시간이 1-2분 걸릴 수 있습니다. 계속하시겠습니까?')) return;
+  if(!confirm('AI로 리뷰를 분석하여 Topic을 자동 생성합니다. 시간이 1-2분 걸릴 수 있습니다. 계속하시겠습니까?')) return;
   if($('ollama-dot').className.indexOf('online')<0){
-    alert('Ollama가 오프라인입니다. AI 서버 URL을 확인해주세요.'); return;
+    alert('AI 서버가 오프라인입니다. AI 서버 URL을 확인해주세요.'); return;
   }
   var allReviews=txGetAllReviews().slice(0,80);
   var sample=allReviews.map(function(r){return '★'+r.rating+': '+(r.text||'').slice(0,140);}).join('\n');

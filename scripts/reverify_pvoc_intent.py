@@ -1,13 +1,14 @@
 """reverify_pvoc_intent.py
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-PVOC 토픽 의도(감성) 데이터(pvoc_intent.json)의 'neg'(부정) 분류를 더 큰 모델(14b)로 재검증한다.
-  - 7b가 '그 토픽에 대해 부정'으로 본 건 중, 14b가 보기에 실제로는 부정이 아닌 것(거짓 부정)을 pos 로 이동.
+PVOC 토픽 의도(감성) 데이터(pvoc_intent.json)의 'neg'(부정) 분류를 Claude로 재검증한다.
+  - classify_pvoc_intent.py가 '그 토픽에 대해 부정'으로 본 건 중, 실제로는 부정이 아닌 것
+    (거짓 부정)을 pos 로 이동.
   - 제거(완화)만 하고 새로 부정 추가는 안 함 → 부정 과표시(허수) 제거. neg 집합만 보므로 빠름.
-  - 배치당 하드 타임아웃으로 Ollama hang 방지(멈춰도 해당 배치만 건너뜀).
+  - 배치당 하드 타임아웃으로 hang 방지(멈춰도 해당 배치만 건너뜀).
 
-키워드용 reverify_suspect.py 와 같은 철학(의심 건만 큰 모델로 재판정, 정밀도↑).
+키워드용 reverify_suspect.py 와 같은 철학(의심 건만 재판정, 정밀도↑).
 사용:
-    python scripts/reverify_pvoc_intent.py --brand 슬룸 --month 2026-05 --model qwen2.5:14b
+    python scripts/reverify_pvoc_intent.py --brand 슬룸 --month 2026-05
 """
 import argparse
 import json
@@ -28,19 +29,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--brand", required=True)
     ap.add_argument("--month", required=True)
-    ap.add_argument("--engine", default="ollama", choices=["ollama", "claude"])
-    ap.add_argument("--model", "--ollama-model", dest="model", default=None)
-    ap.add_argument("--base-url", "--ollama-url", dest="base_url", default="http://localhost:11434")
+    ap.add_argument("--model", default=None)
     ap.add_argument("--timeout", type=int, default=90, help="배치당 하드 타임아웃(초)")
     args = ap.parse_args()
-    model = args.model or ("sonnet" if args.engine == "claude" else "qwen2.5:14b")
+    model = args.model or "sonnet"
 
-    from ollama_analysis import extract_json_from_response  # noqa: E402
-    from claude_engine import make_analyzer  # noqa: E402  (ollama/claude 공용 팩토리)
-    if args.engine == "claude":
-        from classify_unclassified import is_quota  # noqa: E402
-    else:
-        def is_quota(_): return False
+    from claude_engine import ClaudeAnalyzer, is_quota, extract_json_from_response  # noqa: E402
 
     d = ROOT / "docs" / "data" / args.brand / args.month
     ipath = d / "pvoc_intent.json"
@@ -56,17 +50,17 @@ def main():
     if not topics:
         eprint("[SKIP] 토픽 없음"); sys.exit(0)
 
-    analyzer = make_analyzer(args.engine, model=model, base_url=args.base_url)
+    analyzer = ClaudeAnalyzer(model=model)
     if not analyzer.health_check():
         err = str(getattr(analyzer, "last_error", "") or "")
         if is_quota(err):
             eprint(f"[STOP] 한도 소진 — 재실행 시 이어집니다. ({err[:200]})"); sys.exit(3)
-        eprint(f"[ERROR] AI 응답 없음 — 중단 ({err or 'ollama serve 확인'})"); sys.exit(2)
+        eprint(f"[ERROR] Claude 응답 없음 — 중단 ({err})"); sys.exit(2)
 
     # 완료 토픽 이어받기(한도 소진 시 처음부터 재검증하지 않도록)
     prog_path = d / ".pvoc_reverify_progress.json"
     done_topics = set()
-    if args.engine == "claude" and prog_path.is_file():
+    if prog_path.is_file():
         try:
             done_topics = set(json.loads(prog_path.read_text(encoding="utf-8")).get("done", []))
             if done_topics:
@@ -75,15 +69,13 @@ def main():
             done_topics = set()
 
     def save_progress():
-        if args.engine != "claude":
-            return
         try:
             prog_path.write_text(json.dumps({"done": sorted(done_topics)}, ensure_ascii=False), encoding="utf-8")
         except Exception as exc:
             eprint(f"  [WARN] 진행 마커 저장 실패(계속): {exc}")
 
     total_neg = sum(len(io.get("neg", [])) for io in topics.values())
-    eprint(f"  PVOC 의도 재검증: {args.brand}/{args.month} · 부정 {total_neg}건 · 엔진 {args.engine} · 모델 {model}")
+    eprint(f"  PVOC 의도 재검증: {args.brand}/{args.month} · 부정 {total_neg}건 · 모델 {model}")
     ex = ThreadPoolExecutor(max_workers=1)
 
     def classify(name, chunk):

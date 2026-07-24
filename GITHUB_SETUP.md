@@ -89,13 +89,12 @@ https://lyrze.github.io/crema-review-dashboard/
 mkdir -p data/raw/슬룸/2026-05
 # → 이 폴더에 크리마 CSV 파일을 reviews.csv로 복사
 
-# 2. 데이터 처리 (Ollama 없이)
+# 2. 데이터 처리 (Claude Code CLI 로그인 필요 — 감성/키워드 재분류에 사용)
 python scripts/process_data.py \
   --brand 슬룸 \
   --month 2026-05 \
   --input data/raw/슬룸/2026-05/reviews.csv \
-  --prev-input data/raw/슬룸/2026-04/reviews.csv \
-  --skip-ai
+  --prev-input data/raw/슬룸/2026-04/reviews.csv
 
 # 3. 결과 확인
 cat docs/data/슬룸/2026-05/summary.json

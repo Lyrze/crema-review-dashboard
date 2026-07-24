@@ -9,7 +9,7 @@ keywords.json 은 건드리지 않는다(검토형 — 대시보드에서 사람
   부정인데 미포착 리뷰 수집 → AI 클러스터링 → {word, type(complaint|improvement), count, review_ids, samples}
 
 사용:
-  python scripts/discover_keywords.py --brand 슬룸 --month 2026-05 --model qwen2.5:7b
+  python scripts/discover_keywords.py --brand 슬룸 --month 2026-05
 """
 import argparse, json, sys, time, re
 from pathlib import Path
@@ -39,21 +39,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--brand", required=True)
     ap.add_argument("--month", required=True)
-    ap.add_argument("--engine", default="ollama", choices=["ollama", "claude"])
-    ap.add_argument("--model", "--ollama-model", dest="model", default=None)
-    ap.add_argument("--base-url", "--ollama-url", dest="base_url", default="http://localhost:11434")
+    ap.add_argument("--model", default=None)
     ap.add_argument("--max-samples", type=int, default=400, help="AI에 넣을 미포착 리뷰 최대 수(상한)")
     ap.add_argument("--batch-size", type=int, default=50, help="배치당 리뷰 수(순차 처리 단위)")
     ap.add_argument("--timeout", type=int, default=150, help="배치 1개당 하드 타임아웃(초)")
     args = ap.parse_args()
-    model = args.model or ("sonnet" if args.engine == "claude" else "qwen2.5:7b")
+    model = args.model or "sonnet"
 
-    from ollama_analysis import extract_json_from_response  # noqa: E402
-    from claude_engine import make_analyzer  # noqa: E402  (ollama/claude 공용 팩토리)
-    if args.engine == "claude":
-        from classify_unclassified import is_quota  # noqa: E402
-    else:
-        def is_quota(_): return False
+    from claude_engine import ClaudeAnalyzer, is_quota, extract_json_from_response  # noqa: E402
 
     d = ROOT / "docs" / "data" / args.brand / args.month
     rpath = d / "reviews.json"
@@ -86,12 +79,12 @@ def main():
         (d / "keyword_candidates.json").write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
         sys.exit(0)
 
-    analyzer = make_analyzer(args.engine, model=model, base_url=args.base_url)
+    analyzer = ClaudeAnalyzer(model=model)
     if not analyzer.health_check():
         err = str(getattr(analyzer, "last_error", "") or "")
         if is_quota(err):
             eprint(f"[STOP] 한도 소진 — 재실행 시 이어집니다. ({err[:200]})"); sys.exit(3)
-        eprint(f"[ERROR] AI 무응답 ({err or 'ollama serve 확인'})"); sys.exit(2)
+        eprint(f"[ERROR] Claude 무응답 ({err})"); sys.exit(2)
 
     pool = uncap[: args.max_samples]
     B = max(10, args.batch_size)
