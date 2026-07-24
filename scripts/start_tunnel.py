@@ -32,6 +32,14 @@ import time
 import threading
 import webbrowser
 
+# Windows 한국어 콘솔(cp949)에서 한글/특수기호(예: — U+2014) 출력 시 UnicodeEncodeError로
+# 크래시하는 것을 방지 — interactive_select.py/local_proxy.py 와 동일한 관례.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
 DASHBOARD_URL = "https://lyrze.github.io/crema-review-dashboard/"
 URL_PATTERN = re.compile(r"https://[a-z0-9-]+\.trycloudflare\.com")
 
@@ -91,8 +99,32 @@ def check_ollama_running() -> bool:
         return False
 
 
+def pick_ai_backend() -> str:
+    """AI_BACKEND 환경변수가 없으면 대화형으로 물어본다.
+
+    이 선택 프롬프트를 .bat 파일의 echo/set-p 로 하지 않고 여기(Python)서 처리하는 이유:
+    title/chcp/color/set 조합에 한글 echo 가 섞이면 cmd.exe 파서가 이후 줄을 깨뜨리는
+    재현 가능한 버그가 있었다(예: 멀쩡한 문장 중 특정 단어가 "내부/외부 명령이 아닙니다"로
+    오인식됨 — CLAUDE.md 참고). 이 프로젝트는 이미 복잡한/한글 대화형 로직을 전부
+    interactive_select.py 같은 파이썬으로 옮기는 관례가 있어, 여기서도 동일하게 적용한다.
+    """
+    env = os.environ.get("AI_BACKEND", "").strip().lower()
+    if env in ("ollama", "claude"):
+        return env
+    print("  AI 백엔드 선택")
+    print("    1. Ollama (로컬 GPU 필요, 기본)")
+    print("    2. Claude Code CLI (GPU 불필요 - 구독 인증, 미로그인 시 자동 로그인창)")
+    print()
+    try:
+        sel = input("  선택 (1~2, Enter=1번): ").strip()
+    except EOFError:
+        sel = ""
+    return "claude" if sel == "2" else "ollama"
+
+
 def main() -> int:
-    ai_backend = os.environ.get("AI_BACKEND", "ollama").strip().lower()
+    ai_backend = pick_ai_backend()
+    os.environ["AI_BACKEND"] = ai_backend  # local_proxy.py 자식 프로세스가 상속받도록 명시
 
     # 1. Ollama 실행 여부 확인 (AI_BACKEND=claude 면 Ollama가 필요 없으므로 건너뜀)
     print("=" * 70)
@@ -202,19 +234,30 @@ def main() -> int:
                         print("  [O] 클립보드에 URL 복사 완료")
                     print()
 
+                    if ai_backend == "claude":
+                        print("  ⚠️  이 URL은 '이 PC에 로그인된 Claude 계정'을 그대로 씁니다.")
+                        print("      팀원과 공유하면 그 팀원도 당신의 계정/한도를 쓰게 됩니다!")
+                        print("      팀원은 각자 자기 PC에서 start-ai-local.bat(또는 이 터널)을")
+                        print("      직접 실행해 자기 계정으로 쓰게 하세요. 이 URL은 '내가 다른")
+                        print("      기기(폰 등)에서 내 PC로 접속'하는 용도로만 쓰는 걸 권장합니다.")
+                        print()
+
                     # 별도 스레드에서 알림 + 대시보드 오픈
                     def notify_thread():
                         time.sleep(1.5)  # 터널 안정화 대기
                         open_dashboard()
+                        warn = ("\n\n⚠️ 팀원과 공유 금지: 이 URL은 이 PC의 Claude 계정을 그대로 씁니다.\n"
+                                "팀원은 각자 자기 PC에서 실행하세요."
+                                if ai_backend == "claude" else "")
                         show_notification(
-                            "Ollama Tunnel 시작됨 ✓",
+                            "AI Tunnel 시작됨 ✓",
                             f"터널 URL이 클립보드에 복사되었습니다:\n\n"
                             f"{url_found}\n\n"
                             "[다음 단계]\n"
                             "1. 열린 대시보드에서 좌측 사이드바 하단 'AI 서버 URL'에\n"
                             "   Ctrl+V로 붙여넣기 후 Enter\n"
                             "2. ✦ Hey Sloom 클릭하여 AI 응답 확인\n\n"
-                            "⚠️ 이 터널 창을 닫으면 AI 기능이 중단됩니다.",
+                            "⚠️ 이 터널 창을 닫으면 AI 기능이 중단됩니다." + warn,
                         )
 
                     threading.Thread(target=notify_thread, daemon=True).start()

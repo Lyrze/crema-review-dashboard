@@ -403,6 +403,26 @@ def main():
     print("  - GitHub 저장소: %s (%s)" % (REPO, BRANCH))
     print("  - GitHub 토큰 : %s" % ("설정됨 [OK]" if get_token() else "없음 [X] (업로드 불가, 가이드 참고)"))
     print("=" * 64)
+    if AI_BACKEND == "claude":
+        # 안내 문구는 여기(Python, UTF-8 고정)에서 출력한다 — .bat 파일의 title/chcp/color/set 조합과
+        # 한글 echo 가 섞이면 cmd.exe 파서가 이후 줄을 깨뜨리는 재현 가능한 버그가 있었다
+        # (예: '자기' is not recognized... — CLAUDE.md 참고). 배치는 최소한으로만 쓰고
+        # 복잡한/한글 출력은 전부 파이썬이 전담한다(이 프로젝트의 기존 관례와 동일).
+        print()
+        print("  이 창을 실행한 PC에 로그인된 Claude 계정만 사용됩니다.")
+        print("  터널이 아니라 로컬(localhost)로만 동작하므로 다른 사람과 공유되지 않습니다.")
+        print("  팀원은 각자 자기 PC에서 이 파일을 직접 실행하세요.")
+        print()
+        print("  다음 단계:")
+        print("    1. 대시보드(https://lyrze.github.io/crema-review-dashboard/) 접속")
+        print("    2. 좌측 사이드바 하단 'AI 서버 URL'에 아래 주소 입력:")
+        print("         http://localhost:%d" % PORT)
+        print("    3. Enter -> AI 버튼들 사용 가능")
+        print()
+        print("  Claude 로그인이 안 돼있으면 첫 AI 버튼 클릭 시 자동으로 브라우저 로그인 창이 뜹니다.")
+        print()
+        print("  [중요] 이 창을 닫으면 라이브 AI 기능이 멈춥니다.")
+        print("=" * 64)
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

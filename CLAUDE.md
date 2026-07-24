@@ -111,6 +111,54 @@ for /f "usebackq tokens=1,* delims==" %%A in ("%TEMP%\crema_sel.tmp") do (
 
 ---
 
+### 🔴 CRITICAL: Windows 배치파일 — `title`+한글 `echo` 조합이 뒤 줄을 깨뜨림 (2026-07-24)
+
+**발생**: `start-ai-local.bat`/`start-tunnel.bat`에 `title`(한글 포함) + `chcp 65001` +
+`color` + `set` 를 쓰고 그 뒤에 한글 `echo` 여러 줄을 두었더니, 정상적인 한글 문장 중간의
+특정 단어(예: "각자 자기 PC에서" 중 "자기")가 **명령어로 오인식**되어
+`'자기' is not recognized as an internal or external command` 로 배치 실행이 깨짐.
+
+**원인 조사**: 여러 조합을 격리 테스트한 결과 — 인용부호(`"`) 유무, 괄호 유무, 문장 내용
+자체는 원인이 아니었다. **`title` 명령이 파일 어딘가에 존재하기만 해도**, 그 뒤에 오는
+한글 `echo` 줄(들)의 정확한 바이트 정렬에 따라 cmd.exe 파서가 라인 경계를 잘못 잡는
+것으로 보인다(멀티바이트 UTF-8과 cmd 내부 read-buffer 정렬 문제로 추정 — 재현은 확실하나
+"왜"까지는 명확히 규명 못 함). **`title`이 없으면 재현 안 됨.** 같은 파일이라도 문장을
+아주 조금만 바꿔도(단어 순서, 길이) 증상이 사라지거나 다른 줄에서 터질 수 있어 예측 불가.
+
+**규칙**: `title` 명령을 쓰는 배치파일에서는 **한글 안내 문구를 `echo`로 직접 찍지 말고
+전부 Python이 출력하게 위임**한다(이미 확립된 "복잡한 로직은 Python으로 분리" 원칙의 연장).
+`.bat`는 `title`(영문 권장)·`chcp 65001 >nul`·`color`·`python 호출`·`pause` 정도의
+최소 골격만 남긴다. 대화형 선택(예: "1.Ollama / 2.Claude")도 `set /p`+`echo` 대신
+Python의 `input()`으로 옮긴다(`start_tunnel.py`의 `pick_ai_backend()` 참고).
+
+```batch
+:: 올바른 패턴 — 배치는 최소 골격만, 한글 출력은 전부 Python
+@echo off
+title App Name (ASCII)
+chcp 65001 >nul
+color 0B
+python "%~dp0scripts\my_script.py"
+pause
+```
+
+```python
+# my_script.py 쪽 — sys.stdout.reconfigure 필수(cp949 콘솔 크래시 방지, 아래 항목도 참고)
+print("한글 안내 문구는 여기서 전담 출력")
+sel = input("선택 (1~2, Enter=1번): ").strip()
+```
+
+**부수 발견(같이 고침)**: `start_tunnel.py`에 `sys.stdout.reconfigure(encoding="utf-8")` 가
+빠져 있어서, `chcp 65001`로 콘솔을 UTF-8로 바꿔도 **Python 쪽 stdout은 여전히 cp949라
+한글이 깨지거나(모지바케) `—`(U+2014) 같은 cp949 미지원 문자에서 `UnicodeEncodeError`로
+크래시**했다. `interactive_select.py`/`local_proxy.py`는 이미 이 가드가 있었는데
+`start_tunnel.py`엔 없었다 — 한글 출력하는 새 스크립트를 만들 때마다 반드시 넣을 것.
+
+**검증**: 격리 리프로로 원인을 좁힌 뒤, 실제 `start-ai-local.bat`/`start-tunnel.bat`를
+고쳐서 재실행 — 파싱 오류 없이 정상 실행되고(claude 백엔드 선택 시 `AI_BACKEND` 환경변수가
+`local_proxy.py` 자식 프로세스까지 정상 상속됨을 curl로 확인), 한글 출력도 깨지지 않음을 확인.
+
+---
+
 ### 🔴 CRITICAL: Windows 배치파일 — Python inline 코드 따옴표 충돌
 
 **발생**: `python -c "... d['total_reviews'] ..."` 처럼 배치 내 `python -c` 코드에서 dict key를 직접 참조하면 배치 파서가 따옴표를 잘못 파싱함.
@@ -623,10 +671,16 @@ python scripts/local_proxy.py
 # → 대시보드 사이드바 "AI 서버 URL"에 http://localhost:8799 (또는 Cloudflare Tunnel URL) 입력
 ```
 
-`start-tunnel.bat`도 실행 시 "1.Ollama / 2.Claude" 선택 프롬프트를 추가해 `AI_BACKEND`를
-설정하고 `start_tunnel.py`로 상속한다. **주의**: `start_tunnel.py`는 원래 Ollama(11434) 미실행 시
-무조건 중단했는데, `AI_BACKEND=claude`일 땐 이 체크를 건너뛰도록 고쳐야 한다(안 그러면 Ollama
-없는 PC에서 애초에 터널이 안 열림).
+`start_tunnel.py`(`start-tunnel.bat`가 호출)의 `pick_ai_backend()`가 실행 시
+"1.Ollama / 2.Claude" 선택을 물어 `AI_BACKEND`를 정하고 `os.environ`에 반영해
+`local_proxy.py` 자식 프로세스로 상속시킨다(이 선택 프롬프트를 .bat의 echo/set-p가 아니라
+Python으로 하는 이유는 바로 아래 `title`+한글 echo 배치 버그 항목 참고). **주의**:
+`start_tunnel.py`는 원래 Ollama(11434) 미실행 시 무조건 중단했는데, `AI_BACKEND=claude`일
+땐 이 체크를 건너뛰도록 고쳐야 한다(안 그러면 Ollama 없는 PC에서 애초에 터널이 안 열림).
+각자 자기 PC에서 실행해야 각자의 Claude 계정이 쓰인다 — 터널 URL을 팀원과 공유하면 그
+팀원도 터널을 켠 사람의 계정/한도를 쓰게 되므로 팀원과 공유 금지(터널은 "내가 다른
+기기에서 내 PC로 접속"하는 용도로만 권장). `start-ai-local.bat`(신규)은 터널 없이
+로컬(localhost)로만 붙는 방식이라 계정 공유 위험이 아예 없어 이쪽을 기본으로 권장한다.
 
 **설계 포인트**:
 - `GET /`(온라인 점검)은 **로그인 여부와 무관하게 즉시 200**을 반환한다. 대시보드의 `pingOllama()`가
