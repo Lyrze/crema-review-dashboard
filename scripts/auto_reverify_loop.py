@@ -11,7 +11,7 @@
   일반 OS 프로세스 루프로만 동작하므로 그 문제를 원천적으로 피한다.
 
 사용:
-    python scripts/auto_reverify_loop.py --brand 슬룸 --months 2026-04,2026-05,2026-03 --engine claude
+    python scripts/auto_reverify_loop.py --brand 슬룸 --month 2026-05
     (뒤에 붙는 인자는 reverify_suspect.py 에 그대로 전달됨)
 
 동작:
