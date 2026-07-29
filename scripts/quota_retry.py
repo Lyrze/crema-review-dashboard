@@ -6,7 +6,7 @@
   그 외 = 비한도 실패 → 자동 재시도 없이 해당 코드로 즉시 종료(사람 확인)
 
 사용:
-  python scripts/quota_retry.py -- python scripts/classify_unclassified.py --brand 슬룸 --month 2026-05 --engine claude
+  python scripts/quota_retry.py -- python scripts/classify_unclassified.py --brand 슬룸 --month 2026-05
 """
 import subprocess
 import sys

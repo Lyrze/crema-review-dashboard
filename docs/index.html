@@ -731,6 +731,7 @@
     body.taxonomy-mode .sync-filter-bar { display:none; }
     body.taxonomy-mode .product-focus-bar { display:none; }
     body.taxonomy-mode #compare-banner { display:none !important; }
+    body.taxonomy-mode #ai-connect-page { display:none; }
     .tx-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px; gap:16px; flex-wrap:wrap; }
     .tx-title { font-size:22px; font-weight:800; color:var(--text); letter-spacing:-.4px; display:flex; align-items:center; gap:10px; }
     .tx-subtitle { font-size:12.5px; color:var(--text-secondary); margin-top:5px; }
@@ -835,6 +836,7 @@
     body.compare-sku-mode #taxonomy-page { display:none; }
     body.compare-sku-mode #taxonomy-detail { display:none; }
     body.compare-sku-mode #insights-page { display:none; }
+    body.compare-sku-mode #ai-connect-page { display:none; }
     /* ── 심층 분석 탭 ── */
     #insights-page { display:none; padding:0; }
     #insights-page.active { display:block; }
@@ -842,7 +844,37 @@
     body.insights-mode .sync-filter-bar { display:none; }
     body.insights-mode #compare-banner { display:none !important; }
     body.insights-mode #taxonomy-page, body.insights-mode #taxonomy-detail, body.insights-mode #sku-compare-page { display:none; }
+    body.insights-mode #ai-connect-page { display:none; }
     body.taxonomy-mode #insights-page { display:none; }
+    /* ── AI 연결 방법 탭 ── */
+    #ai-connect-page { display:none; padding:0; }
+    #ai-connect-page.active { display:block; }
+    body.ai-connect-mode .section, body.ai-connect-mode .page-header { display:none; }
+    body.ai-connect-mode .sync-filter-bar { display:none; }
+    body.ai-connect-mode .product-focus-bar { display:none; }
+    body.ai-connect-mode #compare-banner { display:none !important; }
+    body.ai-connect-mode #taxonomy-page, body.ai-connect-mode #taxonomy-detail,
+    body.ai-connect-mode #sku-compare-page, body.ai-connect-mode #insights-page { display:none; }
+    .aic-conn-header { margin-bottom:20px; }
+    .aic-conn-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:16px; }
+    .aic-conn-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px 22px; }
+    .aic-conn-download-card { grid-column:1 / -1; text-align:center; }
+    .aic-conn-step-badge { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; background:var(--accent); color:#fff; font-weight:800; font-size:13px; margin-bottom:10px; }
+    .aic-conn-card-title { font-size:15px; font-weight:800; color:var(--text); margin-bottom:12px; }
+    .aic-conn-list { margin:0; padding-left:20px; font-size:12.5px; color:var(--text); line-height:1.9; }
+    .aic-conn-list li { margin-bottom:8px; }
+    .aic-conn-list code { background:var(--bg); border:1px solid var(--border); border-radius:5px; padding:1px 6px; font-size:11.5px; }
+    .aic-conn-code { margin-top:6px; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:12px; font-family:ui-monospace,Consolas,monospace; }
+    .aic-conn-note { margin-top:14px; font-size:11.5px; color:var(--text-secondary); line-height:1.6; background:var(--bg); border-radius:9px; padding:10px 12px; }
+    .aic-conn-warn { margin-top:14px; font-size:11.5px; color:var(--negative); line-height:1.6; background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.25); border-radius:9px; padding:10px 12px; }
+    .aic-conn-download-desc { font-size:12.5px; color:var(--text-secondary); margin:0 0 16px; }
+    .aic-conn-download-btn { display:inline-block; padding:12px 28px; border-radius:10px; background:var(--accent); color:#fff; font-weight:800; font-size:13.5px; text-decoration:none; }
+    .aic-conn-download-btn:hover { opacity:.9; }
+    .aic-conn-faq { width:100%; border-collapse:collapse; font-size:12px; margin-top:6px; }
+    .aic-conn-faq td { padding:9px 8px; border-bottom:1px solid var(--border); vertical-align:top; line-height:1.6; }
+    .aic-conn-faq tr td:first-child { font-weight:700; color:var(--text); white-space:nowrap; width:1%; padding-right:18px; }
+    .aic-conn-faq tr:last-child td { border-bottom:none; }
+    @media(max-width:900px){ .aic-conn-grid { grid-template-columns:1fr; } }
     .ins-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px 20px; margin-bottom:18px; }
     .ins-card-title { font-size:15px; font-weight:800; color:var(--text); margin-bottom:3px; display:flex; align-items:center; gap:8px; }
     .ins-card-sub { font-size:11.5px; color:var(--text-secondary); margin-bottom:14px; line-height:1.5; }
@@ -998,6 +1030,9 @@
     <a href="#" onclick="event.preventDefault();showCompareSKUPage();" id="nav-compare-sku"><span class="icon">🆚</span> SKU 1 vs 1 분석</a>
     <a href="#sec-custom-chart" onclick="goToSection(this,'#sec-custom-chart',event)"><span class="icon">🛠</span> 커스텀 차트</a>
     <a href="#" onclick="event.preventDefault();openAIChatPanel();"><span class="icon">✦</span> Hey Sloom 챗</a>
+    <div class="nav-divider"></div>
+    <div class="nav-group">AI 연결</div>
+    <a href="#" onclick="event.preventDefault();showAIConnectPage();" id="nav-ai-connect"><span class="icon">🔌</span> AI 연결 방법</a>
   </nav>
   <div class="sb-footer">
     <div class="sb-footer-row">
@@ -1230,6 +1265,62 @@
         </div>
         <div class="sc-chart-wrap tall"><canvas id="sc-chart-kw-neg"></canvas></div>
       </div>
+    </div>
+  </div>
+
+  <!-- ───────── AI 연결 방법 페이지 ───────── -->
+  <div id="ai-connect-page">
+    <div class="aic-conn-header">
+      <div>
+        <div class="sc-title">🔌 AI 연결 방법</div>
+        <div class="sc-subtitle">Hey Sloom·AI 분석·AI 자동 분류 같은 AI 기능을 쓰려면, 각자 자기 PC에서 AI 연결 프로그램을 켜야 합니다. GPU는 필요 없지만, <b>본인의 Claude 구독 계정 사용량(토큰)을 소모</b>합니다.</div>
+      </div>
+    </div>
+
+    <div class="aic-conn-grid">
+      <div class="aic-conn-card">
+        <div class="aic-conn-step-badge">1</div>
+        <div class="aic-conn-card-title">필요한 프로그램 설치 (최초 1회만)</div>
+        <ol class="aic-conn-list">
+          <li><b>Python 3.10 이상</b> — <a href="https://www.python.org/downloads/" target="_blank" rel="noopener">python.org</a>에서 다운로드. 설치 시 <b>"Add python.exe to PATH"</b> 체크 필수</li>
+          <li><b>Node.js</b> — <a href="https://nodejs.org/" target="_blank" rel="noopener">nodejs.org</a>에서 LTS 버전 다운로드</li>
+          <li><b>Claude Code CLI</b> 설치 — 설치 후 명령 프롬프트에서:
+            <div class="aic-conn-code">npm install -g @anthropic-ai/claude-code</div>
+          </li>
+          <li>아래 키트를 내려받아 압축을 푼 뒤, 그 폴더에서 명령 프롬프트를 열고:
+            <div class="aic-conn-code">pip install -r requirements.txt</div>
+          </li>
+        </ol>
+        <div class="aic-conn-note">💡 Claude 구독 계정 로그인은 미리 해둘 필요 없습니다 — 2단계에서 AI 버튼을 처음 누르면 자동으로 브라우저 로그인 창이 뜹니다.</div>
+      </div>
+
+      <div class="aic-conn-card">
+        <div class="aic-conn-step-badge">2</div>
+        <div class="aic-conn-card-title">AI 연결 키트 실행</div>
+        <ol class="aic-conn-list">
+          <li>키트 폴더의 <b>start-ai-local.bat</b> 더블클릭</li>
+          <li>창에 <code>AI 백엔드 : Claude Code CLI ... 로그인됨</code>이 뜨면 준비 완료</li>
+          <li>이 페이지 좌측 사이드바 아래 <b>"AI 서버 URL"</b> 칸에 <code>http://localhost:8799</code> 입력 → Enter</li>
+          <li>이제 Hey Sloom, AI 분석 등 AI 버튼이 전부 작동합니다</li>
+        </ol>
+        <div class="aic-conn-warn">⚠️ 무료 서버가 아닙니다 — 이 창을 실행한 PC에 로그인된 <b>본인의 Claude 구독 계정 사용량(토큰)이 실제로 소모</b>됩니다. 팀원과 키트를 공유하더라도 <b>각자 자기 PC에서 직접 실행</b>해야 각자의 계정/사용량이 소모되며, 한 사람이 켠 걸 여럿이 같이 쓰면 안 됩니다. 이 창을 닫으면 AI 기능이 멈춥니다(자리를 비울 땐 최소화만 하세요).</div>
+      </div>
+
+      <div class="aic-conn-card aic-conn-download-card">
+        <div class="aic-conn-card-title">📦 필요 파일 다운로드</div>
+        <p class="aic-conn-download-desc">위 1~2단계에 필요한 실행 파일을 한 번에 내려받으세요(start-ai-local.bat + 실행 스크립트 + 사용법).</p>
+        <a class="aic-conn-download-btn" href="downloads/크리마-AI연결키트.zip" download>⬇ 크리마-AI연결키트.zip 받기</a>
+        <div class="aic-conn-note" style="margin-top:14px;">다른 기기(폰 등)에서 이 PC의 AI를 쓰고 싶다면, 키트 안의 <b>start-tunnel.bat</b>을 대신 실행하세요 — 발급된 터널 주소를 다른 기기의 "AI 서버 URL"에 붙여넣으면 됩니다(단, 그 주소도 결국 이 PC의 Claude 계정을 쓰므로 팀원과는 공유하지 마세요).</div>
+      </div>
+    </div>
+
+    <div class="aic-conn-card" style="margin-top:18px;">
+      <div class="aic-conn-card-title">문제 해결</div>
+      <table class="aic-conn-faq">
+        <tr><td>AI 버튼이 계속 "오프라인"으로 뜸</td><td><b>start-ai-local.bat</b> 창이 켜져 있는지, 사이드바 "AI 서버 URL"이 <code>http://localhost:8799</code>인지 확인하세요.</td></tr>
+        <tr><td>"Python not found" 오류</td><td>Python 설치 시 PATH 체크를 안 했을 수 있습니다. 재설치하거나 명령 프롬프트에서 <code>python --version</code>이 동작하는지 확인하세요.</td></tr>
+        <tr><td>세션 한도(사용량) 도달 안내가 뜸</td><td>Claude 구독 세션 사용량 한도입니다. 안내된 리셋 시각 이후 다시 시도하세요.</td></tr>
+      </table>
     </div>
   </div>
 
@@ -3407,8 +3498,8 @@ function kwCloud(cid,kws,cls){
 }
 
 function updateActiveNav(){
-  // 특수 페이지(SKU 1vs1·Taxonomy·심층분석)에선 스크롤 스파이 비활성 — nav active 를 덮어쓰지 않음
-  if(document.body.classList.contains('compare-sku-mode')||document.body.classList.contains('taxonomy-mode')||document.body.classList.contains('insights-mode')) return;
+  // 특수 페이지(SKU 1vs1·Taxonomy·심층분석·AI 연결)에선 스크롤 스파이 비활성 — nav active 를 덮어쓰지 않음
+  if(document.body.classList.contains('compare-sku-mode')||document.body.classList.contains('taxonomy-mode')||document.body.classList.contains('insights-mode')||document.body.classList.contains('ai-connect-mode')) return;
   var secs=document.querySelectorAll('section[id]');
   var links=document.querySelectorAll('nav a');
   var sy=window.scrollY+120; var cur='';
@@ -7400,9 +7491,11 @@ function showInsightsPage(){
   document.body.classList.add('insights-mode');
   document.body.classList.remove('taxonomy-mode');
   document.body.classList.remove('compare-sku-mode');
+  document.body.classList.remove('ai-connect-mode');
   if($('taxonomy-page')) $('taxonomy-page').classList.remove('active');
   if($('taxonomy-detail')) $('taxonomy-detail').classList.remove('active');
   if($('sku-compare-page')) $('sku-compare-page').classList.remove('active');
+  if($('ai-connect-page')) $('ai-connect-page').classList.remove('active');
   $('insights-page').classList.add('active');
   document.querySelectorAll('aside nav a').forEach(function(a){a.classList.remove('active');});
   var ni=$('nav-insights'); if(ni) ni.classList.add('active');
@@ -7663,9 +7756,11 @@ function showCompareSKUPage(){
   document.body.classList.add('compare-sku-mode');
   document.body.classList.remove('taxonomy-mode');
   document.body.classList.remove('insights-mode');
+  document.body.classList.remove('ai-connect-mode');
   if($('taxonomy-page')) $('taxonomy-page').classList.remove('active');
   if($('taxonomy-detail')) $('taxonomy-detail').classList.remove('active');
   if($('insights-page')) $('insights-page').classList.remove('active');
+  if($('ai-connect-page')) $('ai-connect-page').classList.remove('active');
   $('sku-compare-page').classList.add('active');
   document.querySelectorAll('aside nav a').forEach(function(a){a.classList.remove('active');});
   $('nav-compare-sku').classList.add('active');
@@ -7677,6 +7772,25 @@ function hideCompareSKUPage(){
   $('sku-compare-page').classList.remove('active');
 }
 
+function showAIConnectPage(){
+  document.body.classList.add('ai-connect-mode');
+  document.body.classList.remove('taxonomy-mode');
+  document.body.classList.remove('compare-sku-mode');
+  document.body.classList.remove('insights-mode');
+  if($('taxonomy-page')) $('taxonomy-page').classList.remove('active');
+  if($('taxonomy-detail')) $('taxonomy-detail').classList.remove('active');
+  if($('sku-compare-page')) $('sku-compare-page').classList.remove('active');
+  if($('insights-page')) $('insights-page').classList.remove('active');
+  $('ai-connect-page').classList.add('active');
+  document.querySelectorAll('aside nav a').forEach(function(a){a.classList.remove('active');});
+  $('nav-ai-connect').classList.add('active');
+}
+
+function hideAIConnectPage(){
+  document.body.classList.remove('ai-connect-mode');
+  $('ai-connect-page').classList.remove('active');
+}
+
 // ───────────────────────────────────────────────
 //  통합 페이지 전환 — 모든 mode 해제 + nav active 갱신
 // ───────────────────────────────────────────────
@@ -7686,10 +7800,12 @@ function goToSection(linkEl, hash, evt){
   document.body.classList.remove('taxonomy-mode');
   document.body.classList.remove('compare-sku-mode');
   document.body.classList.remove('insights-mode');
+  document.body.classList.remove('ai-connect-mode');
   if($('taxonomy-page')) $('taxonomy-page').classList.remove('active');
   if($('taxonomy-detail')) $('taxonomy-detail').classList.remove('active');
   if($('sku-compare-page')) $('sku-compare-page').classList.remove('active');
   if($('insights-page')) $('insights-page').classList.remove('active');
+  if($('ai-connect-page')) $('ai-connect-page').classList.remove('active');
   // nav active 갱신
   document.querySelectorAll('aside nav a').forEach(function(a){a.classList.remove('active');});
   if(linkEl) linkEl.classList.add('active');
@@ -9091,8 +9207,10 @@ function showTaxonomyPage(){
   document.body.classList.add('taxonomy-mode');
   document.body.classList.remove('compare-sku-mode');
   document.body.classList.remove('insights-mode');
+  document.body.classList.remove('ai-connect-mode');
   if($('sku-compare-page')) $('sku-compare-page').classList.remove('active');
   if($('insights-page')) $('insights-page').classList.remove('active');
+  if($('ai-connect-page')) $('ai-connect-page').classList.remove('active');
   $('taxonomy-page').classList.add('active');
   $('taxonomy-detail').classList.remove('active');
   TX_STATE.activeTaxonomyId=null;
