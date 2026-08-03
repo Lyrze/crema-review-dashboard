@@ -3,22 +3,22 @@
   "month": "2026-03",
   "generated_at": "2026-06-18T17:05:30.207955",
   "kpis": {
-    "total_reviews": 1727,
+    "total_reviews": 1716,
     "avg_rating": 4.55,
     "rating_distribution": {
       "1": 39,
       "2": 22,
       "3": 135,
-      "4": 277,
-      "5": 1254
+      "4": 276,
+      "5": 1244
     },
     "photo_review_count": 252,
     "photo_review_rate": 14.6,
-    "positive_count": 1315,
-    "neutral_count": 239,
+    "positive_count": 1307,
+    "neutral_count": 236,
     "negative_count": 173,
-    "positive_rate": 76.14,
-    "negative_rate": 10.02,
+    "positive_rate": 76.17,
+    "negative_rate": 10.08,
     "mom_review_change": null,
     "mom_review_change_pct": null,
     "mom_rating_change": null
