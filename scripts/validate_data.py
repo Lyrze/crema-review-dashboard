@@ -21,6 +21,10 @@
 import argparse, json, sys
 from pathlib import Path
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -93,7 +97,7 @@ def main():
         if pct >= 100 and fb == 0:
             oks.append(f"감성 커버리지 100% (폴백 0)")
         else:
-            warns.append(f"감성 커버리지 {pct:.0f}% · 별점폴백 {fb}건 (recheck_sentiment.py --full 로 보완 권장)")
+            fails.append(f"감성 커버리지 {pct:.0f}% · 별점폴백 {fb}건 — recheck_sentiment.py --full 미완(정제 안 됨). 배포 차단")
 
     # ── 4) 버킷 감성 정합성 (칭찬=긍정?, 불만·개선=부정?) ──
     if keywords and reviews:
@@ -132,7 +136,7 @@ def main():
 
     # ── 6) pvoc_intent ──
     if pvoc is None:
-        warns.append("pvoc_intent.json 없음 (구매경험 VOC 감성 데이터 미생성)")
+        fails.append("pvoc_intent.json 없음 — classify_pvoc_intent.py 미실행(정제 안 됨). 배포 차단")
     elif isinstance(pvoc.get("topics"), dict):
         oks.append(f"pvoc_intent 토픽 {len(pvoc['topics'])}개")
 

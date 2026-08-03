@@ -484,7 +484,7 @@ tail -20 scripts/process_data.py  # if __name__ == '__main__' 블록 확인
 **규칙**: 특정 시각(한도 리셋 등)에 무인으로 명령을 재시도해야 하면 **Claude Code 예약작업을 쓰지 말고** `scripts/auto_reverify_loop.py`처럼 **순수 프로세스 루프**를 지금 세션에서 `run_in_background`로 직접 띄운다. 이 스크립트는 실패 메시지에서 "resets HH:MMam/pm" 을 정규식으로 파싱해 그 시각까지 sleep 후 재시도한다.
 
 ```bash
-python scripts/auto_reverify_loop.py --brand 슬룸 --months 2026-04,2026-05,2026-03 --engine claude
+python scripts/auto_reverify_loop.py --brand 슬룸 --months 2026-04,2026-05,2026-03
 ```
 
 **추가로 발견한 버그(같이 고침)**: 계정 전체가 한도 소진이면 `reverify_month()`의 `analyzer.health_check()`가 실패하는데, 이걸 그냥 "건너뜀(False)"으로 처리하면 남은 모든 월도 연쇄로 스킵되다가 `main()`이 **exit 0("완료")** 로 끝나버려 사실상 아무 것도 처리 못 했는데 성공한 것처럼 보임. → `health_check` 실패 원인이 한도성 메시지(`is_quota()`)면 반드시 `"quota"`를 반환해 `main()`이 `sys.exit(3)`으로 멈추게 해야 한다(그래야 `auto_reverify_loop.py`가 올바르게 재시도 여부를 판단할 수 있음).

@@ -9,6 +9,17 @@ if errorlevel 1 ( echo [ERROR] Python not found. & pause & exit /b 1 )
 where git >nul 2>&1
 if errorlevel 1 ( echo [ERROR] Git not found. & pause & exit /b 1 )
 
+:: Claude Code CLI 응답 확인 — AI 정제가 전부 Claude에 의존하므로 없으면 중단(반제품 배포 방지)
+echo  Claude 연결 확인 중...
+call claude -p "ping" --model sonnet <nul >nul 2>&1
+if errorlevel 1 (
+  echo.
+  echo  [ERROR] Claude Code CLI 응답 없음 - 로그인 또는 세션 한도를 확인하세요.
+  echo          해결: 명령 프롬프트에서 'claude' 실행 후 브라우저 로그인, 또는 한도 리셋 대기.
+  pause
+  exit /b 1
+)
+
 :: Python이 대화형 메뉴 + 선택 처리 전담
 :: 메뉴/입력 = stderr(화면), 결과 KEY=VALUE = stdout(파일)
 python scripts\interactive_select.py > "%TEMP%\crema_sel.tmp"
@@ -47,26 +58,31 @@ if errorlevel 1 ( echo. & echo [ERROR] 데이터 처리 실패. & pause & exit /
 echo.
 echo  [3.5/4] AI 정밀 보정 중 - 의심 키워드 재검증...
 python scripts\quota_retry.py -- python scripts\reverify_suspect.py --brand "!BRAND!" --month "!MONTH!"
+if errorlevel 1 ( echo. & echo  [ERROR] 의심 키워드 재검증 실패 - Claude 연결/한도 확인 후 재실행. 배포 중단. & pause & exit /b 1 )
 
 :: [3.6/4] 구매경험 VOC 감성 데이터 (PVOC 토픽별 칭찬/불만)
 echo.
 echo  [3.6/4] 구매경험 VOC 감성 데이터 생성 중...
 python scripts\quota_retry.py -- python scripts\classify_pvoc_intent.py --brand "!BRAND!" --month "!MONTH!"
+if errorlevel 1 ( echo. & echo  [ERROR] PVOC 감성 분류 실패 - Claude 연결/한도 확인 후 재실행. 배포 중단. & pause & exit /b 1 )
 
 :: [3.7/4] PVOC 의도 재검증 (부정 거짓양성 완화)
 echo.
 echo  [3.7/4] PVOC 의도 재검증 중 - 부정 거짓양성 완화...
 python scripts\quota_retry.py -- python scripts\reverify_pvoc_intent.py --brand "!BRAND!" --month "!MONTH!"
+if errorlevel 1 ( echo. & echo  [ERROR] PVOC 의도 재검증 실패 - Claude 연결/한도 확인 후 재실행. 배포 중단. & pause & exit /b 1 )
 
 :: [3.8/4] 신규 키워드 후보 발굴 (부정 미포착 → 검토형)
 echo.
 echo  [3.8/4] 신규 키워드 후보 발굴 중 - 부정 미포착 리뷰 클러스터링...
 python scripts\quota_retry.py -- python scripts\discover_keywords.py --brand "!BRAND!" --month "!MONTH!"
+if errorlevel 1 ( echo. & echo  [ERROR] 신규 키워드 후보 발굴 실패 - Claude 연결/한도 확인 후 재실행. 배포 중단. & pause & exit /b 1 )
 
 :: [3.9/4] Taxonomy 미분류 AI 분류 제안 (검토형)
 echo.
 echo  [3.9/4] Taxonomy 미분류 AI 분류 제안 생성 중...
 python scripts\quota_retry.py -- python scripts\classify_unclassified.py --brand "!BRAND!" --month "!MONTH!"
+if errorlevel 1 ( echo. & echo  [ERROR] Taxonomy 미분류 분류 제안 실패 - Claude 연결/한도 확인 후 재실행. 배포 중단. & pause & exit /b 1 )
 
 :: [3.95/4] 옵션 기반 상품 매핑 재라벨링 (사은품 제외 + 세트 분해 + 다중 귀속)
 echo.
@@ -88,7 +104,7 @@ if errorlevel 1 ( echo  [WARNING] 익명화 실패. 계속 진행합니다. )
 echo.
 echo  [4/5] Claude 감성 정밀화 중... (한도 시 자동 대기/재개 - 오래 걸릴 수 있음)
 python scripts\quota_retry.py -- python scripts\recheck_sentiment.py --brand "!BRAND!" --months "!MONTH!" --full
-if errorlevel 1 ( echo  [WARNING] 감성 정밀화 미완료 - 잠정 감성으로 계속. 한도 회복 후 재실행 권장. )
+if errorlevel 1 ( echo. & echo  [ERROR] 감성 정밀화 실패 - Claude 연결/한도 확인 후 재실행. 배포 중단. & pause & exit /b 1 )
 
 
 :: [5/5] 데이터 정합성 검증 (FAIL 시 푸시 중단 - 잘못된 데이터 배포 차단)

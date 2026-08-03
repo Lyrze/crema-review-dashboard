@@ -55,6 +55,7 @@ git add docs/
 git add scripts/
 git add .github/ 2>nul
 git add CLAUDE.md README.md requirements.txt .gitignore 2>nul
+git add *.md 2>nul
 echo  Staged:
 git diff --cached --name-only
 
