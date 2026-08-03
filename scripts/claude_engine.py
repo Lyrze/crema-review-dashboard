@@ -25,8 +25,13 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import time
 from typing import Any, List, Optional
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +76,7 @@ class ClaudeClient:
     CIRCUIT_THRESHOLD = 3  # 연속 완전실패(재시도 다 소진) 이 횟수 이상이면 회로 차단
                            # (2는 콜드스타트/일시 타임아웃 2회에 과민 개방 → 3으로 상향)
 
-    def __init__(self, timeout: int = 90):
+    def __init__(self, timeout: int = 180):
         self.exe = _find_claude()
         self.timeout = timeout
         self.fail_count = 0     # 누적 호출 실패 수 (한도/과부하 감지 — 재검증 이어받기 판단용)
@@ -363,7 +368,7 @@ class ClaudeAnalyzer:
     _MAX_KEYWORD_SAMPLE: int = 100  # 키워드 추출 최대 샘플 수
     _MAX_BRIEF_SAMPLE: int = 20     # 브리프 생성 최대 샘플 수
 
-    def __init__(self, model: str = "sonnet", timeout: int = 90, **_ignored):
+    def __init__(self, model: str = "sonnet", timeout: int = 180, **_ignored):
         self.model = model or "sonnet"
         self.client = ClaudeClient(timeout=timeout)
         self.last_error = None  # health_check 실패 시 원인 메시지 (호출측의 한도감지용)

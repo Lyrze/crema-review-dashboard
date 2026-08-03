@@ -4016,7 +4016,8 @@ function imRenderInsightCards(p){
     label:'PRAISE', cls:'praise', tag:'Brand Insights',
     question:'고객들이 이 상품에서 어떤 점을 가장 만족스러워하나요?',
     summary:'리뷰에서 자주 언급되는 긍정 키워드를 그룹화한 핵심 만족 요인입니다.',
-    blocks: imGroupKeywordsIntoBlocks(praise, 'praise', p)
+    blocks: imGroupKeywordsIntoBlocks(praise, 'praise', p),
+    isEmpty: praise.length===0
   }));
 
   // 카드 2: 불만 인사이트
@@ -4024,7 +4025,8 @@ function imRenderInsightCards(p){
     label:'COMPLAINTS', cls:'complaint', tag:'Brand Insights',
     question:'고객들이 부정 리뷰에서 어떤 제품 경험에 만족하지 못했나요?',
     summary:'고객들이 알고 싶어 하는 핵심 페인 포인트를 그룹화하여 표시합니다.',
-    blocks: imGroupKeywordsIntoBlocks(complaint, 'complaint', p)
+    blocks: imGroupKeywordsIntoBlocks(complaint, 'complaint', p),
+    isEmpty: complaint.length===0
   }));
 
   // 카드 3: 개선 제안
@@ -4032,7 +4034,8 @@ function imRenderInsightCards(p){
     label:'ENHANCEMENT', cls:'improve', tag:'Brand Insights',
     question:'고객들이 이 상품에 어떤 개선을 원하나요?',
     summary:'리뷰에서 추출한 개선 요청 키워드를 그룹화한 사용자 니즈입니다.',
-    blocks: imGroupKeywordsIntoBlocks(improvement, 'improve', p)
+    blocks: imGroupKeywordsIntoBlocks(improvement, 'improve', p),
+    isEmpty: improvement.length===0
   }));
 
   // 카드 4: 종합 요약 (별점 분포 + MoM)
@@ -4182,6 +4185,17 @@ function imBuildCard(opts){
       '<span class="im-card-ts">Updated on '+ts+'</span>'+
       '<div class="im-card-vote"><button title="유용함" onclick="this.classList.toggle(\'active\')">👍</button><button title="아쉬움" onclick="this.classList.toggle(\'active\')">👎</button></div>'+
     '</div>';
+  // 키워드 데이터 부족 + 캐시 없음 + AI 서버 온라인 → 버튼 클릭 없이 자동으로 AI 심층 분석 실행
+  if(opts.isEmpty && !cached){
+    var onlineDot=$('ollama-dot');
+    var isOnline=onlineDot && onlineDot.className.indexOf('online')>=0;
+    if(isOnline){
+      setTimeout(function(){
+        var trigger=card.querySelector('.im-ai-trigger');
+        if(trigger) imAskAIForCard(trigger, opts.cls);
+      }, 100);
+    }
+  }
   return card;
 }
 

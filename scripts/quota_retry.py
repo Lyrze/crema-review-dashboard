@@ -13,6 +13,10 @@ import sys
 import time
 from datetime import datetime, timedelta
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 from auto_reverify_loop import parse_reset_time  # 동일 디렉터리 — resets 시각 파서 재사용
 
 MAX_RETRIES = 20            # 대형 작업(전건 재판정 등)은 여러 리셋 윈도우가 필요 — 넉넉히
