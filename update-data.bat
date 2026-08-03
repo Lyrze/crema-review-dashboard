@@ -11,7 +11,7 @@ if errorlevel 1 ( echo [ERROR] Git not found. & pause & exit /b 1 )
 
 :: Claude Code CLI 응답 확인 — AI 정제가 전부 Claude에 의존하므로 없으면 중단(반제품 배포 방지)
 echo  Claude 연결 확인 중...
-claude -p "ping" --model sonnet >nul 2>&1
+call claude -p "ping" --model sonnet <nul >nul 2>&1
 if errorlevel 1 (
   echo.
   echo  [ERROR] Claude Code CLI 응답 없음 - 로그인 또는 세션 한도를 확인하세요.
