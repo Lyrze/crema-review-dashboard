@@ -3,22 +3,22 @@
   "month": "2026-03",
   "generated_at": "2026-06-18T17:05:30.207955",
   "kpis": {
-    "total_reviews": 2061,
-    "avg_rating": 4.57,
+    "total_reviews": 1716,
+    "avg_rating": 4.55,
     "rating_distribution": {
       "1": 39,
       "2": 22,
-      "3": 151,
-      "4": 354,
-      "5": 1495
+      "3": 135,
+      "4": 276,
+      "5": 1244
     },
-    "photo_review_count": 269,
-    "photo_review_rate": 20.2,
-    "positive_count": 1649,
-    "neutral_count": 239,
+    "photo_review_count": 252,
+    "photo_review_rate": 14.6,
+    "positive_count": 1307,
+    "neutral_count": 236,
     "negative_count": 173,
-    "positive_rate": 80.01,
-    "negative_rate": 8.39,
+    "positive_rate": 76.17,
+    "negative_rate": 10.08,
     "mom_review_change": null,
     "mom_review_change_pct": null,
     "mom_rating_change": null
@@ -26,169 +26,169 @@
   "timeline": [
     {
       "date": "2026-03-01",
-      "count": 46,
-      "avg_rating": 4.39
+      "count": 60,
+      "avg_rating": 4.27
     },
     {
       "date": "2026-03-02",
-      "count": 46,
-      "avg_rating": 4.46
+      "count": 54,
+      "avg_rating": 4.5
     },
     {
       "date": "2026-03-03",
-      "count": 53,
-      "avg_rating": 4.62
-    },
-    {
-      "date": "2026-03-04",
-      "count": 37,
-      "avg_rating": 4.35
-    },
-    {
-      "date": "2026-03-05",
-      "count": 56,
-      "avg_rating": 4.57
-    },
-    {
-      "date": "2026-03-06",
-      "count": 36,
-      "avg_rating": 4.61
-    },
-    {
-      "date": "2026-03-07",
-      "count": 32,
-      "avg_rating": 4.59
-    },
-    {
-      "date": "2026-03-08",
-      "count": 36,
-      "avg_rating": 4.58
-    },
-    {
-      "date": "2026-03-09",
-      "count": 27,
-      "avg_rating": 4.59
-    },
-    {
-      "date": "2026-03-10",
-      "count": 36,
-      "avg_rating": 4.25
-    },
-    {
-      "date": "2026-03-11",
-      "count": 33,
-      "avg_rating": 4.52
-    },
-    {
-      "date": "2026-03-12",
-      "count": 31,
-      "avg_rating": 4.65
-    },
-    {
-      "date": "2026-03-13",
-      "count": 44,
-      "avg_rating": 4.66
-    },
-    {
-      "date": "2026-03-14",
-      "count": 29,
-      "avg_rating": 4.69
-    },
-    {
-      "date": "2026-03-15",
-      "count": 33,
-      "avg_rating": 4.61
-    },
-    {
-      "date": "2026-03-16",
-      "count": 23,
-      "avg_rating": 4.43
-    },
-    {
-      "date": "2026-03-17",
-      "count": 38,
-      "avg_rating": 4.53
-    },
-    {
-      "date": "2026-03-18",
-      "count": 39,
-      "avg_rating": 4.72
-    },
-    {
-      "date": "2026-03-19",
-      "count": 37,
-      "avg_rating": 4.43
-    },
-    {
-      "date": "2026-03-20",
-      "count": 61,
-      "avg_rating": 4.43
-    },
-    {
-      "date": "2026-03-21",
-      "count": 60,
-      "avg_rating": 4.6
-    },
-    {
-      "date": "2026-03-22",
-      "count": 60,
-      "avg_rating": 4.7
-    },
-    {
-      "date": "2026-03-23",
-      "count": 48,
-      "avg_rating": 4.58
-    },
-    {
-      "date": "2026-03-24",
-      "count": 58,
-      "avg_rating": 4.66
-    },
-    {
-      "date": "2026-03-25",
-      "count": 68,
+      "count": 49,
       "avg_rating": 4.41
     },
     {
-      "date": "2026-03-26",
-      "count": 56,
-      "avg_rating": 4.59
+      "date": "2026-03-04",
+      "count": 46,
+      "avg_rating": 4.5
     },
     {
-      "date": "2026-03-27",
-      "count": 33,
-      "avg_rating": 4.18
+      "date": "2026-03-05",
+      "count": 66,
+      "avg_rating": 4.56
     },
     {
-      "date": "2026-03-28",
+      "date": "2026-03-06",
+      "count": 55,
+      "avg_rating": 4.55
+    },
+    {
+      "date": "2026-03-07",
+      "count": 48,
+      "avg_rating": 4.65
+    },
+    {
+      "date": "2026-03-08",
+      "count": 40,
+      "avg_rating": 4.53
+    },
+    {
+      "date": "2026-03-09",
+      "count": 39,
+      "avg_rating": 4.46
+    },
+    {
+      "date": "2026-03-10",
+      "count": 60,
+      "avg_rating": 4.45
+    },
+    {
+      "date": "2026-03-11",
+      "count": 42,
+      "avg_rating": 4.6
+    },
+    {
+      "date": "2026-03-12",
+      "count": 49,
+      "avg_rating": 4.55
+    },
+    {
+      "date": "2026-03-13",
+      "count": 62,
+      "avg_rating": 4.73
+    },
+    {
+      "date": "2026-03-14",
+      "count": 48,
+      "avg_rating": 4.54
+    },
+    {
+      "date": "2026-03-15",
+      "count": 49,
+      "avg_rating": 4.69
+    },
+    {
+      "date": "2026-03-16",
+      "count": 38,
+      "avg_rating": 4.42
+    },
+    {
+      "date": "2026-03-17",
+      "count": 52,
+      "avg_rating": 4.52
+    },
+    {
+      "date": "2026-03-18",
       "count": 41,
       "avg_rating": 4.71
     },
     {
-      "date": "2026-03-29",
-      "count": 40,
-      "avg_rating": 4.5
+      "date": "2026-03-19",
+      "count": 45,
+      "avg_rating": 4.42
     },
     {
-      "date": "2026-03-30",
-      "count": 37,
+      "date": "2026-03-20",
+      "count": 67,
+      "avg_rating": 4.51
+    },
+    {
+      "date": "2026-03-21",
+      "count": 73,
+      "avg_rating": 4.68
+    },
+    {
+      "date": "2026-03-22",
+      "count": 71,
+      "avg_rating": 4.7
+    },
+    {
+      "date": "2026-03-23",
+      "count": 65,
       "avg_rating": 4.62
     },
     {
+      "date": "2026-03-24",
+      "count": 70,
+      "avg_rating": 4.66
+    },
+    {
+      "date": "2026-03-25",
+      "count": 72,
+      "avg_rating": 4.36
+    },
+    {
+      "date": "2026-03-26",
+      "count": 59,
+      "avg_rating": 4.56
+    },
+    {
+      "date": "2026-03-27",
+      "count": 54,
+      "avg_rating": 4.26
+    },
+    {
+      "date": "2026-03-28",
+      "count": 63,
+      "avg_rating": 4.75
+    },
+    {
+      "date": "2026-03-29",
+      "count": 54,
+      "avg_rating": 4.59
+    },
+    {
+      "date": "2026-03-30",
+      "count": 52,
+      "avg_rating": 4.58
+    },
+    {
       "date": "2026-03-31",
-      "count": 58,
-      "avg_rating": 4.79
+      "count": 84,
+      "avg_rating": 4.69
     }
   ],
   "review_path_distribution": {
-    "기존리뷰": 1093,
-    "모바일": 81,
-    "기타": 74,
-    "모바일(팝업)": 48,
+    "모바일": 78,
+    "모바일(팝업)": 44,
+    "모바일(상품리뷰)": 11,
+    "기존리뷰": 725,
     "반응형(내리뷰)": 16,
-    "모바일(상품리뷰)": 12,
     "PC": 4,
-    "PC(팝업)": 3,
+    "PC(팝업)": 2,
+    "기타": 73,
     "PC(상품상세)": 1,
     "스마트스토어": 773
   }
