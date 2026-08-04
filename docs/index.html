@@ -5958,16 +5958,27 @@ function closeReviewSearch(){
 function runReviewSearch(){
   var q=($('rev-search-input').value||'').trim().toLowerCase();
   var rating=$('rev-search-rating').value;
-  var prods=STATE.products||REAL_DATA.products;
   var allReviews=[];
-  prods.forEach(function(p){
-    (p.top_reviews||[]).forEach(function(r){
-      allReviews.push({name:p.name, type:'pos', r:r});
+  var usedFullIndex=false;
+  if(STATE.reviewsById){
+    // 전체 리뷰 인덱스(reviews.json) 사용 — 상품별 top/bottom 샘플(최대 수십 건)만 보면
+    // 그 달 리뷰 대부분이 검색에서 누락되므로, 있으면 반드시 전체를 스캔한다.
+    usedFullIndex=true;
+    Object.keys(STATE.reviewsById).forEach(function(rid){
+      var rv=STATE.reviewsById[rid]||{};
+      var pname=rv.product||'';
+      if(STATE.productFocus && pname!==STATE.productFocus) return;
+      allReviews.push({name:pname, r:{review_id:rid, rating:rv.rating, date:rv.date, text:rv.text, sentiment:rv.sentiment}});
     });
-    (p.bottom_reviews||[]).forEach(function(r){
-      allReviews.push({name:p.name, type:'neg', r:r});
+  }else{
+    // 폴백(구버전 캐시 등 reviews.json 없을 때만): 상품별 저장 샘플(top/bottom)만 검색 가능
+    var prods=STATE.products||REAL_DATA.products;
+    prods.forEach(function(p){
+      if(STATE.productFocus && p.name!==STATE.productFocus) return;
+      (p.top_reviews||[]).forEach(function(r){ allReviews.push({name:p.name, r:r}); });
+      (p.bottom_reviews||[]).forEach(function(r){ allReviews.push({name:p.name, r:r}); });
     });
-  });
+  }
   var matched=allReviews.filter(function(item){
     if(rating && item.r.rating!==parseInt(rating)) return false;
     if(!q) return true;
@@ -5982,7 +5993,7 @@ function runReviewSearch(){
     countEl.textContent='';
     return;
   }
-  countEl.textContent='총 '+matched.length+'건';
+  countEl.textContent='총 '+matched.length+'건'+(usedFullIndex?'':' (⚠️ 저장된 샘플만 검색됨 — reviews.json 재생성 시 전체 검색 가능)');
   resultsEl.innerHTML=matched.slice(0,100).map(function(item){
     var r=item.r;
     var stars=''; for(var i=1;i<=5;i++) stars+=i<=r.rating?'★':'☆';
@@ -5994,13 +6005,15 @@ function runReviewSearch(){
     }else{
       highlighted=escapeHtml(text);
     }
-    var tag=item.type==='pos'?'<span style="background:rgba(22,163,74,.12);color:#16a34a;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">긍정</span>':'<span style="background:rgba(220,38,38,.10);color:#dc2626;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">부정</span>';
+    var sc=senClass(r);
+    var tag=sc==='pos'?'<span style="background:rgba(22,163,74,.12);color:#16a34a;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">긍정</span>':sc==='neg'?'<span style="background:rgba(220,38,38,.10);color:#dc2626;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">부정</span>':'<span style="background:var(--surface-hover);color:var(--text-secondary);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">중립</span>';
     return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;">'+
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'+
         '<span style="font-size:11.5px;font-weight:700;color:var(--accent);cursor:pointer;" onclick="closeReviewSearch();openProductPanel(\''+item.name.replace(/'/g,"\\'")+'\');">'+escapeHtml(fmtS(item.name))+'</span>'+
         '<span style="font-size:12px;color:#f59e0b;letter-spacing:-1px;">'+stars+'</span>'+
         '<span style="font-size:10.5px;color:var(--text-secondary);">'+(r.date||'')+'</span>'+
         tag+
+        ssBadge(r.review_id)+
       '</div>'+
       '<div style="font-size:12.5px;color:var(--text);line-height:1.6;">'+highlighted+'</div>'+
       '</div>';
