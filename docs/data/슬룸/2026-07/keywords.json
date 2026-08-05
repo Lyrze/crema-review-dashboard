@@ -2730,23 +2730,23 @@
         "by_product": [
           {
             "product": "목 마사지 베개 V2",
-            "count": 30
+            "count": 31
           },
           {
             "product": "발편한케어 V1",
             "count": 16
           },
           {
-            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
-            "count": 14
+            "product": "팔꿈치 마사지기",
+            "count": 15
           },
           {
             "product": "허리편한케어 V2",
             "count": 7
           },
           {
-            "product": "바디풀고컷",
-            "count": 4
+            "product": "바디 풀고컷",
+            "count": 5
           },
           {
             "product": "목베개 플러스",
@@ -2769,10 +2769,6 @@
             "count": 1
           },
           {
-            "product": "바디 풀고컷",
-            "count": 1
-          },
-          {
             "product": "손편한케어",
             "count": 1
           },
@@ -2782,14 +2778,6 @@
           },
           {
             "product": "넥숄더 힐링케어",
-            "count": 1
-          },
-          {
-            "product": "목마사지베개 V2",
-            "count": 1
-          },
-          {
-            "product": "팔꿈치 마사지기",
             "count": 1
           }
         ],
@@ -3146,7 +3134,7 @@
             "count": 24
           },
           {
-            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
+            "product": "팔꿈치 마사지기",
             "count": 12
           },
           {
@@ -3705,11 +3693,11 @@
         "by_product": [
           {
             "product": "목 마사지 베개 V2",
-            "count": 19
+            "count": 20
           },
           {
-            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
-            "count": 11
+            "product": "팔꿈치 마사지기",
+            "count": 13
           },
           {
             "product": "발편한케어 V1",
@@ -3720,15 +3708,15 @@
             "count": 6
           },
           {
+            "product": "바디 풀고컷",
+            "count": 5
+          },
+          {
             "product": "[썸머 수퍼데이] 목베개 스트레칭 베개",
             "count": 3
           },
           {
             "product": "목베개 플러스",
-            "count": 3
-          },
-          {
-            "product": "바디 풀고컷",
             "count": 3
           },
           {
@@ -3738,18 +3726,6 @@
           {
             "product": "목편한케어 플라잉",
             "count": 2
-          },
-          {
-            "product": "바디풀고컷",
-            "count": 2
-          },
-          {
-            "product": "팔꿈치 마사지기",
-            "count": 2
-          },
-          {
-            "product": "목마사지베개 V2",
-            "count": 1
           },
           {
             "product": "허리베개 프로",
@@ -4174,7 +4150,7 @@
           },
           {
             "product": "팔꿈치 마사지기",
-            "count": 5
+            "count": 6
           },
           {
             "product": "목베개 플러스",
@@ -4185,7 +4161,7 @@
             "count": 3
           },
           {
-            "product": "바디풀고컷",
+            "product": "바디 풀고컷",
             "count": 3
           },
           {
@@ -4199,10 +4175,6 @@
           {
             "product": "허리베개 프로",
             "count": 2
-          },
-          {
-            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
-            "count": 1
           },
           {
             "product": "종아리편한케어",
@@ -4559,20 +4531,16 @@
             "count": 25
           },
           {
-            "product": "목베개 플러스",
-            "count": 7
+            "product": "팔꿈치 마사지기",
+            "count": 9
           },
           {
-            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
+            "product": "목베개 플러스",
             "count": 7
           },
           {
             "product": "허리편한케어 V2",
             "count": 6
-          },
-          {
-            "product": "팔꿈치 마사지기",
-            "count": 2
           },
           {
             "product": "골반 마사지기",
@@ -4892,7 +4860,7 @@
           },
           {
             "product": "목베개 플러스",
-            "count": 2
+            "count": 3
           },
           {
             "product": "손편한케어",
@@ -4908,10 +4876,6 @@
           },
           {
             "product": "넥숄더 프로",
-            "count": 1
-          },
-          {
-            "product": "목베개플러스",
             "count": 1
           },
           {
@@ -5032,7 +4996,7 @@
         ],
         "by_product": [
           {
-            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
+            "product": "팔꿈치 마사지기",
             "count": 5
           },
           {
@@ -5190,7 +5154,7 @@
             "count": 2
           },
           {
-            "product": "바디풀고컷",
+            "product": "바디 풀고컷",
             "count": 2
           },
           {
@@ -5275,7 +5239,7 @@
         ],
         "by_product": [
           {
-            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
+            "product": "팔꿈치 마사지기",
             "count": 1
           },
           {
@@ -5283,7 +5247,7 @@
             "count": 1
           },
           {
-            "product": "바디풀고컷",
+            "product": "바디 풀고컷",
             "count": 1
           }
         ],
@@ -5330,7 +5294,7 @@
         ],
         "by_product": [
           {
-            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
+            "product": "팔꿈치 마사지기",
             "count": 1
           },
           {
@@ -5408,14 +5372,14 @@
         "by_product": [
           {
             "product": "목 마사지 베개 V2",
-            "count": 13
+            "count": 14
           },
           {
             "product": "목베개 플러스",
             "count": 1
           },
           {
-            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
+            "product": "팔꿈치 마사지기",
             "count": 1
           },
           {
@@ -5448,10 +5412,6 @@
           },
           {
             "product": "넥숄더 프로",
-            "count": 1
-          },
-          {
-            "product": "목마사지베개 V2",
             "count": 1
           },
           {
@@ -5615,7 +5575,7 @@
             "count": 2
           },
           {
-            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
+            "product": "팔꿈치 마사지기",
             "count": 1
           },
           {
@@ -5746,11 +5706,7 @@
           },
           {
             "product": "목베개 플러스",
-            "count": 2
-          },
-          {
-            "product": "목베개플러스",
-            "count": 1
+            "count": 3
           }
         ],
         "review_samples": [
@@ -6299,7 +6255,7 @@
         ],
         "by_product": [
           {
-            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
+            "product": "팔꿈치 마사지기",
             "count": 1
           },
           {
@@ -6413,7 +6369,7 @@
         ],
         "by_product": [
           {
-            "product": "목베개플러스",
+            "product": "목베개 플러스",
             "count": 1
           }
         ],

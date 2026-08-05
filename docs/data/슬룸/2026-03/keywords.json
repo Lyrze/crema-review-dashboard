@@ -3223,7 +3223,7 @@
           },
           {
             "product": "목베개 플러스",
-            "count": 22
+            "count": 24
           },
           {
             "product": "허리편한케어 V2",
@@ -3247,10 +3247,6 @@
           },
           {
             "product": "넥숄더 프로",
-            "count": 2
-          },
-          {
-            "product": "목베개플러스",
             "count": 2
           },
           {
@@ -3565,7 +3561,7 @@
         "by_product": [
           {
             "product": "목베개 플러스",
-            "count": 20
+            "count": 23
           },
           {
             "product": "목 마사지 베개 V2",
@@ -3601,10 +3597,6 @@
           },
           {
             "product": "눈편한케어",
-            "count": 3
-          },
-          {
-            "product": "목베개플러스",
             "count": 3
           },
           {
@@ -4241,7 +4233,7 @@
           },
           {
             "product": "목베개 플러스",
-            "count": 10
+            "count": 11
           },
           {
             "product": "목 마사지 베개 V2",
@@ -4293,10 +4285,6 @@
           },
           {
             "product": "넥숄더 힐링케어 V2",
-            "count": 1
-          },
-          {
-            "product": "목베개플러스",
             "count": 1
           }
         ],
@@ -5273,15 +5261,11 @@
         "by_product": [
           {
             "product": "목베개 플러스",
-            "count": 12
+            "count": 13
           },
           {
             "product": "허리편한케어 V2",
             "count": 3
-          },
-          {
-            "product": "목베개플러스",
-            "count": 1
           }
         ],
         "review_samples": [
@@ -5622,15 +5606,11 @@
         ],
         "by_product": [
           {
-            "product": "발편한케어 V1",
-            "count": 1
-          },
-          {
             "product": "목베개 플러스",
-            "count": 1
+            "count": 2
           },
           {
-            "product": "목베개플러스",
+            "product": "발편한케어 V1",
             "count": 1
           }
         ],
