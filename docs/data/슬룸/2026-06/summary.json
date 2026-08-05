@@ -3,22 +3,22 @@
   "month": "2026-06",
   "generated_at": "2026-07-30T10:17:17.206179",
   "kpis": {
-    "total_reviews": 1134,
-    "avg_rating": 4.58,
+    "total_reviews": 1491,
+    "avg_rating": 4.52,
     "rating_distribution": {
-      "1": 33,
-      "2": 11,
-      "3": 49,
-      "4": 210,
-      "5": 831
+      "1": 52,
+      "2": 22,
+      "3": 85,
+      "4": 277,
+      "5": 1055
     },
     "photo_review_count": 223,
     "photo_review_rate": 19.0,
-    "positive_count": 887,
-    "neutral_count": 133,
-    "negative_count": 114,
-    "positive_rate": 78.22,
-    "negative_rate": 10.05,
+    "positive_count": 1175,
+    "neutral_count": 164,
+    "negative_count": 152,
+    "positive_rate": 78.81,
+    "negative_rate": 10.19,
     "mom_review_change": -159,
     "mom_review_change_pct": -7.3,
     "mom_rating_change": 0.02
@@ -184,6 +184,7 @@
     "PC": 5,
     "PC(상품상세)": 1,
     "PC(팝업)": 1,
-    "스마트스토어": 372
+    "스마트스토어": 372,
+    "쿠팡": 357
   }
 }

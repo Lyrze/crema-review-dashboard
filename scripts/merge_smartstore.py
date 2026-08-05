@@ -128,7 +128,7 @@ def recompute_from_reviews(reviews):
             "avg": round(rsum / n, 2) if n else 0}
 
 
-def merge_summary(base, reviews, ss_reviews):
+def merge_summary(base, reviews, ss_reviews, channel="스마트스토어"):
     k = base.get("kpis", {})
     agg = recompute_from_reviews(reviews)
     k["total_reviews"] = agg["n"]
@@ -140,10 +140,10 @@ def merge_summary(base, reviews, ss_reviews):
     k["positive_rate"] = round(agg["pos"] / agg["n"] * 100, 2) if agg["n"] else 0
     k["negative_rate"] = round(agg["neg"] / agg["n"] * 100, 2) if agg["n"] else 0
     base["kpis"] = k
-    # 경로분포에 스마트스토어 가산
+    # 경로분포에 채널 가산
     rpd = base.get("review_path_distribution")
     if isinstance(rpd, dict):
-        rpd["스마트스토어"] = rpd.get("스마트스토어", 0) + len(ss_reviews)
+        rpd[channel] = rpd.get(channel, 0) + len(ss_reviews)
         base["review_path_distribution"] = rpd
 
 
@@ -178,17 +178,17 @@ def merge_products(base, ss):
     bl.sort(key=lambda x: x.get("review_count", 0), reverse=True)
 
 
-def merge_month(month, jm_dir, ss_dir):
+def merge_month(month, jm_dir, ss_dir, prefix="ss_", channel="스마트스토어"):
     jm_r = jm_dir / "reviews.json"
     ss_r = ss_dir / "reviews.json"
     if not jm_r.is_file():
-        eprint(f"  [SKIP] {month}: 슬룸 reviews.json 없음"); return False
+        eprint(f"  [SKIP] {month}: {jm_dir.name} reviews.json 없음"); return False
     if not ss_r.is_file():
-        eprint(f"  [SKIP] {month}: 스마트스토어 분류결과 없음"); return False
+        eprint(f"  [SKIP] {month}: {channel} 분류결과 없음"); return False
     base_reviews = load(jm_r)
-    # 멱등: 이미 ss_ 리뷰가 있으면 스킵
-    if any(str(k).startswith("ss_") for k in base_reviews.get("reviews", {})):
-        eprint(f"  [SKIP] {month}: 이미 스마트스토어 병합됨"); return False
+    # 멱등: 이미 해당 채널(prefix) 리뷰가 있으면 스킵
+    if any(str(k).startswith(prefix) for k in base_reviews.get("reviews", {})):
+        eprint(f"  [SKIP] {month}: 이미 {channel} 병합됨"); return False
     ss_reviews = load(ss_r)
 
     # 백업
@@ -205,7 +205,7 @@ def merge_month(month, jm_dir, ss_dir):
         save(jk, jm_dir / "keywords.json")
     if (jm_dir / "summary.json").is_file():
         js = load(jm_dir / "summary.json")
-        merge_summary(js, base_reviews.get("reviews", {}), ss_reviews.get("reviews", {}))
+        merge_summary(js, base_reviews.get("reviews", {}), ss_reviews.get("reviews", {}), channel=channel)
         save(js, jm_dir / "summary.json")
     if (jm_dir / "products.json").is_file() and (ss_dir / "products.json").is_file():
         jp = load(jm_dir / "products.json"); merge_products(jp, load(ss_dir / "products.json"))
@@ -216,23 +216,26 @@ def merge_month(month, jm_dir, ss_dir):
         merge_pvoc(jv, load(ss_dir / "pvoc_intent.json"))
         save(jv, pv_p)
 
-    eprint(f"  [OK] {month}: 스마트스토어 {added}건 병합 (자사몰 미변경, 추가만)")
+    eprint(f"  [OK] {month}: {channel} {added}건 병합 (자사몰 미변경, 추가만)")
     return True
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--brand", default="슬룸", help="자사몰 브랜드(대상)")
-    ap.add_argument("--ss-brand", default="스마트스토어", help="스마트스토어 분류결과 브랜드 폴더")
-    ap.add_argument("--months", required=True, help="쉼표구분 월 (SS 있는 월만)")
+    ap.add_argument("--ss-brand", default="스마트스토어", help="채널 분류결과 브랜드 폴더 (예: 스마트스토어, 쿠팡)")
+    ap.add_argument("--prefix", default="ss_", help="채널 리뷰ID 접두사 (스마트스토어=ss_, 쿠팡=cp_)")
+    ap.add_argument("--channel", default="스마트스토어", help="경로분포/로그에 쓸 채널명")
+    ap.add_argument("--months", required=True, help="쉼표구분 월 (채널 분류결과 있는 월만)")
     ap.add_argument("--data-root", default=str(ROOT / "docs" / "data"))
     args = ap.parse_args()
     droot = Path(args.data_root)
     n = 0
     for m in [x.strip() for x in args.months.split(",") if x.strip()]:
-        if merge_month(m, droot / args.brand / m, droot / args.ss_brand / m):
+        if merge_month(m, droot / args.brand / m, droot / args.ss_brand / m,
+                       prefix=args.prefix, channel=args.channel):
             n += 1
-    eprint(f"완료 — {n}개월 병합. 대시보드에서 ss_ 리뷰에 스마트스토어 뱃지 확인 후 커밋/업로드하세요.")
+    eprint(f"완료 — {n}개월 병합. 대시보드에서 병합 리뷰 뱃지 확인 후 커밋/업로드하세요.")
 
 
 if __name__ == "__main__":

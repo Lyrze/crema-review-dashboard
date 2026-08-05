@@ -541,6 +541,7 @@
     .im-review-tag.neg { background:rgba(220,38,38,.10); color:#dc2626; }
     .im-review-tag.neu { background:rgba(100,116,139,.12); color:#64748b; }
     .ss-badge { display:inline-block; font-size:9.5px; font-weight:700; color:#fff; background:#03c75a; border-radius:5px; padding:1px 6px; margin-left:4px; vertical-align:middle; letter-spacing:.2px; }
+    .cp-badge { display:inline-block; font-size:9.5px; font-weight:700; color:#fff; background:#e52528; border-radius:5px; padding:1px 6px; margin-left:4px; vertical-align:middle; letter-spacing:.2px; }
     .im-review-text { font-size:12.5px; color:var(--text); line-height:1.6; }
     /* AI 심층분석 결과 */
     .im-ai-result { background:rgba(46,107,230,.06); border:1px solid rgba(46,107,230,.2); border-radius:8px; padding:10px 12px; margin-top:12px; font-size:12px; line-height:1.6; color:var(--text); white-space:pre-wrap; display:none; }
@@ -4461,7 +4462,7 @@ function imBuildReview(r, type){
   div.innerHTML='<div class="im-review-meta">'+
     '<span class="im-review-stars">'+stars+'</span>'+
     '<span class="im-review-date">'+(r.date||'')+'</span>'+
-    ssBadge(r.review_id)+
+    ssBadge(r.review_id)+cpBadge(r.review_id)+
     '<span class="im-review-tag '+type+'">'+(type==='pos'?'긍정':type==='neg'?'부정':'중립')+'</span>'+
     '</div>'+
     '<div class="im-review-text" id="'+fullId+'-short">'+displayText+
@@ -5012,7 +5013,7 @@ function krmRenderList(){
         '<span style="font-size:12px;color:#f59e0b;letter-spacing:-1px;">'+stars+'</span>'+
         '<span style="font-size:10.5px;color:var(--text-secondary);">'+(r.date||'')+'</span>'+
         tag+
-        ssBadge(r.review_id)+
+        ssBadge(r.review_id)+cpBadge(r.review_id)+
       '</div>'+
       '<div style="font-size:12.5px;color:var(--text);line-height:1.65;">'+highlighted+'</div>'+
     '</div>';
@@ -6008,7 +6009,7 @@ function runReviewSearch(){
         '<span style="font-size:12px;color:#f59e0b;letter-spacing:-1px;">'+stars+'</span>'+
         '<span style="font-size:10.5px;color:var(--text-secondary);">'+(r.date||'')+'</span>'+
         tag+
-        ssBadge(r.review_id)+
+        ssBadge(r.review_id)+cpBadge(r.review_id)+
       '</div>'+
       '<div style="font-size:12.5px;color:var(--text);line-height:1.6;">'+highlighted+'</div>'+
       '</div>';
@@ -6787,6 +6788,7 @@ function senPos(r){ return senClass(r)==='pos'; }
 // 리뷰 카드용 긍/부정 뱃지 — 현재 기준(별점/감성)에 따라 라벨 결정, 별점은 항상 표기
 // 스마트스토어 채널 리뷰 뱃지 — 리뷰ID가 ss_ 로 시작하면(변환기가 붙인 접두사) 표시
 function ssBadge(rid){ return (rid && String(rid).indexOf('ss_')===0) ? '<span class="ss-badge">스마트스토어</span>' : ''; }
+function cpBadge(rid){ return (rid && String(rid).indexOf('cp_')===0) ? '<span class="cp-badge">쿠팡</span>' : ''; }
 function senBadge(r){
   var c=senClass(r), rt=(r&&r.rating)||0;
   var lab=c==='pos'?'긍정':(c==='neg'?'부정':'중립');
@@ -7553,7 +7555,7 @@ function insReviewModal(title, ids){
     '<span>🔴 부정 <b style="color:var(--negative);">'+neg+'</b></span></div>';
   var CAP=500;
   var shown=ids.slice(0,CAP);
-  var items=shown.map(function(id){ var r=byId[id]; var stars=''; for(var i=1;i<=5;i++) stars+=(i<=Math.round(r.rating||0)?'★':'☆'); var sc=r.sentiment==='negative'?'var(--negative)':r.sentiment==='positive'?'var(--positive)':'var(--text-secondary)'; return '<div style="border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:8px;background:var(--card);"><div style="font-size:11px;color:var(--text-secondary);margin-bottom:5px;">'+stars+' · '+escapeHtml(r.date||'')+' · '+escapeHtml(r.product||'')+' · <span style="color:'+sc+';font-weight:700;">'+escapeHtml(r.sentiment||'')+'</span>'+ssBadge(id)+'</div><div style="font-size:12.5px;line-height:1.6;">'+escapeHtml(r.text||'')+'</div></div>'; }).join('');
+  var items=shown.map(function(id){ var r=byId[id]; var stars=''; for(var i=1;i<=5;i++) stars+=(i<=Math.round(r.rating||0)?'★':'☆'); var sc=r.sentiment==='negative'?'var(--negative)':r.sentiment==='positive'?'var(--positive)':'var(--text-secondary)'; return '<div style="border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:8px;background:var(--card);"><div style="font-size:11px;color:var(--text-secondary);margin-bottom:5px;">'+stars+' · '+escapeHtml(r.date||'')+' · '+escapeHtml(r.product||'')+' · <span style="color:'+sc+';font-weight:700;">'+escapeHtml(r.sentiment||'')+'</span>'+ssBadge(id)+cpBadge(id)+'</div><div style="font-size:12.5px;line-height:1.6;">'+escapeHtml(r.text||'')+'</div></div>'; }).join('');
   if(!items) items='<div style="color:var(--text-secondary);font-size:12.5px;">표시할 리뷰가 없습니다.</div>';
   if(n>CAP) items+='<div style="text-align:center;color:var(--text-secondary);font-size:11.5px;padding:8px;">… 외 '+(n-CAP)+'건 더 (상위 '+CAP+'건 표시)</div>';
   var m=$('ins-rev-modal');
