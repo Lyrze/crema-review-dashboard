@@ -35,7 +35,7 @@ CREMA_COLUMNS = [
 ]
 CHANNEL_TAG = "쿠팡"
 STARONLY_TEXT = "별점만 남기고 별도 리뷰작성하지 않음"
-MONTHS_OK = {"2026-03", "2026-04", "2026-05", "2026-06", "2026-07"}
+DEFAULT_MONTHS = "2026-03,2026-04,2026-05,2026-06,2026-07"
 
 
 def eprint(*a, **k):
@@ -76,7 +76,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--indir", default="쿠팡 리뷰 분류 필요", help="제품별 CSV 폴더")
     ap.add_argument("--outdir", default="data/raw/쿠팡_변환")
+    ap.add_argument("--months", default=DEFAULT_MONTHS,
+                    help="추출할 월(쉼표구분, 예: 2026-08). 그 외 기간 리뷰는 제외")
     args = ap.parse_args()
+    months_ok = {m.strip() for m in args.months.split(",") if m.strip()}
 
     files = sorted(glob.glob(os.path.join(args.indir, "*.csv")))
     if not files:
@@ -94,7 +97,7 @@ def main():
             if not rid or not month:
                 skipped += 1
                 continue
-            if month not in MONTHS_OK:
+            if month not in months_ok:
                 out_of_range += 1
                 continue
             stars = clean_id(r.get("Stars"))
