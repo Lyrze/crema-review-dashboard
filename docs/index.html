@@ -8662,10 +8662,14 @@ var PRODUCT_TAXONOMY = {
     {name:'소음 / 진동', icon:'🔊', keywords:['소음','시끄','조용','소리가','소리는','진동','웅웅','정숙','소리도']},
     {name:'착용감 / 사용 편의', icon:'🤲', keywords:['착용','사용법','사용하기','간편','조작','버튼','리모컨','작동법','쓰기','거치','맞춰','고정이','밀착','감기']},
     {name:'디자인 / 외관', icon:'🎨', keywords:['디자인','색상','색깔','예뻐','예쁘','고급','이쁘','외관','컬러','모양','심플','깔끔']},
-    {name:'크기 / 무게', icon:'📏', keywords:['크기','사이즈','무게','가볍','무겁','크다','작다','커서','작아','부피','크고','두께','휴대']},
+    {name:'크기 / 무게', icon:'📏', keywords:['크기','사이즈','무게','가볍','무겁','크다','작다','커서','작아','부피','크고','두께','휴대','두꺼운','두껍','굵은','굵어','크면','커요','엉덩이']},
     {name:'배터리 / 충전', icon:'🔋', keywords:['배터리','충전','방전','무선','유선','케이블','선이','코드','어댑터','전원','콘센트']},
-    {name:'내구성 / 품질', icon:'🛡️', keywords:['내구','튼튼','견고','마감','품질','퀄리티','튼실','오래 쓸','내구성','만듦새','꼼꼼']},
-    {name:'가격 / 가성비', icon:'💰', keywords:['가성비','가격','비싸','저렴','할인','값','가격대','돈값','금액','혜자','비쌈','가격이']}
+    {name:'내구성 / 품질', icon:'🛡️', keywords:['내구','튼튼','견고','마감','품질','퀄리티','튼실','오래 쓸','내구성','만듦새','꼼꼼','보풀','찢어','흰가루','박음질','까짐','까져','고장','작동이 안']},
+    {name:'가격 / 가성비', icon:'💰', keywords:['가성비','가격','비싸','저렴','할인','값','가격대','돈값','금액','혜자','비쌈','가격이','이벤트','프로모션','싸게']},
+    // 2026-08 추가(개선인사이트 보강 지시서 §5 + 실측 미포착 리뷰 분석): 기존 10개 토픽에 없던 주제
+    {name:'커버 / 세탁', icon:'🧺', keywords:['커버','세탁','빨래','세척','물세척','분리형','벗겨','세탁가능','세탁불가']},
+    {name:'벨크로 / 고정', icon:'🔗', keywords:['벨크로','찍찍이','접착력','고정이','부착','끈','줄이','밴드']},
+    {name:'냄새', icon:'👃', keywords:['냄새','고무냄새','플라스틱냄새','쿰쿰']}
   ]
 };
 
@@ -8674,8 +8678,35 @@ var PRODUCT_TAXONOMY = {
 //   다른 브랜드는 '빈 분류'로 생성(토픽 0개) → 나중에 그 브랜드 키워드를 받아 채운다.
 function txEnsureProductTaxonomy(){
   if(typeof PRODUCT_TAXONOMY==='undefined') return;
-  if(TAXONOMIES.some(function(t){return t.id===PRODUCT_TAXONOMY.id;})) return;
   var isSloom = (STATE.brand||'슬룸')==='슬룸';
+  var existing=TAXONOMIES.find(function(t){return t.id===PRODUCT_TAXONOMY.id;});
+  if(existing){
+    // 마이그레이션: 이미 시드된(로컬스토리지에 저장된) 분류에도, 이후 PRODUCT_TAXONOMY에
+    // 새로 추가된 토픽(이름 기준)이 없으면 덧붙인다 — 기존 토픽 편집분은 안 건드림.
+    if(isSloom){
+      var byName={}; (existing.topics||[]).forEach(function(tp){ byName[tp.name]=tp; });
+      var added=false;
+      PRODUCT_TAXONOMY.topics.forEach(function(it){
+        var tp=byName[it.name];
+        if(!tp){
+          // 토픽 자체가 없음 — 새로 추가
+          var tid='t-prod-'+(existing.topics||[]).length+'-'+Object.keys(byName).length;
+          existing.topics=existing.topics||[];
+          tp={id:tid, name:it.name, icon:it.icon, keywords:it.keywords.slice(), mode:'any'};
+          existing.topics.push(tp);
+          byName[it.name]=tp; added=true;
+          return;
+        }
+        // 토픽은 있음 — 이후 추가된 키워드만 누락분 보강(기존 키워드·순서는 보존)
+        tp.keywords=tp.keywords||[];
+        it.keywords.forEach(function(kw){
+          if(tp.keywords.indexOf(kw)<0){ tp.keywords.push(kw); added=true; }
+        });
+      });
+      if(added) txSave();
+    }
+    return;
+  }
   TAXONOMIES.push({
     id:PRODUCT_TAXONOMY.id,
     product:true,
