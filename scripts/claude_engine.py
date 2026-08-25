@@ -44,7 +44,11 @@ __all__ = [
 ]
 
 _QUOTA_SIGNALS = ("usage limit", "session limit", "rate limit", "quota", "limit reached",
-                  "too many requests", "429", "overloaded")
+                  "too many requests", "429", "overloaded",
+                  # 2026-08: "You've hit your org's monthly spend limit" — 기존 시그널로
+                  # 안 잡혀서 자동재시도(quota_retry.py) 없이 즉시 중단(exit 2)되던 문제 발견.
+                  # 실제로는 수십 분~몇 시간 뒤 관리자 조치 등으로 풀리는 걸 관측해 재시도 대상에 포함.
+                  "spend limit")
 
 
 def is_quota(text) -> bool:

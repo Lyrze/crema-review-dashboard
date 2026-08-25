@@ -74,8 +74,11 @@ def reverify_month(brand: str, month: str, model: str, polarities: list) -> bool
 
     def is_quota(msg):
         m = str(msg).lower()
+        # 2026-08: "org's monthly spend limit"도 한도 신호로 인식 — claude_engine.is_quota와
+        # 동일하게 보강(이 파일은 별도 로컬 사본이라 따로 반영 필요).
         return any(k in m for k in ("usage limit", "session limit", "rate limit", "quota",
-                                    "limit reached", "too many requests", "429", "overloaded"))
+                                    "limit reached", "too many requests", "429", "overloaded",
+                                    "spend limit"))
 
     if not analyzer.health_check():
         err = getattr(analyzer, "last_error", None) or ""
