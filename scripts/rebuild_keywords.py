@@ -58,7 +58,8 @@ def build_dataframe(reviews: dict) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def rebuild_month(brand: str, month: str, top_n: int = 30) -> bool:
+def rebuild_month(brand: str, month: str, top_n: int = 30, only: list = None) -> bool:
+    only = only or ["complaint", "improvement"]
     d = ROOT / "docs" / "data" / brand / month
     rpath = d / "reviews.json"
     kpath = d / "keywords.json"
@@ -84,10 +85,12 @@ def rebuild_month(brand: str, month: str, top_n: int = 30) -> bool:
     old_complaint_cnt = sum(x.get("count", 0) for x in (old_bi.get("complaint") or []))
     old_improve_cnt = sum(x.get("count", 0) for x in (old_bi.get("improvement") or []))
 
-    # complaint/improvement만 교체 — praise·negative_keywords 등 나머지는 그대로 보존
+    # complaint/improvement 중 --only로 지정된 것만 교체 — praise·나머지는 항상 보존.
+    # (기본은 둘 다. 한쪽 패턴만 바뀐 경우 --only complaint 로 좁혀서, 이미 AI 재검증
+    #  끝난 반대쪽을 raw 상태로 되돌리는 낭비를 피한다.)
     kdata.setdefault("by_intent", {})
-    kdata["by_intent"]["complaint"] = result["by_intent"]["complaint"]
-    kdata["by_intent"]["improvement"] = result["by_intent"]["improvement"]
+    for key in only:
+        kdata["by_intent"][key] = result["by_intent"][key]
 
     # 백업(멱등 — 이미 있으면 최초 원본만 유지)
     bak = kpath.with_suffix(".json.bak")
@@ -96,17 +99,45 @@ def rebuild_month(brand: str, month: str, top_n: int = 30) -> bool:
 
     kpath.write_text(json.dumps(kdata, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    new_complaint_n = len(result["by_intent"]["complaint"])
-    new_improve_n = len(result["by_intent"]["improvement"])
-    new_complaint_cnt = sum(x.get("count", 0) for x in result["by_intent"]["complaint"])
-    new_improve_cnt = sum(x.get("count", 0) for x in result["by_intent"]["improvement"])
+    # 재계산한 polarity의 reverify 완료 마커를 무효화 — 안 그러면 reverify_suspect.py가
+    # "이미 완료(__done_pol__)"로 오판해 방금 리셋된 raw 데이터를 검증 없이 건너뛴다
+    # (실제로 겪은 버그: rebuild 후 __done_pol__이 그대로 남아 재검증이 통째로 스킵됨).
+    prog_path = d / ".reverify_progress.json"
+    if prog_path.is_file():
+        try:
+            prog = json.loads(prog_path.read_text(encoding="utf-8"))
+        except Exception:
+            prog = {}
+        changed = False
+        dp = prog.get("__done_pol__", {}) or {}
+        for engine, pols in list(dp.items()):
+            new_pols = [p for p in pols if p not in only]
+            if new_pols != pols:
+                dp[engine] = new_pols
+                changed = True
+        prog["__done_pol__"] = dp
+        for engine in list(prog.keys()):
+            if engine == "__done_pol__":
+                continue
+            items = prog.get(engine) or []
+            new_items = [t for t in items if not any(t.startswith(f"{k}::") for k in only)]
+            if new_items != items:
+                prog[engine] = new_items
+                changed = True
+        if changed:
+            prog_path.write_text(json.dumps(prog, ensure_ascii=False, indent=2), encoding="utf-8")
+            eprint(f"  [{month}] .reverify_progress.json에서 {only} 완료마커 무효화(재검증 필요 상태로 리셋)")
 
-    eprint(
-        f"  [{month}] complaint {old_complaint_n}개/{old_complaint_cnt}건 → "
-        f"{new_complaint_n}개/{new_complaint_cnt}건  |  "
-        f"improvement {old_improve_n}개/{old_improve_cnt}건 → "
-        f"{new_improve_n}개/{new_improve_cnt}건"
-    )
+    parts = []
+    if "complaint" in only:
+        n = len(result["by_intent"]["complaint"])
+        c = sum(x.get("count", 0) for x in result["by_intent"]["complaint"])
+        parts.append(f"complaint {old_complaint_n}개/{old_complaint_cnt}건 → {n}개/{c}건")
+    if "improvement" in only:
+        n = len(result["by_intent"]["improvement"])
+        c = sum(x.get("count", 0) for x in result["by_intent"]["improvement"])
+        parts.append(f"improvement {old_improve_n}개/{old_improve_cnt}건 → {n}개/{c}건")
+    eprint(f"  [{month}] " + "  |  ".join(parts))
     return True
 
 
@@ -115,13 +146,17 @@ def main():
     ap.add_argument("--brand", required=True)
     ap.add_argument("--months", required=True, help="쉼표구분 YYYY-MM 목록")
     ap.add_argument("--top-n", type=int, default=30)
+    ap.add_argument("--only", default="complaint,improvement",
+                     help="재계산할 대상만 쉼표구분(complaint / improvement / 둘 다). "
+                          "한쪽 패턴만 바뀐 경우 반대쪽의 기완료 AI 재검증을 보존하려면 좁혀서 지정.")
     args = ap.parse_args()
 
     months = [m.strip() for m in args.months.split(",") if m.strip()]
-    eprint(f"[rebuild_keywords] {args.brand} — {len(months)}개월 재추출 시작")
+    only = [o.strip() for o in args.only.split(",") if o.strip()]
+    eprint(f"[rebuild_keywords] {args.brand} — {len(months)}개월 재추출 시작 (대상: {only})")
     ok = 0
     for month in months:
-        if rebuild_month(args.brand, month, top_n=args.top_n):
+        if rebuild_month(args.brand, month, top_n=args.top_n, only=only):
             ok += 1
     eprint(f"[DONE] {ok}/{len(months)}개월 완료")
     if ok < len(months):
