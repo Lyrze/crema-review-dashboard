@@ -1050,6 +1050,17 @@ def extract_keywords_basic(df: pd.DataFrame, top_n: int = 30) -> dict:
     neg_df = df[df["rating"].le(2)].reset_index(drop=True)
     pos_df = df[df["rating"].ge(4)].reset_index(drop=True)
 
+    # complaint 매칭 풀 — 2026-08 확장: 기존엔 별점<=3(low_df)로만 한정해서, 별점은
+    # 4~5인데 감성은 negative인 리뷰("좋은데 충전기가 고장나여 ㅠㅠ" 등, AI 감성판정이
+    # 권위)의 불만이 통째로 안 잡혔음(실측: 전체 부정감성 822건 중 239건/29%가 이 이유로
+    # complaint 패턴 매칭 대상에서 아예 제외됨 — improvement 풀이 겪던 것과 거울상 문제).
+    # low_df(rating<=3)와 합집합으로 넓혀 기존 커버리지는 그대로 보존.
+    if "sentiment" in df.columns:
+        complaint_pool = df[df["rating"].le(3) | (df["sentiment"].fillna("") == "negative")]
+        complaint_pool = complaint_pool.reset_index(drop=True)
+    else:
+        complaint_pool = low_df
+
     # 개선요청 풀 — 전 감성 대상(2026-08 확장: ★4~5 긍정 리뷰 속 "~만 되면 좋겠다"류
     # 개선 니즈가 '부정 감성만' 게이트에 막혀 통째로 누락되던 문제 해결).
     # 칭찬 오포착 방어는 _IMP_SIGNAL(결핍/요망 신호어) ±8자 인접 게이트가 담당.
@@ -1062,7 +1073,7 @@ def extract_keywords_basic(df: pd.DataFrame, top_n: int = 30) -> dict:
     )
 
     all_texts = df["body"].fillna("").astype(str).tolist()
-    low_texts = low_df["body"].fillna("").astype(str).tolist()
+    complaint_texts = complaint_pool["body"].fillna("").astype(str).tolist()
 
     # review_id 리스트 (패턴 매칭용)
     all_ids = (
@@ -1070,14 +1081,14 @@ def extract_keywords_basic(df: pd.DataFrame, top_n: int = 30) -> dict:
         if "review_id" in df.columns
         else [str(i) for i in range(len(df))]
     )
-    low_ids = (
-        low_df["review_id"].astype(str).tolist()
-        if "review_id" in low_df.columns
-        else [str(i) for i in range(len(low_df))]
+    complaint_ids = (
+        complaint_pool["review_id"].astype(str).tolist()
+        if "review_id" in complaint_pool.columns
+        else [str(i) for i in range(len(complaint_pool))]
     )
 
     praise_items = _match_compiled_patterns(_COMPILED_PRAISE, all_texts, all_ids)
-    complaint_items = _match_compiled_patterns(_COMPILED_COMPLAINT, low_texts, low_ids)
+    complaint_items = _match_compiled_patterns(_COMPILED_COMPLAINT, complaint_texts, complaint_ids)
     improvement_items = _match_compiled_patterns(_COMPILED_IMPROVEMENT, nonpos_texts, nonpos_ids)
 
     # review_id → product_name 매핑 생성 (by_product 분포 계산용)
@@ -1173,7 +1184,7 @@ def extract_keywords_basic(df: pd.DataFrame, top_n: int = 30) -> dict:
     _attach_by_product(complaint_top)
     _attach_by_product(improvement_top)
     _attach_review_samples(praise_top, df, max_samples=50)
-    _attach_review_samples(complaint_top, low_df, max_samples=50)
+    _attach_review_samples(complaint_top, complaint_pool, max_samples=50)
     _attach_review_samples(improvement_top, imp_pool, max_samples=50)
 
     return {
