@@ -2730,6 +2730,68 @@ function onMonthChange(v){
 }
 async function reload(){ await loadData(STATE.brand,STATE.month); render(); }
 
+// ── 긍/부정 기준(별점↔감성) 토글 실시간 반영 헬퍼 ──
+// 2026-09: products.json/summary.json의 positive_rate/negative_rate는 파이프라인이
+// 감성분석 기준으로 고정 계산해둔 값이라, 헤더의 "긍·부정 기준" 토글(별점/감성)을 눌러도
+// Executive Summary·KPI·SKU 테이블·SKU 스코어카드 숫자가 전혀 안 바뀌던 문제 수정.
+// STATE.reviewsById가 있으면 senClass()(SENT_MODE를 이미 반영)로 매번 실시간 재계산한다.
+// senClass()는 이 파일 뒤쪽에서 정의되지만 함수 선언은 호이스팅되므로 순서 무관.
+function cloneShallow(o){ var c={}; for(var k in o){ if(Object.prototype.hasOwnProperty.call(o,k)) c[k]=o[k]; } return c; }
+function liveProductStatsMap(){
+  if(!STATE.reviewsById) return null;
+  var m={};
+  Object.keys(STATE.reviewsById).forEach(function(id){
+    var r=STATE.reviewsById[id];
+    var name=r.product; if(!name) return;
+    if(!m[name]) m[name]={pos:0,neg:0,neu:0,total:0};
+    var c=senClass(r);
+    if(c==='pos') m[name].pos++; else if(c==='neg') m[name].neg++; else m[name].neu++;
+    m[name].total++;
+  });
+  Object.keys(m).forEach(function(name){
+    var s=m[name];
+    s.positive_rate=s.total?s.pos/s.total*100:0;
+    s.negative_rate=s.total?s.neg/s.total*100:0;
+  });
+  return m;
+}
+// SENT_MODE·월이 바뀌지 않는 한 재사용(같은 render() 사이클 내 여러 섹션에서 재계산 방지)
+function getLiveProdMap(){
+  if(!STATE.reviewsById) return null;
+  if(!STATE._liveProdMapCache || STATE._liveProdMapMode!==SENT_MODE || STATE._liveProdMapMonth!==STATE.month){
+    STATE._liveProdMapCache=liveProductStatsMap();
+    STATE._liveProdMapMode=SENT_MODE;
+    STATE._liveProdMapMonth=STATE.month;
+  }
+  return STATE._liveProdMapCache;
+}
+// 상품 하나에 실시간 긍/부정률을 덮어씌운 사본 반환(원본 STATE.products는 불변 유지)
+function withLiveRates(p){
+  var map=getLiveProdMap();
+  var lp=map && map[p.name];
+  if(!lp) return p;
+  var copy=cloneShallow(p);
+  copy.positive_rate=lp.positive_rate; copy.negative_rate=lp.negative_rate;
+  copy._liveSent={pos:lp.pos, neg:lp.neg, neu:lp.neu, total:lp.total};
+  return copy;
+}
+// 전체(또는 productFocus 상품 하나)의 실시간 긍/부정 집계 — Executive Summary·KPI용
+function liveOverallStats(){
+  var map=getLiveProdMap();
+  if(!map) return null;
+  if(STATE.productFocus){
+    var lp=map[STATE.productFocus];
+    if(!lp) return null;
+    return {total_reviews:lp.total, positive_count:lp.pos, negative_count:lp.neg, neutral_count:lp.neu,
+            positive_rate:lp.positive_rate, negative_rate:lp.negative_rate};
+  }
+  var pos=0,neg=0,neu=0,total=0;
+  Object.keys(map).forEach(function(name){ var lp2=map[name]; pos+=lp2.pos; neg+=lp2.neg; neu+=lp2.neu; total+=lp2.total; });
+  if(!total) return null;
+  return {total_reviews:total, positive_count:pos, negative_count:neg, neutral_count:neu,
+          positive_rate:pos/total*100, negative_rate:neg/total*100};
+}
+
 function render(){ if(typeof COMPARE_STATE!=='undefined'){ if(COMPARE_STATE.active) applyCompareBaseline(); else restoreCompareBaseline(); } renderHeader(); renderExec(); renderSKUScorecards(); renderKPI(); renderTimeline(); renderSKUTable(); renderSKUCombo(); renderChangeTables(); renderVOC(); updateProductFocusBar(); updateCustomAIModelLabel(); populateCompareMonths(); updateCompareBanner(); renderPVOCKanban(); renderProductVOC(); if(typeof renderKeywordCandidates==='function') renderKeywordCandidates(); syncChipBarFromState(); if(typeof syncSentToggle==='function') syncSentToggle(); refreshOpenInsightModal(); setTimeout(enhanceCardActions,50); }
 
 // View Insight 모달이 열려 있으면 인사이트 카드 숫자도 즉시 갱신
@@ -2751,6 +2813,8 @@ function renderHeader(){
 function renderExec(){
   var prod=STATE.productFocus?(STATE.products||REAL_DATA.products).find(function(p){return p.name===STATE.productFocus;}):null;
   var k=prod?{total_reviews:prod.review_count,avg_rating:prod.avg_rating,positive_rate:prod.positive_rate||0,negative_rate:prod.negative_rate||0}:(STATE.summary||REAL_DATA.summary).kpis;
+  var live=liveOverallStats();
+  if(live){ k=cloneShallow(k); k.positive_rate=live.positive_rate; k.negative_rate=live.negative_rate; }
   $('mini-total').textContent=fmt(k.total_reviews)+'건';
   $('mini-rating').textContent=k.avg_rating.toFixed(2)+'★';
   $('mini-pos').textContent=k.positive_rate.toFixed(1)+'%';
@@ -2821,6 +2885,12 @@ function renderKPI(){
     negative_count: prod.sentiment?prod.sentiment.negative:Math.round((prod.negative_rate||0)/100*prod.review_count),
     neutral_count: prod.sentiment?prod.sentiment.neutral:(prod.review_count-Math.round((prod.positive_rate||0)/100*prod.review_count)-Math.round((prod.negative_rate||0)/100*prod.review_count))
   }:(STATE.summary||REAL_DATA.summary).kpis;
+  var liveK=liveOverallStats();
+  if(liveK){
+    k=cloneShallow(k);
+    k.positive_rate=liveK.positive_rate; k.negative_rate=liveK.negative_rate;
+    k.positive_count=liveK.positive_count; k.negative_count=liveK.negative_count; k.neutral_count=liveK.neutral_count;
+  }
   var prevRv=prod&&prod.prev_review_count!=null?prod.prev_review_count:FALLBACK_PREV.total_reviews;
   var prevRt=prod&&prod.prev_avg_rating!=null?prod.prev_avg_rating:FALLBACK_PREV.avg_rating;
   var prevMonth=STATE.month.replace(/(\d{4})-(\d{2})/,function(_,y,m){var n=parseInt(m)-1;return n<1?(parseInt(y)-1)+'-12':y+'-'+(n<10?'0'+n:n);});
@@ -2975,6 +3045,7 @@ function renderSKUTable(){
   var sortField=STATE.skuSort||'review_count';
   var allProds=(STATE.products||REAL_DATA.products);
   if(STATE.productFocus) allProds=allProds.filter(function(p){return p.name===STATE.productFocus;});
+  allProds=allProds.map(withLiveRates);   // 긍·부정 기준(별점/감성) 토글 실시간 반영
   var q=(($('sku-search-input')||{}).value||'').trim().toLowerCase();
   var prods=allProds.filter(function(p){
     return p.review_count>=minRv&&(!q||p.name.toLowerCase().indexOf(q)>=0);
@@ -3134,6 +3205,8 @@ function openKpiReviewInsight(){
   });
   rv.sort(function(a,b){ return b.r.rating-a.r.rating; });
   var k=(STATE.summary||REAL_DATA.summary).kpis;
+  var liveK=liveOverallStats();
+  if(liveK){ k=cloneShallow(k); k.positive_rate=liveK.positive_rate; k.negative_rate=liveK.negative_rate; }
   scOpenInsight({
     title:'📄 '+(STATE.brand||'슬룸')+' '+STATE.month+' 리뷰 인사이트',
     subtitle:'총 '+fmt(k.total_reviews)+'건 · ★'+(k.avg_rating||0).toFixed(2)+' · 긍정 '+(k.positive_rate||0).toFixed(1)+'% / 부정 '+(k.negative_rate||0).toFixed(2)+'% · 대표/하위 '+rv.length+'건',
@@ -4028,10 +4101,10 @@ function imRenderInsightCards(p){
 
   // 카드 3: 개선 제안
   cards.appendChild(imBuildCard({
-    label:'ENHANCEMENT', cls:'improve', tag:'Brand Insights',
+    label:'IMPROVEMENT', cls:'improve', tag:'Brand Insights',
     question:'고객들이 이 상품에 어떤 개선을 원하나요?',
     summary:'리뷰에서 추출한 개선 요청 키워드를 그룹화한 사용자 니즈입니다.',
-    blocks: imGroupKeywordsIntoBlocks(improvement, 'improve', p),
+    blocks: imGroupKeywordsIntoBlocks(improvement, 'improvement', p),
     isEmpty: improvement.length===0
   }));
 
@@ -7721,6 +7794,7 @@ function renderSKUScorecards(){
   var el=$('sku-scorecards'); if(!el) return;
   var prods=(STATE.products||[]).slice();
   if(STATE.productFocus) prods=prods.filter(function(p){return p.name===STATE.productFocus;});
+  prods=prods.map(withLiveRates);   // 긍·부정 기준(별점/감성) 토글 실시간 반영
   prods.sort(function(a,b){return (b.review_count||0)-(a.review_count||0);});
   var top=prods.slice(0,5);
   if(!top.length){ el.innerHTML='<div style="grid-column:1/-1;padding:20px;text-align:center;color:var(--text-secondary);font-size:12px;">표시할 상품 데이터가 없습니다.</div>'; return; }
