@@ -1,263 +1,255 @@
-"""purge_bulk_reviews.py — 브랜드가 직접 일괄등록한 리뷰를 대시보드 산출물에서 제거
-
-'일괄 등록 리뷰/*.csv' (크리마 리뷰 일괄등록 템플릿으로 브랜드가 직접 업로드한 리뷰)의
-리뷰 본문을 raw CSV의 실제 리뷰 본문과 정확 대조해 동일 리뷰를 찾아 제거한다.
-
-  · reviews.json  : 매칭된 자사몰 리뷰 제거 (스마트스토어 ss_ 리뷰는 대상 아님 — 건드리지 않음)
-  · summary.json  : KPI(총수·평점분포·감성카운트·긍부율·경로분포·타임라인·포토율) 재계산
-  · products.json : patch_product_mapping.rebuild_products 재사용 (멤버십 기반, MoM prev 체인)
-  · keywords.json : patch_product_mapping.rebuild_keywords 재사용 (word/all_review_ids/by_product)
-  · keyword_candidates.json : patch_product_mapping.rebuild_candidates 재사용
-  · pvoc_intent.json : topics.{pos,neg} 에서 제거, 양쪽 다 빈 토픽은 삭제
-
-★ 감성/키워드 AI 판정 자체는 건드리지 않는다 — 이미 판정된 리뷰를 '빼기'만 한다.
-★ 기본은 dry-run(요약만 출력). 실제 반영은 --apply. 반영 전 .bak 백업(--no-backup 로 생략).
-★ 월은 반드시 시간순으로 지정 (products.json의 전월대비 prev_* 체인 유지).
+"""purge_bulk_reviews.py
+~~~~~~~~~~~~~~~~~~~~~~~~
+크리마 "일괄등록"(bulk CSV import) 템플릿으로 만들어진 마케팅/시딩성 가짜 리뷰를
+찾아서 파이프라인 산출물(reviews.json/products.json/summary.json/keywords.json)에서
+제거한다. 원본 CSV(리뷰 번호 컬럼)는 업로더가 임의로 정하는 값이라 크리마 내부
+review_id와 다르므로, ID 매칭이 아니라 **본문 텍스트 부분일치**로 실제 반영된
+리뷰를 찾는다(2026-09, 이 세션에서 확인된 방식).
 
 사용:
-    python scripts/purge_bulk_reviews.py --brand 슬룸 --months 2026-03,2026-04,2026-05,2026-06,2026-07
-    python scripts/purge_bulk_reviews.py --brand 슬룸 --months 2026-03,2026-04,2026-05,2026-06,2026-07 --apply
+  python scripts/purge_bulk_reviews.py --dry-run   # 대상만 확인
+  python scripts/purge_bulk_reviews.py --apply     # 실제 제거 + 재계산
 """
-import argparse
-import csv
-import glob
-import json
-import re
-import shutil
-import sys
-from collections import Counter
+import argparse, json, sys, glob, csv, os, shutil
 from pathlib import Path
+from collections import Counter, defaultdict
 
 if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8")
-    sys.stderr.reconfigure(encoding="utf-8")
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from patch_product_mapping import rebuild_products, rebuild_keywords, rebuild_candidates, _col  # noqa: E402
+DATA_ROOT = ROOT / "docs" / "data" / "슬룸"
+DOWNLOADS = Path(r"C:/Users/올릿/Downloads")
 
 
-def norm(s):
-    return re.sub(r"\s+", "", s or "").strip()
+def eprint(*a, **k):
+    print(*a, file=sys.stderr, flush=True, **k)
 
 
-def load_bulk_texts(bulk_dir: Path):
-    """일괄등록 CSV 전부에서 리뷰내용(message) 텍스트 집합 반환."""
-    texts = set()
-    files = sorted(glob.glob(str(bulk_dir / "*.csv")))
+def load_bulk_snippets():
+    files = sorted(glob.glob(str(DOWNLOADS / "brand_csv-*.csv")))
+    snippets = []
     for f in files:
-        with open(f, encoding="utf-8-sig") as fh:
+        with open(f, encoding="utf-8-sig", newline="") as fh:
             rows = list(csv.reader(fh))
-        # 행 구조: 0=헤더, 1=필수/선택, 2=설명문, 3=예시(crematest/홍길동), 4~=실제 데이터
-        for r in rows[4:]:
-            if len(r) < 8:
+        for r in rows[14:]:
+            if not r or len(r) < 8:
                 continue
             msg = (r[7] or "").strip()
-            if msg:
-                texts.add(norm(msg))
-    return texts, len(files)
-
-
-def load_raw_info(brand: str, month: str):
-    """raw CSV -> {review_id: {photo(bool), pid, price, raw_name, body}}"""
-    p = ROOT / f"data/raw/{brand}/{month}/reviews.csv"
-    out = {}
-    if not p.is_file():
-        return out
-    with open(p, encoding="utf-8-sig") as f:
-        for r in csv.DictReader(f):
-            rid = _col(r, "리뷰ID", "리뷰번호")
-            if not rid:
+            if len(msg) < 20:
                 continue
-            try:
-                photo_n = int(str(r.get("포토개수", "0") or "0").strip() or 0)
-            except ValueError:
-                photo_n = 0
-            out[rid] = {
-                "photo": photo_n > 0,
-                "pid": _col(r, "상품번호"),
-                "price": _col(r, "상품가격"),
-                "raw_name": _col(r, "상품명"),
-                "body": r.get("리뷰본문", "") or "",
-            }
-    return out
+            snippets.append(msg[:40])
+    return snippets, len(files)
 
 
-def find_excluded_ids(reviews: dict, raw_info: dict, bulk_texts: set):
-    excluded = []
-    for rid, rv in reviews.items():
-        if str(rid).startswith("ss_"):
+def find_matches(snippets):
+    """월별로 reviews.json을 뒤져 본문에 스니펫이 포함된 review_id를 찾는다."""
+    matches = defaultdict(set)  # month -> set(review_id)
+    details = []  # (month, review_id, product, rating)
+    for m in sorted(p.name for p in DATA_ROOT.iterdir() if p.is_dir()):
+        rpath = DATA_ROOT / m / "reviews.json"
+        if not rpath.is_file():
             continue
-        body = raw_info.get(rid, {}).get("body") or rv.get("text", "")
-        if norm(body) in bulk_texts:
-            excluded.append(rid)
-    return excluded
+        reviews = json.loads(rpath.read_text(encoding="utf-8"))["reviews"]
+        for snippet in snippets:
+            for rid, r in reviews.items():
+                if rid in matches[m]:
+                    continue
+                if snippet in (r.get("text") or ""):
+                    matches[m].add(rid)
+                    details.append((m, rid, r.get("product"), r.get("rating")))
+                    break
+    return matches, details
 
 
-def recompute_summary(reviews: dict, raw_info: dict, old_summary: dict):
+def recompute_products(month: str, purge_ids: set):
+    ppath = DATA_ROOT / month / "products.json"
+    rpath = DATA_ROOT / month / "reviews.json"
+    pdata = json.loads(ppath.read_text(encoding="utf-8"))
+    reviews = json.loads(rpath.read_text(encoding="utf-8"))["reviews"]
+
+    affected_products = set()
+    for p in pdata["products"]:
+        # 이 상품에 속한, purge 대상이 아닌 리뷰만으로 재집계
+        prod_reviews = [(rid, r) for rid, r in reviews.items()
+                         if r.get("product") == p["name"] and rid not in purge_ids]
+        old_count = p["review_count"]
+        new_count = len(prod_reviews)
+        if new_count == old_count:
+            continue  # 이 상품엔 purge 대상 없음
+        affected_products.add(p["name"])
+
+        if new_count == 0:
+            # 이 달에 이 상품 리뷰가 하나도 안 남으면 0으로 표시만 하고 남겨둠(상품 자체 삭제는 안 함)
+            p["review_count"] = 0
+            p["avg_rating"] = 0.0
+            p["rating_distribution"] = {"1": 0, "2": 0, "3": 0, "4": 0, "5": 0}
+            p["photo_count"] = 0
+            p["sentiment"] = {"positive": 0, "neutral": 0, "negative": 0}
+            p["positive_rate"] = 0.0
+            p["negative_rate"] = 0.0
+            p["top_reviews"] = []
+            p["bottom_reviews"] = []
+            continue
+
+        ratings = [r["rating"] for _, r in prod_reviews]
+        p["review_count"] = new_count
+        p["avg_rating"] = round(sum(ratings) / new_count, 2)
+        dist = Counter(str(r["rating"]) for _, r in prod_reviews)
+        p["rating_distribution"] = {str(i): dist.get(str(i), 0) for i in range(1, 6)}
+        sent = Counter((r.get("sentiment") or "").lower() for _, r in prod_reviews)
+        pos, neu, neg = sent.get("positive", 0), sent.get("neutral", 0), sent.get("negative", 0)
+        p["sentiment"] = {"positive": pos, "neutral": neu, "negative": neg}
+        p["positive_rate"] = round(pos / new_count * 100, 2) if new_count else 0.0
+        p["negative_rate"] = round(neg / new_count * 100, 2) if new_count else 0.0
+
+        # top/bottom_reviews에서 purge 대상 제거(있으면)
+        p["top_reviews"] = [tr for tr in (p.get("top_reviews") or []) if tr.get("review_id") not in purge_ids]
+        p["bottom_reviews"] = [br for br in (p.get("bottom_reviews") or []) if br.get("review_id") not in purge_ids]
+
+    ppath.write_text(json.dumps(pdata, ensure_ascii=False, indent=2), encoding="utf-8")
+    return affected_products
+
+
+def recompute_summary(month: str):
+    spath = DATA_ROOT / month / "summary.json"
+    rpath = DATA_ROOT / month / "reviews.json"
+    sdata = json.loads(spath.read_text(encoding="utf-8"))
+    reviews = json.loads(rpath.read_text(encoding="utf-8"))["reviews"]
+
     total = len(reviews)
-    rd = {str(i): 0 for i in range(1, 6)}
-    pos = neu = neg = 0
-    rsum = 0
-    path_dist = Counter()
-    tl_count = Counter()
-    tl_ratings = {}
-    photo_n = 0
-    for rid, rv in reviews.items():
-        rt = int(rv.get("rating") or 0)
-        if 1 <= rt <= 5:
-            rd[str(rt)] += 1
-            rsum += rt
-        s = rv.get("sentiment", "neutral")
-        if s == "positive":
-            pos += 1
-        elif s == "negative":
-            neg += 1
-        else:
-            neu += 1
-        ch = rv.get("channel") or "미분류"
-        path_dist[ch] += 1
-        d = rv.get("date")
-        if d:
-            tl_count[d] += 1
-            tl_ratings.setdefault(d, []).append(rt)
-        if raw_info.get(rid, {}).get("photo"):
-            photo_n += 1
+    ratings = [r["rating"] for r in reviews.values() if r.get("rating") is not None]
+    avg_rating = round(sum(ratings) / len(ratings), 2) if ratings else 0.0
+    dist = Counter(str(r["rating"]) for r in reviews.values() if r.get("rating") is not None)
+    rating_distribution = {str(i): dist.get(str(i), 0) for i in range(1, 6)}
+    sent = Counter((r.get("sentiment") or "").lower() for r in reviews.values())
+    pos, neu, neg = sent.get("positive", 0), sent.get("neutral", 0), sent.get("negative", 0)
 
-    avg = round(rsum / total, 2) if total else 0.0
-    summary = dict(old_summary)
-    k = dict(summary.get("kpis", {}))
+    k = sdata["kpis"]
     k["total_reviews"] = total
-    k["avg_rating"] = avg
-    k["rating_distribution"] = rd
+    k["avg_rating"] = avg_rating
+    k["rating_distribution"] = rating_distribution
     k["positive_count"] = pos
     k["neutral_count"] = neu
     k["negative_count"] = neg
     k["positive_rate"] = round(pos / total * 100, 2) if total else 0.0
     k["negative_rate"] = round(neg / total * 100, 2) if total else 0.0
-    k["photo_review_count"] = photo_n
-    k["photo_review_rate"] = round(photo_n / total * 100, 1) if total else 0.0
-    summary["kpis"] = k
-    summary["review_path_distribution"] = dict(path_dist)
-    tl = []
-    for d in sorted(tl_count):
-        ratings = [x for x in tl_ratings[d] if x]
-        tl.append({
-            "date": d, "count": tl_count[d],
-            "avg_rating": round(sum(ratings) / len(ratings), 2) if ratings else 0,
-        })
-    summary["timeline"] = tl
-    return summary
+    # photo_review_count/rate, mom_* 등은 purge 대상이 사진 없는 텍스트 리뷰라 영향이 없어 보존
+
+    # 타임라인 day별 count/avg_rating 재계산
+    by_date = defaultdict(list)
+    for r in reviews.values():
+        d = r.get("date")
+        if d:
+            by_date[d].append(r.get("rating"))
+    new_tl = []
+    for entry in sdata["timeline"]:
+        d = entry["date"]
+        ratings_d = [x for x in by_date.get(d, []) if x is not None]
+        entry["count"] = len(ratings_d)
+        entry["avg_rating"] = round(sum(ratings_d) / len(ratings_d), 2) if ratings_d else 0.0
+        new_tl.append(entry)
+    sdata["timeline"] = new_tl
+
+    spath.write_text(json.dumps(sdata, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def recompute_pvoc(pvoc: dict, alive: set):
-    topics = pvoc.get("topics", {})
-    new_topics = {}
-    for name, io in topics.items():
-        pos = [x for x in io.get("pos", []) if x in alive]
-        neg = [x for x in io.get("neg", []) if x in alive]
-        if pos or neg:
-            new_topics[name] = {"pos": pos, "neg": neg}
-    out = dict(pvoc)
-    out["topics"] = new_topics
-    return out
+def recompute_keywords(month: str, purge_ids: set):
+    kpath = DATA_ROOT / month / "keywords.json"
+    rpath = DATA_ROOT / month / "reviews.json"
+    if not kpath.is_file():
+        return
+    kdata = json.loads(kpath.read_text(encoding="utf-8"))
+    reviews = json.loads(rpath.read_text(encoding="utf-8"))["reviews"]
+    bi = kdata.get("by_intent", {}) or {}
+    removed_kw = 0
+    for grp in ("praise", "complaint", "improvement"):
+        items = bi.get(grp) or []
+        new_items = []
+        for kw in items:
+            all_ids = kw.get("all_review_ids") or []
+            new_ids = [rid for rid in all_ids if rid not in purge_ids]
+            if len(new_ids) == len(all_ids):
+                new_items.append(kw)
+                continue
+            if not new_ids:
+                removed_kw += 1
+                continue  # 이 키워드는 전부 가짜 리뷰였던 것 -> 통째로 제거
+            kw["all_review_ids"] = new_ids
+            kw["reviews"] = [rid for rid in (kw.get("reviews") or []) if rid not in purge_ids]
+            kw["count"] = len(new_ids)
+            by_prod_cnt = Counter()
+            for rid in new_ids:
+                prod = (reviews.get(rid) or {}).get("product") or "(상품 미상)"
+                by_prod_cnt[prod] += 1
+            kw["by_product"] = [{"product": p, "count": n} for p, n in
+                                 sorted(by_prod_cnt.items(), key=lambda x: -x[1])]
+            kw["review_samples"] = [s for s in (kw.get("review_samples") or [])
+                                     if s.get("review_id") not in purge_ids]
+            new_items.append(kw)
+        bi[grp] = new_items
+    kdata["by_intent"] = bi
+    kpath.write_text(json.dumps(kdata, ensure_ascii=False, indent=2), encoding="utf-8")
+    if removed_kw:
+        eprint(f"  [{month}] 가짜 리뷰만으로 구성됐던 키워드 {removed_kw}개 통째로 제거")
 
 
-def purge_month(brand, month, bulk_texts, prev_counts, apply_, backup):
-    ddir = ROOT / "docs" / "data" / brand / month
-    rpath, spath, ppath, kpath = (ddir / "reviews.json", ddir / "summary.json",
-                                  ddir / "products.json", ddir / "keywords.json")
-    cpath = ddir / "keyword_candidates.json"
-    pvpath = ddir / "pvoc_intent.json"
-    if not rpath.is_file():
-        print(f"  [SKIP] {month}: reviews.json 없음")
-        return prev_counts
-
-    rjson = json.loads(rpath.read_text(encoding="utf-8"))
-    reviews = rjson.get("reviews", {})
-    raw_info = load_raw_info(brand, month)
-    if not raw_info:
-        print(f"  [WARN] {month}: raw CSV 없음 — 리뷰 본문(reviews.json)만으로 대조합니다(600자 절단 영향 가능)")
-
-    excluded = find_excluded_ids(reviews, raw_info, bulk_texts)
-    survivors = {rid: rv for rid, rv in reviews.items() if rid not in excluded}
-    alive = set(survivors.keys())
-
-    print(f"\n[{month}] 전체 {len(reviews)}건 중 일괄등록 매칭 {len(excluded)}건 제외 -> 잔존 {len(survivors)}건")
-
-    # rebuild_products/rebuild_keywords 는 rv['products'](복수 귀속)를 요구한다.
-    # 일부 월(예: 06월)은 patch_product_mapping.py 를 아직 안 거쳐 'product'(단수)만 있음 —
-    # 집계 전용 사본에서만 보정하고, 실제 reviews.json(survivors)의 스키마는 건드리지 않는다.
-    agg_reviews = {}
-    for rid, rv in survivors.items():
-        arv = dict(rv)
-        arv["_id"] = rid
-        if not arv.get("products"):
-            arv["products"] = [arv["product"]] if arv.get("product") else []
-        agg_reviews[rid] = arv
-
-    prods_json, counts = rebuild_products(agg_reviews, raw_info, prev_counts)
-
-    kw = json.loads(kpath.read_text(encoding="utf-8")) if kpath.is_file() else {}
-    kw = rebuild_keywords(kw, agg_reviews) if kw else kw
-
-    cand = None
-    if cpath.is_file():
-        cand = rebuild_candidates(json.loads(cpath.read_text(encoding="utf-8")), alive)
-
-    old_summary = json.loads(spath.read_text(encoding="utf-8")) if spath.is_file() else {}
-    new_summary = recompute_summary(survivors, raw_info, old_summary) if old_summary else old_summary
-
-    new_pvoc = None
-    if pvpath.is_file():
-        new_pvoc = recompute_pvoc(json.loads(pvpath.read_text(encoding="utf-8")), alive)
-
-    print(f"    상품 {len(prods_json['products'])}종 (재계산 완료)")
-    if new_summary:
-        print(f"    총 리뷰수 {new_summary['kpis']['total_reviews']} · "
-              f"평점 {new_summary['kpis']['avg_rating']} · "
-              f"긍정률 {new_summary['kpis']['positive_rate']}%")
-
-    if apply_:
-        targets = [rpath, spath, ppath, kpath, pvpath] + ([cpath] if cand is not None else [])
-        if backup:
-            for f in targets:
-                if f.is_file():
-                    shutil.copy2(f, f.with_suffix(f.suffix + ".bak"))
-        rjson["reviews"] = survivors
-        rjson["count"] = len(survivors)
-        rpath.write_text(json.dumps(rjson, ensure_ascii=False, indent=2), encoding="utf-8")
-        ppath.write_text(json.dumps(prods_json, ensure_ascii=False, indent=2), encoding="utf-8")
-        if kw:
-            kpath.write_text(json.dumps(kw, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
-        if new_summary:
-            spath.write_text(json.dumps(new_summary, ensure_ascii=False, indent=2), encoding="utf-8")
-        if cand is not None:
-            cpath.write_text(json.dumps(cand, ensure_ascii=False, indent=2), encoding="utf-8")
-        if new_pvoc is not None:
-            pvpath.write_text(json.dumps(new_pvoc, ensure_ascii=False, indent=2), encoding="utf-8")
-        print(f"    [APPLIED] {month} 반영 완료" + (" (.bak 백업)" if backup else ""))
-
-    return counts
+def backup(path: Path):
+    bak = path.with_suffix(path.suffix + ".bak_purge")
+    if not bak.is_file():
+        shutil.copy2(path, bak)
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--brand", default="슬룸")
-    ap.add_argument("--months", required=True, help="쉼표구분, 시간순으로(예: 2026-03,2026-04,...)")
-    ap.add_argument("--bulk-dir", default=str(ROOT / "일괄 등록 리뷰"))
-    ap.add_argument("--apply", action="store_true")
-    ap.add_argument("--no-backup", action="store_true")
+    g = ap.add_mutually_exclusive_group(required=True)
+    g.add_argument("--dry-run", action="store_true")
+    g.add_argument("--apply", action="store_true")
     args = ap.parse_args()
 
-    bulk_texts, n_files = load_bulk_texts(Path(args.bulk_dir))
-    print(f"[일괄등록] {n_files}개 파일 · 고유 텍스트 {len(bulk_texts)}건 로드")
+    snippets, nfiles = load_bulk_snippets()
+    eprint(f"다운로드 CSV {nfiles}개에서 리뷰 스니펫 {len(snippets)}건 수집")
+    matches, details = find_matches(snippets)
 
-    months = [m.strip() for m in args.months.split(",") if m.strip()]
-    prev = {}
-    for mo in months:
-        prev = purge_month(args.brand, mo, bulk_texts, prev, args.apply, not args.no_backup)
-    print("\n[완료]" + ("" if args.apply else "  (dry-run — 실제 반영은 --apply)"))
+    total = sum(len(v) for v in matches.values())
+    eprint(f"\n실제 우리 데이터에서 확인된 가짜(일괄등록) 리뷰: 총 {total}건")
+    by_month_prod = Counter((m, p) for m, _, p, _ in details)
+    for k, v in sorted(by_month_prod.items()):
+        eprint(f"  {k}: {v}건")
+
+    if args.dry_run:
+        eprint("\n[dry-run] 실제 파일 변경 없음. --apply로 실행하면 반영됩니다.")
+        return
+
+    for month, ids in matches.items():
+        if not ids:
+            continue
+        eprint(f"\n===== {month} 처리 시작 (제거 대상 {len(ids)}건) =====")
+        rpath = DATA_ROOT / month / "reviews.json"
+        ppath = DATA_ROOT / month / "products.json"
+        spath = DATA_ROOT / month / "summary.json"
+        kpath = DATA_ROOT / month / "keywords.json"
+        for p in (rpath, ppath, spath, kpath):
+            if p.is_file():
+                backup(p)
+
+        rdata = json.loads(rpath.read_text(encoding="utf-8"))
+        before = len(rdata["reviews"])
+        for rid in ids:
+            rdata["reviews"].pop(rid, None)
+        rdata["count"] = len(rdata["reviews"])
+        rpath.write_text(json.dumps(rdata, ensure_ascii=False, indent=2), encoding="utf-8")
+        eprint(f"  reviews.json: {before} -> {rdata['count']}건")
+
+        affected = recompute_products(month, ids)
+        eprint(f"  products.json 재계산 완료 (영향받은 상품: {sorted(affected)})")
+        recompute_summary(month)
+        eprint(f"  summary.json 재계산 완료")
+        recompute_keywords(month, ids)
+        eprint(f"  keywords.json 재계산 완료")
+
+    eprint("\n[DONE] 전 월 처리 완료. *.bak_purge 로 원본 백업됨.")
 
 
 if __name__ == "__main__":

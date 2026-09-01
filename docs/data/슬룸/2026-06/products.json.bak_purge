@@ -5,23 +5,23 @@
       "name": "목 마사지 베개 V2",
       "raw_name": "목 마사지 베개 V2 경추 마사지기 베개",
       "price": 119000,
-      "review_count": 302,
-      "avg_rating": 4.16,
+      "review_count": 312,
+      "avg_rating": 4.19,
       "rating_distribution": {
         "1": 32,
         "2": 5,
         "3": 25,
-        "4": 60,
-        "5": 180
+        "4": 62,
+        "5": 188
       },
       "photo_count": 66,
       "sentiment": {
-        "positive": 194,
-        "neutral": 45,
-        "negative": 63
+        "positive": 202,
+        "neutral": 46,
+        "negative": 64
       },
-      "positive_rate": 64.24,
-      "negative_rate": 20.86,
+      "positive_rate": 64.74,
+      "negative_rate": 20.51,
       "prev_review_count": 430,
       "prev_avg_rating": 4.5,
       "top_reviews": [
@@ -183,23 +183,23 @@
       "name": "팔꿈치 마사지기",
       "raw_name": "팔꿈치 마사지기",
       "price": null,
-      "review_count": 107,
-      "avg_rating": 4.71,
+      "review_count": 197,
+      "avg_rating": 4.72,
       "rating_distribution": {
         "1": 0,
         "2": 2,
         "3": 6,
-        "4": 13,
-        "5": 86
+        "4": 38,
+        "5": 151
       },
       "photo_count": 46,
       "sentiment": {
-        "positive": 82,
+        "positive": 172,
         "neutral": 12,
         "negative": 13
       },
-      "positive_rate": 76.64,
-      "negative_rate": 12.15,
+      "positive_rate": 87.31,
+      "negative_rate": 6.6,
       "prev_review_count": null,
       "prev_avg_rating": null,
       "top_reviews": [
@@ -361,23 +361,23 @@
       "name": "허리편한케어 V2",
       "raw_name": "허리편한케어 V2 허리 마사지기",
       "price": 149000,
-      "review_count": 156,
+      "review_count": 157,
       "avg_rating": 4.66,
       "rating_distribution": {
         "1": 1,
         "2": 1,
         "3": 11,
         "4": 24,
-        "5": 119
+        "5": 120
       },
       "photo_count": 15,
       "sentiment": {
-        "positive": 133,
+        "positive": 134,
         "neutral": 16,
         "negative": 7
       },
-      "positive_rate": 85.26,
-      "negative_rate": 4.49,
+      "positive_rate": 85.35,
+      "negative_rate": 4.46,
       "prev_review_count": 170,
       "prev_avg_rating": 4.64,
       "top_reviews": [
@@ -717,23 +717,23 @@
       "name": "허리베개",
       "raw_name": "허리베개 허리 편안 베개",
       "price": 43800,
-      "review_count": 37,
-      "avg_rating": 4.7,
+      "review_count": 43,
+      "avg_rating": 4.65,
       "rating_distribution": {
-        "1": 1,
+        "1": 2,
         "2": 0,
         "3": 1,
         "4": 5,
-        "5": 30
+        "5": 35
       },
       "photo_count": 3,
       "sentiment": {
-        "positive": 29,
+        "positive": 34,
         "neutral": 6,
-        "negative": 2
+        "negative": 3
       },
-      "positive_rate": 78.38,
-      "negative_rate": 5.41,
+      "positive_rate": 79.07,
+      "negative_rate": 6.98,
       "prev_review_count": 40,
       "prev_avg_rating": 4.72,
       "top_reviews": [
@@ -806,23 +806,23 @@
       "name": "목편한케어 플라잉",
       "raw_name": "[김마통x슬룸] ★구독자 한정 역대급 할인 판매★",
       "price": 59900,
-      "review_count": 34,
-      "avg_rating": 4.62,
+      "review_count": 36,
+      "avg_rating": 4.64,
       "rating_distribution": {
         "1": 0,
         "2": 2,
         "3": 1,
         "4": 5,
-        "5": 26
+        "5": 28
       },
       "photo_count": 7,
       "sentiment": {
-        "positive": 26,
+        "positive": 28,
         "neutral": 6,
         "negative": 2
       },
-      "positive_rate": 76.47,
-      "negative_rate": 5.88,
+      "positive_rate": 77.78,
+      "negative_rate": 5.56,
       "prev_review_count": 23,
       "prev_avg_rating": 4.48,
       "top_reviews": [
@@ -895,23 +895,23 @@
       "name": "손편한케어",
       "raw_name": "프리미엄 엘보케어 팔꿈치 마사지기",
       "price": 149000,
-      "review_count": 27,
-      "avg_rating": 4.59,
+      "review_count": 28,
+      "avg_rating": 4.6,
       "rating_distribution": {
         "1": 1,
         "2": 0,
         "3": 1,
         "4": 5,
-        "5": 20
+        "5": 21
       },
       "photo_count": 1,
       "sentiment": {
         "positive": 24,
-        "neutral": 2,
+        "neutral": 3,
         "negative": 1
       },
-      "positive_rate": 88.89,
-      "negative_rate": 3.7,
+      "positive_rate": 85.71,
+      "negative_rate": 3.57,
       "prev_review_count": 18,
       "prev_avg_rating": 4.89,
       "top_reviews": [
@@ -1316,22 +1316,22 @@
       "name": "코어 요추벨트",
       "raw_name": "[타임딜] 코어 요추벨트 허리 보호대",
       "price": 39000,
-      "review_count": 12,
+      "review_count": 13,
       "avg_rating": 4.92,
       "rating_distribution": {
         "1": 0,
         "2": 0,
         "3": 0,
         "4": 1,
-        "5": 11
+        "5": 12
       },
       "photo_count": 4,
       "sentiment": {
-        "positive": 9,
+        "positive": 10,
         "neutral": 3,
         "negative": 0
       },
-      "positive_rate": 75.0,
+      "positive_rate": 76.92,
       "negative_rate": 0.0,
       "prev_review_count": 25,
       "prev_avg_rating": 4.4,
