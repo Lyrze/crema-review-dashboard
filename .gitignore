@@ -177,3 +177,4 @@ reclass_run.log
 **/.reclassify_full_progress.json
 **/.pvoc_intent_progress.json
 **/.pvoc_reverify_progress.json
+docs/data/*/*.bak_purge
