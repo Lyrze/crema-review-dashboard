@@ -31,17 +31,21 @@ def merge_month(brand: str, month: str, max_samples: int = 50) -> bool:
     d = ROOT / "docs" / "data" / brand / month
     rpath = d / "reviews.json"
     kpath = d / "keywords.json"
-    cpath = d / "keyword_candidates.json"
-    if not cpath.is_file():
-        eprint(f"  [{month}] keyword_candidates.json 없음 — 스킵")
+    cpath = d / "keyword_candidates.json"                  # 불만/개선요청 후보(부정 미포착)
+    cpath_praise = d / "keyword_candidates_praise.json"     # 칭찬 후보(긍정 미포착)
+    if not cpath.is_file() and not cpath_praise.is_file():
+        eprint(f"  [{month}] keyword_candidates(.json/_praise.json) 없음 — 스킵")
         return False
     if not rpath.is_file() or not kpath.is_file():
         eprint(f"  [{month}] reviews.json/keywords.json 없음 — 스킵")
         return False
 
     reviews = json.loads(rpath.read_text(encoding="utf-8")).get("reviews", {})
-    cdata = json.loads(cpath.read_text(encoding="utf-8"))
-    candidates = cdata.get("candidates") or []
+    candidates = []
+    if cpath.is_file():
+        candidates += json.loads(cpath.read_text(encoding="utf-8")).get("candidates") or []
+    if cpath_praise.is_file():
+        candidates += json.loads(cpath_praise.read_text(encoding="utf-8")).get("candidates") or []
     if not candidates:
         eprint(f"  [{month}] 후보 0개 — 스킵")
         return False
@@ -50,17 +54,18 @@ def merge_month(brand: str, month: str, max_samples: int = 50) -> bool:
     kdata.setdefault("by_intent", {})
     kdata["by_intent"].setdefault("complaint", [])
     kdata["by_intent"].setdefault("improvement", [])
+    kdata["by_intent"].setdefault("praise", [])
 
     # 이미 채택된 word는 중복 추가 방지
     existing_words = {
-        (k.get("word") or "") for grp in ("complaint", "improvement")
+        (k.get("word") or "") for grp in ("complaint", "improvement", "praise")
         for k in kdata["by_intent"].get(grp, [])
     }
 
-    added = {"complaint": 0, "improvement": 0}
+    added = {"complaint": 0, "improvement": 0, "praise": 0}
     for c in candidates:
         word = (c.get("word") or "").strip()
-        ctype = c.get("type") if c.get("type") in ("complaint", "improvement") else "complaint"
+        ctype = c.get("type") if c.get("type") in ("complaint", "improvement", "praise") else "complaint"
         if not word or word in existing_words:
             continue
         ids = [str(rid) for rid in (c.get("review_ids") or []) if str(rid) in reviews]
@@ -101,7 +106,7 @@ def merge_month(brand: str, month: str, max_samples: int = 50) -> bool:
         existing_words.add(word)
         added[ctype] += 1
 
-    if added["complaint"] == 0 and added["improvement"] == 0:
+    if added["complaint"] == 0 and added["improvement"] == 0 and added["praise"] == 0:
         eprint(f"  [{month}] 신규 채택 0개(이미 반영됐거나 대상 없음)")
         return False
 
@@ -109,7 +114,7 @@ def merge_month(brand: str, month: str, max_samples: int = 50) -> bool:
     if not bak.is_file():
         shutil.copy2(kpath, bak)
     kpath.write_text(json.dumps(kdata, ensure_ascii=False, indent=2), encoding="utf-8")
-    eprint(f"  [{month}] 채택 완료 — complaint +{added['complaint']}개, improvement +{added['improvement']}개")
+    eprint(f"  [{month}] 채택 완료 — complaint +{added['complaint']}개, improvement +{added['improvement']}개, praise +{added['praise']}개")
     return True
 
 
