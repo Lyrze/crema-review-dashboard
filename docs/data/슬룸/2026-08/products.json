@@ -5,23 +5,23 @@
       "name": "목 마사지 베개 V2",
       "raw_name": "목 마사지 베개 V2 경추 마사지기 베개",
       "price": 129000,
-      "review_count": 341,
-      "avg_rating": 4.51,
+      "review_count": 288,
+      "avg_rating": 4.49,
       "rating_distribution": {
         "1": 14,
         "2": 4,
-        "3": 26,
-        "4": 48,
-        "5": 249
+        "3": 21,
+        "4": 38,
+        "5": 211
       },
       "photo_count": 0,
       "sentiment": {
-        "positive": 280,
+        "positive": 227,
         "neutral": 29,
         "negative": 32
       },
-      "positive_rate": 82.11,
-      "negative_rate": 9.38,
+      "positive_rate": 78.82,
+      "negative_rate": 11.11,
       "prev_review_count": 440,
       "prev_avg_rating": 4.31,
       "top_reviews": [

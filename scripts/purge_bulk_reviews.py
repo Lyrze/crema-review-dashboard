@@ -44,7 +44,11 @@ def load_bulk_snippets():
 
 
 def find_matches(snippets):
-    """월별로 reviews.json을 뒤져 본문에 스니펫이 포함된 review_id를 찾는다."""
+    """월별로 reviews.json을 뒤져 본문에 스니펫이 포함된 review_id를 찾는다.
+
+    스니펫 하나가 여러 리뷰(같은 문구가 중복 업로드된 경우)에 매칭될 수 있으므로
+    첫 매치에서 멈추지 않고 해당 스니펫을 포함하는 리뷰를 전부 찾는다
+    (예전엔 break로 스니펫당 1건만 잡아 중복분이 누락되는 버그가 있었음)."""
     matches = defaultdict(set)  # month -> set(review_id)
     details = []  # (month, review_id, product, rating)
     for m in sorted(p.name for p in DATA_ROOT.iterdir() if p.is_dir()):
@@ -59,7 +63,6 @@ def find_matches(snippets):
                 if snippet in (r.get("text") or ""):
                     matches[m].add(rid)
                     details.append((m, rid, r.get("product"), r.get("rating")))
-                    break
     return matches, details
 
 
