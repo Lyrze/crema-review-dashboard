@@ -33,7 +33,7 @@ def main():
     ap.add_argument("--brand", required=True)
     ap.add_argument("--month", required=True)
     ap.add_argument("--warn-reverse-pct", type=float, default=10.0,
-                    help="칭찬 역감성 비율 WARN 임계(%)")
+                    help="칭찬 역감성 비율 WARN 임계(%%)")
     args = ap.parse_args()
 
     d = ROOT / "docs" / "data" / args.brand / args.month
