@@ -5,23 +5,23 @@
       "name": "목 마사지 베개 V2",
       "raw_name": "목 마사지 베개 V2 경추 마사지기 베개",
       "price": 129000,
-      "review_count": 725,
-      "avg_rating": 4.56,
+      "review_count": 341,
+      "avg_rating": 4.51,
       "rating_distribution": {
-        "1": 15,
-        "2": 5,
-        "3": 63,
-        "4": 119,
-        "5": 523
+        "1": 14,
+        "2": 4,
+        "3": 26,
+        "4": 48,
+        "5": 249
       },
       "photo_count": 0,
       "sentiment": {
-        "positive": 659,
-        "neutral": 32,
-        "negative": 34
+        "positive": 280,
+        "neutral": 29,
+        "negative": 32
       },
-      "positive_rate": 90.9,
-      "negative_rate": 4.69,
+      "positive_rate": 82.11,
+      "negative_rate": 9.38,
       "prev_review_count": 440,
       "prev_avg_rating": 4.31,
       "top_reviews": [
@@ -42,18 +42,6 @@
           "text": "평소에 마사지샵 자주 다녔는데 이거 사고 나서 방문 횟수가 줄었어요. 에어백이 천천히 부풀면서 목을 스트레칭해주는 감각이 전문 마사지 받는 것 같거든요. 집중 모드로 하면 뭉친 곳을 집중적으로 풀어주는 게 느껴져서 좋아요. 네이비 색상이 고급스러워 보여서 방에 두면 인테리어 소품 같기도 해요. 15분 타이머 덕분에 쓰다 잠들어도 걱정 없는 게 제일 마음에 들어요.",
           "rating": 5,
           "date": "2026-08-08"
-        },
-        {
-          "review_id": "118140",
-          "text": "전신 피로도 있지만 유독 목이 항상 제일 힘들었는데 이거 쓰고 나서 한결 나아졌어요. 에어백이 목을 지그시 받쳐주면서 눌리는 느낌이 마사지샵이 생각날 정도예요. 진동 릴렉스 모드로 부드럽게 켜두고 눕는 게 하루 마무리 루틴이 됐어요. 타이머가 자동으로 꺼지니까 그대로 잠들어도 되고, 아침에 일어나면 목이 훨씬 개운해요. 강추하고 싶은 제품이에요.",
-          "rating": 5,
-          "date": "2026-08-03"
-        },
-        {
-          "review_id": "118455",
-          "text": "어깨 결림이 심해서 경추까지 같이 아픈 날이 많은데 이거 쓰면 연결된 부위가 같이 풀리는 느낌이에요. 에어백이 경추를 자연스럽게 늘려줘서 어깨까지 시원해지는 것 같아요. 온열이 따뜻하게 감싸줘서 혈액순환이 잘 되는 것 같고요. 진동 집중 모드로 뭉친 부위를 집중 케어할 수 있어서 좋아요. 네이비 색상이 세련돼서 방에 두면 분위기가 살아요.",
-          "rating": 5,
-          "date": "2026-08-03"
         }
       ],
       "bottom_reviews": [
@@ -94,23 +82,23 @@
       "name": "프리미엄 엘보케어 팔꿈치 마사지기",
       "raw_name": "프리미엄 엘보케어 팔꿈치 마사지기",
       "price": 149000,
-      "review_count": 685,
-      "avg_rating": 4.72,
+      "review_count": 455,
+      "avg_rating": 4.71,
       "rating_distribution": {
         "1": 4,
         "2": 2,
         "3": 7,
-        "4": 156,
-        "5": 516
+        "4": 94,
+        "5": 348
       },
       "photo_count": 0,
       "sentiment": {
-        "positive": 604,
-        "neutral": 67,
+        "positive": 393,
+        "neutral": 48,
         "negative": 14
       },
-      "positive_rate": 88.18,
-      "negative_rate": 2.04,
+      "positive_rate": 86.37,
+      "negative_rate": 3.08,
       "prev_review_count": 0,
       "prev_avg_rating": null,
       "top_reviews": [
@@ -1102,18 +1090,18 @@
       "name": "손편한케어",
       "raw_name": "프리미엄 엘보케어 팔꿈치 마사지기",
       "price": 149000,
-      "review_count": 2,
+      "review_count": 1,
       "avg_rating": 5.0,
       "rating_distribution": {
         "1": 0,
         "2": 0,
         "3": 0,
         "4": 0,
-        "5": 2
+        "5": 1
       },
       "photo_count": 0,
       "sentiment": {
-        "positive": 2,
+        "positive": 1,
         "neutral": 0,
         "negative": 0
       },
@@ -1396,41 +1384,27 @@
       "name": "목편한케어 플라잉",
       "raw_name": "[시그니처 세트] 허리편한케어 V2 + 목편한케어 플라잉",
       "price": 238000,
-      "review_count": 1,
-      "avg_rating": 5.0,
+      "review_count": 0,
+      "avg_rating": 0.0,
       "rating_distribution": {
         "1": 0,
         "2": 0,
         "3": 0,
         "4": 0,
-        "5": 1
+        "5": 0
       },
       "photo_count": 0,
       "sentiment": {
         "positive": 0,
-        "neutral": 1,
+        "neutral": 0,
         "negative": 0
       },
       "positive_rate": 0.0,
       "negative_rate": 0.0,
       "prev_review_count": 18,
       "prev_avg_rating": 4.39,
-      "top_reviews": [
-        {
-          "review_id": "118864",
-          "text": "목이 안좋아서 저꺼\n허리 안좋은 어머니꺼\n세트로~",
-          "rating": 5,
-          "date": "2026-08-17"
-        }
-      ],
-      "bottom_reviews": [
-        {
-          "review_id": "118864",
-          "text": "목이 안좋아서 저꺼\n허리 안좋은 어머니꺼\n세트로~",
-          "rating": 5,
-          "date": "2026-08-17"
-        }
-      ]
+      "top_reviews": [],
+      "bottom_reviews": []
     },
     {
       "id": "1036",

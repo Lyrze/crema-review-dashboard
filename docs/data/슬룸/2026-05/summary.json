@@ -3,22 +3,22 @@
   "month": "2026-05",
   "generated_at": "2026-06-15T18:02:22.763734",
   "kpis": {
-    "total_reviews": 1476,
-    "avg_rating": 4.55,
+    "total_reviews": 1395,
+    "avg_rating": 4.54,
     "rating_distribution": {
       "1": 47,
       "2": 22,
-      "3": 94,
-      "4": 223,
-      "5": 1090
+      "3": 87,
+      "4": 209,
+      "5": 1030
     },
     "photo_review_count": 190,
     "photo_review_rate": 14.4,
-    "positive_count": 1128,
+    "positive_count": 1047,
     "neutral_count": 213,
     "negative_count": 135,
-    "positive_rate": 76.42,
-    "negative_rate": 9.15,
+    "positive_rate": 75.05,
+    "negative_rate": 9.68,
     "mom_review_change": 184,
     "mom_review_change_pct": 9.2,
     "mom_rating_change": 0.02
@@ -26,33 +26,33 @@
   "timeline": [
     {
       "date": "2026-05-01",
-      "count": 79,
-      "avg_rating": 4.54
+      "count": 67,
+      "avg_rating": 4.52
     },
     {
       "date": "2026-05-02",
-      "count": 49,
-      "avg_rating": 4.67
+      "count": 37,
+      "avg_rating": 4.68
     },
     {
       "date": "2026-05-03",
-      "count": 48,
-      "avg_rating": 4.69
+      "count": 36,
+      "avg_rating": 4.67
     },
     {
       "date": "2026-05-04",
-      "count": 51,
-      "avg_rating": 4.53
+      "count": 41,
+      "avg_rating": 4.49
     },
     {
       "date": "2026-05-05",
-      "count": 77,
-      "avg_rating": 4.66
+      "count": 67,
+      "avg_rating": 4.67
     },
     {
       "date": "2026-05-06",
-      "count": 67,
-      "avg_rating": 4.48
+      "count": 58,
+      "avg_rating": 4.52
     },
     {
       "date": "2026-05-07",
@@ -76,13 +76,13 @@
     },
     {
       "date": "2026-05-11",
-      "count": 59,
+      "count": 53,
       "avg_rating": 4.64
     },
     {
       "date": "2026-05-12",
-      "count": 53,
-      "avg_rating": 4.45
+      "count": 50,
+      "avg_rating": 4.42
     },
     {
       "date": "2026-05-13",
@@ -91,8 +91,8 @@
     },
     {
       "date": "2026-05-14",
-      "count": 54,
-      "avg_rating": 4.43
+      "count": 47,
+      "avg_rating": 4.36
     },
     {
       "date": "2026-05-15",
