@@ -70,14 +70,17 @@ def main():
                 for rid in (kw.get("all_review_ids") or []):
                     captured.add(str(rid))
 
-    # 부정 감성인데 미포착 + 본문 있는 리뷰
+    # 부정+중립 감성인데 미포착 + 본문 있는 리뷰
+    # (중립=3점대 혼합리뷰에 "좋은데 ~했으면"류 개선요청이 많이 섞여있는데,
+    #  예전엔 negative만 봐서 이 pool을 통째로 놓치고 있었음 — 2026-09 확인)
     uncap = [(rid, (r.get("text") or "").strip(), r.get("rating"))
              for rid, r in reviews.items()
-             if r.get("sentiment") == "negative" and str(rid) not in captured and (r.get("text") or "").strip()]
-    eprint(f"  {args.brand}/{args.month}: 부정 미포착 {len(uncap)}건")
+             if r.get("sentiment") in ("negative", "neutral") and str(rid) not in captured
+             and (r.get("text") or "").strip() and "별점만 남기고" not in (r.get("text") or "")]
+    eprint(f"  {args.brand}/{args.month}: 부정+중립 미포착 {len(uncap)}건")
 
     out = {"brand": args.brand, "month": args.month, "generated_at": "",
-           "source": "uncaptured_negative", "uncaptured_total": len(uncap), "candidates": []}
+           "source": "uncaptured_negative_neutral", "uncaptured_total": len(uncap), "candidates": []}
     if len(uncap) < 5:
         eprint("  발굴 대상 적음(5건 미만) — 후보 없음으로 저장")
         (d / "keyword_candidates.json").write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -112,8 +115,10 @@ def main():
         batch = pool[bi * B:(bi + 1) * B]
         lines = [f"[{i}] {t.replace(chr(10), ' ')[:160]}" for i, (_rid, t, _rt) in enumerate(batch)]
         prompt = (
-            "다음은 '부정적이지만 기존 불만 키워드에 안 잡힌' 제품 리뷰들이다. "
-            "반복되는 불만·개선요청을 5~10개의 키워드로 묶어라.\n"
+            "다음은 '부정적이거나 중립(3점대 혼합리뷰)이지만 기존 불만 키워드에 안 잡힌' 제품 리뷰들이다. "
+            "반복되는 불만·개선요청을 5~10개의 키워드로 묶어라. 중립 리뷰는 '좋은데 ~했으면 좋겠다' 식의 "
+            "혼합 피드백이 많으니 그 안에 섞인 불만/개선요청 포인트를 놓치지 마라. 단순히 무난하거나 "
+            "미온적인 칭찬뿐이고 구체적인 불만·요청이 없는 리뷰는 클러스터링 대상에서 제외하라.\n"
             "- word: 짧은 한국어 명사구(예: '에어튜브 크기', '버튼 위치', '진동 강도')\n"
             "- type: 'complaint'(고장·불량·단순 불만) 또는 'improvement'(개선요청). "
             "improvement는 너그럽게 분류하라 — '~있으면 좋겠다 / ~됐으면 / ~해주세요 / ~추가 / ~지원 / ~옵션 / 아쉽다 / 부족하다' "
