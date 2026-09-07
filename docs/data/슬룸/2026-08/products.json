@@ -1,104 +1,27 @@
 {
   "products": [
     {
-      "id": "909",
-      "name": "목 마사지 베개 V2",
-      "raw_name": "목 마사지 베개 V2 경추 마사지기 베개",
-      "price": 129000,
-      "review_count": 288,
-      "avg_rating": 4.49,
-      "rating_distribution": {
-        "1": 14,
-        "2": 4,
-        "3": 21,
-        "4": 38,
-        "5": 211
-      },
-      "photo_count": 0,
-      "sentiment": {
-        "positive": 227,
-        "neutral": 29,
-        "negative": 32
-      },
-      "positive_rate": 78.82,
-      "negative_rate": 11.11,
-      "prev_review_count": 440,
-      "prev_avg_rating": 4.31,
-      "top_reviews": [
-        {
-          "review_id": "117965",
-          "text": "허리 협착증ㆍ디스크가있어서 우연찮게 슬룸 광고를보고 과연 효과가 있을까??? 과장 광고겠지?? 이렇듯 구매를 망설이게 되더라고요. 근데, 병원가서 도스치료ㆍ물리치료받고 신경주사 맞는금액보다 저렴하겠단 생각이 들어 다른 구매자분들 후기보고 구매 결정을하게 됐네요. 구입후 직접 사용해보니 처음에 오히려 허리가 더 아프더라고요.  허리가 더 아파지는것 같아 겁이나더라고요. 1세트,2세트 끝나고 일어나려고하니 허리가 아파 일어나기가 힘들더라고요. 이제품이 과연 효과가 있는건지? 오히려 사용전보다 더 아파 반품을해야하나 고민이 들었던건 사실. 처음이니 그러겠지.  며칠사용하다보면 적응도 될거고 아픈허리가 좀더 통증도 사라지고 좋아지겠지 희망을 갖고 꾸준히 해보려고요. 목마사지기는 거북목이 있어서 그런지 개인적으로 넘",
-          "rating": 5,
-          "date": "2026-08-04"
-        },
-        {
-          "review_id": "118123",
-          "text": "하루 종일 컴퓨터 앞에 앉아 있다 보니 목이 항상 뻐근했는데, 이 베개 쓰고 나서 확실히 달라졌어요. 에어백이 목을 살살 눌러주는 느낌이 처음엔 낯설었는데 이제는 없으면 안 될 것 같아요. 온열 기능이랑 같이 쓰니까 찜질하는 것처럼 깊이 풀리는 느낌이에요. 네이비 색상도 고급스러워서 인테리어랑도 잘 어울리더라고요. 마사지 받다가 그냥 잠들어버렸는데 아침에 일어나니 목이 너무 개운했어요.",
-          "rating": 5,
-          "date": "2026-08-10"
-        },
-        {
-          "review_id": "118128",
-          "text": "평소에 마사지샵 자주 다녔는데 이거 사고 나서 방문 횟수가 줄었어요. 에어백이 천천히 부풀면서 목을 스트레칭해주는 감각이 전문 마사지 받는 것 같거든요. 집중 모드로 하면 뭉친 곳을 집중적으로 풀어주는 게 느껴져서 좋아요. 네이비 색상이 고급스러워 보여서 방에 두면 인테리어 소품 같기도 해요. 15분 타이머 덕분에 쓰다 잠들어도 걱정 없는 게 제일 마음에 들어요.",
-          "rating": 5,
-          "date": "2026-08-08"
-        }
-      ],
-      "bottom_reviews": [
-        {
-          "review_id": "119273",
-          "text": "베고자는용도도아니었고 아플때마다 충전해서 목디스크치료용으로구입하였습니다.구매한지 두달됐고 커버만분리해서세탁하려했는데 메모리폼전체가 곰팡이천지라 교환,환불얘기했더니 제가방치하고 관리를못해서그런거라고하는데 도대체어떤식으로 애지중지 관리를해야합니까? 말그대로면 여름날습기차서 그렇다는데 에어컨틀고 제습기돌리고 동물도안키우고 환기도 맨날하는데 매번 빨래집게에걸어서 안쓸때는 그렇게 보관해야됩니까?의료기기를? 안에뜯어서보세요. 이게메모리폼인지 스폰지 끼워맞추기인지. 두달밖에안됐고 쓴게몇번되지도않는데 이정도의곰팡이면 쇼파쿠션이고 베고자는 경추베개는 왜멀쩡한겁니까. 걔네는 애지중지관리해서그런겁니까? 그리고 베고있는 머리쪽은 멀쩡하고 양옆이 왜그런겁니까? 말이안되자나요이게",
-          "rating": 1,
-          "date": "2026-08-18"
-        },
-        {
-          "review_id": "119740",
-          "text": "목베개 상품 수령 후 사용 후기 입니다 \n첫째 목베개 충전단자가 외피천재질과 분리되어 안쪽에  따로 움직여서 충전단자 끼워 맞추어 충전하기 불편합니다~\n\n둘째, 안마기능 선택 버튼이 머리 우측 베개아래쪽에\n있어서 네개버튼 중 동작을 선택해서 누를수가 없습니다.\n일어나서 기능버튼을 누르고 다시 머리를 눕고 \n엄청 불편합니다 ㅜㅜ(기능선택 리모컨 없음)\n\n세째, 목베개 커버를 분리할수 없어 머리밑에 손수건 등을 깔아놓고 사용 해야 합니다 ~\n\n아무튼 제발 상품 내놓기전에 먼저 사용해보고\n 사용하기 편리한 제품을 만들어 주세요~",
-          "rating": 1,
-          "date": "2026-08-21"
-        },
-        {
-          "review_id": "118001",
-          "text": "에어백이 사용한 지 한 달 정도밖에 되지 않았는데 이미 고장 났습니다.\nA/S를 받기 위해 여러 번 문의했지만, AI에서는 항상 “접수가 완료되었습니다.“라는 안내만 나올 뿐 이후에는 아무런 연락이 없었습니다.\n2주 이상 기다렸는데도 연락이 없어 다시 문의했고, 총 3번이나 A/S를 요청했지만 회사에서는 아직까지 아무런 답변이나 조치가 없습니다.\n제품 품질도 아쉽지만, 무엇보다 A/S 대응이 전혀 이루어지지 않는 점에 매우 실망했습니다.",
-          "rating": 1,
-          "date": "2026-08-05"
-        },
-        {
-          "review_id": "120272",
-          "text": "목 마사지 도움 하나도 안되고 마사지 받으면서 잠에 든다는데 기계 돌아가는 소리 시끄럽고 잠이나 들겄나\n배송 당일에 한번 누워보고 아니다 싶어 바로 반품 요청 했는데 포장지 뜯었다고 반품 거절 당하고 ㅋㅋ\n한번 사면 반품 절대 안되니까 절대 사지마세요\n이런 쓰레기 제품은 처음 봅니다.\n그냥 목 뒤에 수건 말아서 자는게 목 교정 훨씬 도움됩니다\n반품 거절 사유가 어이 없어서 12만원 그냥 불우이웃돕기 했다고 생각할랍니다",
-          "rating": 1,
-          "date": "2026-08-27"
-        },
-        {
-          "review_id": "120325",
-          "text": "목 마사지 베게 충천시 충전알림 빨간색이 뜨지 않거나 뜨더라도 아무리 오래 충전해도 초록불이 들어오지 않는 불량이 왔습니다. 맛사지시에도 왼쪽어깨만 맛사지되고 오른쪽어깨는 제대로 맛사지 되지 않습니다. 매우 불만족스럽고 이 불량제품을 보내주신것에 대한 반품 요구합니다.",
-          "rating": 1,
-          "date": "2026-08-31"
-        }
-      ]
-    },
-    {
       "id": "980",
       "name": "프리미엄 엘보케어 팔꿈치 마사지기",
       "raw_name": "프리미엄 엘보케어 팔꿈치 마사지기",
       "price": 149000,
-      "review_count": 455,
-      "avg_rating": 4.71,
+      "review_count": 491,
+      "avg_rating": 4.7,
       "rating_distribution": {
-        "1": 4,
+        "1": 5,
         "2": 2,
-        "3": 7,
-        "4": 94,
-        "5": 348
+        "3": 11,
+        "4": 98,
+        "5": 375
       },
       "photo_count": 0,
       "sentiment": {
-        "positive": 393,
-        "neutral": 48,
-        "negative": 14
+        "positive": 421,
+        "neutral": 51,
+        "negative": 19
       },
-      "positive_rate": 86.37,
-      "negative_rate": 3.08,
+      "positive_rate": 85.74,
+      "negative_rate": 3.87,
       "prev_review_count": 0,
       "prev_avg_rating": null,
       "top_reviews": [
@@ -167,27 +90,104 @@
       ]
     },
     {
+      "id": "909",
+      "name": "목 마사지 베개 V2",
+      "raw_name": "목 마사지 베개 V2 경추 마사지기 베개",
+      "price": 129000,
+      "review_count": 366,
+      "avg_rating": 4.5,
+      "rating_distribution": {
+        "1": 15,
+        "2": 5,
+        "3": 27,
+        "4": 53,
+        "5": 266
+      },
+      "photo_count": 0,
+      "sentiment": {
+        "positive": 277,
+        "neutral": 48,
+        "negative": 41
+      },
+      "positive_rate": 75.68,
+      "negative_rate": 11.2,
+      "prev_review_count": 440,
+      "prev_avg_rating": 4.31,
+      "top_reviews": [
+        {
+          "review_id": "117965",
+          "text": "허리 협착증ㆍ디스크가있어서 우연찮게 슬룸 광고를보고 과연 효과가 있을까??? 과장 광고겠지?? 이렇듯 구매를 망설이게 되더라고요. 근데, 병원가서 도스치료ㆍ물리치료받고 신경주사 맞는금액보다 저렴하겠단 생각이 들어 다른 구매자분들 후기보고 구매 결정을하게 됐네요. 구입후 직접 사용해보니 처음에 오히려 허리가 더 아프더라고요.  허리가 더 아파지는것 같아 겁이나더라고요. 1세트,2세트 끝나고 일어나려고하니 허리가 아파 일어나기가 힘들더라고요. 이제품이 과연 효과가 있는건지? 오히려 사용전보다 더 아파 반품을해야하나 고민이 들었던건 사실. 처음이니 그러겠지.  며칠사용하다보면 적응도 될거고 아픈허리가 좀더 통증도 사라지고 좋아지겠지 희망을 갖고 꾸준히 해보려고요. 목마사지기는 거북목이 있어서 그런지 개인적으로 넘",
+          "rating": 5,
+          "date": "2026-08-04"
+        },
+        {
+          "review_id": "118123",
+          "text": "하루 종일 컴퓨터 앞에 앉아 있다 보니 목이 항상 뻐근했는데, 이 베개 쓰고 나서 확실히 달라졌어요. 에어백이 목을 살살 눌러주는 느낌이 처음엔 낯설었는데 이제는 없으면 안 될 것 같아요. 온열 기능이랑 같이 쓰니까 찜질하는 것처럼 깊이 풀리는 느낌이에요. 네이비 색상도 고급스러워서 인테리어랑도 잘 어울리더라고요. 마사지 받다가 그냥 잠들어버렸는데 아침에 일어나니 목이 너무 개운했어요.",
+          "rating": 5,
+          "date": "2026-08-10"
+        },
+        {
+          "review_id": "118128",
+          "text": "평소에 마사지샵 자주 다녔는데 이거 사고 나서 방문 횟수가 줄었어요. 에어백이 천천히 부풀면서 목을 스트레칭해주는 감각이 전문 마사지 받는 것 같거든요. 집중 모드로 하면 뭉친 곳을 집중적으로 풀어주는 게 느껴져서 좋아요. 네이비 색상이 고급스러워 보여서 방에 두면 인테리어 소품 같기도 해요. 15분 타이머 덕분에 쓰다 잠들어도 걱정 없는 게 제일 마음에 들어요.",
+          "rating": 5,
+          "date": "2026-08-08"
+        }
+      ],
+      "bottom_reviews": [
+        {
+          "review_id": "119273",
+          "text": "베고자는용도도아니었고 아플때마다 충전해서 목디스크치료용으로구입하였습니다.구매한지 두달됐고 커버만분리해서세탁하려했는데 메모리폼전체가 곰팡이천지라 교환,환불얘기했더니 제가방치하고 관리를못해서그런거라고하는데 도대체어떤식으로 애지중지 관리를해야합니까? 말그대로면 여름날습기차서 그렇다는데 에어컨틀고 제습기돌리고 동물도안키우고 환기도 맨날하는데 매번 빨래집게에걸어서 안쓸때는 그렇게 보관해야됩니까?의료기기를? 안에뜯어서보세요. 이게메모리폼인지 스폰지 끼워맞추기인지. 두달밖에안됐고 쓴게몇번되지도않는데 이정도의곰팡이면 쇼파쿠션이고 베고자는 경추베개는 왜멀쩡한겁니까. 걔네는 애지중지관리해서그런겁니까? 그리고 베고있는 머리쪽은 멀쩡하고 양옆이 왜그런겁니까? 말이안되자나요이게",
+          "rating": 1,
+          "date": "2026-08-18"
+        },
+        {
+          "review_id": "119740",
+          "text": "목베개 상품 수령 후 사용 후기 입니다 \n첫째 목베개 충전단자가 외피천재질과 분리되어 안쪽에  따로 움직여서 충전단자 끼워 맞추어 충전하기 불편합니다~\n\n둘째, 안마기능 선택 버튼이 머리 우측 베개아래쪽에\n있어서 네개버튼 중 동작을 선택해서 누를수가 없습니다.\n일어나서 기능버튼을 누르고 다시 머리를 눕고 \n엄청 불편합니다 ㅜㅜ(기능선택 리모컨 없음)\n\n세째, 목베개 커버를 분리할수 없어 머리밑에 손수건 등을 깔아놓고 사용 해야 합니다 ~\n\n아무튼 제발 상품 내놓기전에 먼저 사용해보고\n 사용하기 편리한 제품을 만들어 주세요~",
+          "rating": 1,
+          "date": "2026-08-21"
+        },
+        {
+          "review_id": "118001",
+          "text": "에어백이 사용한 지 한 달 정도밖에 되지 않았는데 이미 고장 났습니다.\nA/S를 받기 위해 여러 번 문의했지만, AI에서는 항상 “접수가 완료되었습니다.“라는 안내만 나올 뿐 이후에는 아무런 연락이 없었습니다.\n2주 이상 기다렸는데도 연락이 없어 다시 문의했고, 총 3번이나 A/S를 요청했지만 회사에서는 아직까지 아무런 답변이나 조치가 없습니다.\n제품 품질도 아쉽지만, 무엇보다 A/S 대응이 전혀 이루어지지 않는 점에 매우 실망했습니다.",
+          "rating": 1,
+          "date": "2026-08-05"
+        },
+        {
+          "review_id": "120272",
+          "text": "목 마사지 도움 하나도 안되고 마사지 받으면서 잠에 든다는데 기계 돌아가는 소리 시끄럽고 잠이나 들겄나\n배송 당일에 한번 누워보고 아니다 싶어 바로 반품 요청 했는데 포장지 뜯었다고 반품 거절 당하고 ㅋㅋ\n한번 사면 반품 절대 안되니까 절대 사지마세요\n이런 쓰레기 제품은 처음 봅니다.\n그냥 목 뒤에 수건 말아서 자는게 목 교정 훨씬 도움됩니다\n반품 거절 사유가 어이 없어서 12만원 그냥 불우이웃돕기 했다고 생각할랍니다",
+          "rating": 1,
+          "date": "2026-08-27"
+        },
+        {
+          "review_id": "120325",
+          "text": "목 마사지 베게 충천시 충전알림 빨간색이 뜨지 않거나 뜨더라도 아무리 오래 충전해도 초록불이 들어오지 않는 불량이 왔습니다. 맛사지시에도 왼쪽어깨만 맛사지되고 오른쪽어깨는 제대로 맛사지 되지 않습니다. 매우 불만족스럽고 이 불량제품을 보내주신것에 대한 반품 요구합니다.",
+          "rating": 1,
+          "date": "2026-08-31"
+        }
+      ]
+    },
+    {
       "id": "724",
       "name": "목베개 플러스",
       "raw_name": "★최대할인 비밀링크★ 목베개 플러스 특가",
       "price": 69000,
-      "review_count": 119,
-      "avg_rating": 4.35,
+      "review_count": 120,
+      "avg_rating": 4.36,
       "rating_distribution": {
         "1": 5,
         "2": 5,
         "3": 9,
         "4": 24,
-        "5": 76
+        "5": 77
       },
       "photo_count": 0,
       "sentiment": {
-        "positive": 71,
+        "positive": 72,
         "neutral": 25,
         "negative": 23
       },
-      "positive_rate": 59.66,
-      "negative_rate": 19.33,
+      "positive_rate": 60.0,
+      "negative_rate": 19.17,
       "prev_review_count": 121,
       "prev_avg_rating": 4.34,
       "top_reviews": [
@@ -260,23 +260,23 @@
       "name": "허리편한케어 V2",
       "raw_name": "허리편한케어 V2 허리 마사지기",
       "price": 129000,
-      "review_count": 77,
-      "avg_rating": 4.52,
+      "review_count": 103,
+      "avg_rating": 4.6,
       "rating_distribution": {
-        "1": 2,
+        "1": 3,
         "2": 2,
         "3": 6,
         "4": 11,
-        "5": 56
+        "5": 81
       },
       "photo_count": 0,
       "sentiment": {
-        "positive": 52,
-        "neutral": 20,
-        "negative": 5
+        "positive": 70,
+        "neutral": 26,
+        "negative": 7
       },
-      "positive_rate": 67.53,
-      "negative_rate": 6.49,
+      "positive_rate": 67.96,
+      "negative_rate": 6.8,
       "prev_review_count": 189,
       "prev_avg_rating": 4.56,
       "top_reviews": [
@@ -349,23 +349,23 @@
       "name": "발편한케어 V1",
       "raw_name": "발편한케어 프리미엄 고주파 발 마사지기",
       "price": 99000,
-      "review_count": 42,
-      "avg_rating": 4.79,
+      "review_count": 72,
+      "avg_rating": 4.71,
       "rating_distribution": {
-        "1": 0,
+        "1": 1,
         "2": 0,
         "3": 3,
-        "4": 3,
-        "5": 36
+        "4": 11,
+        "5": 57
       },
       "photo_count": 0,
       "sentiment": {
-        "positive": 33,
-        "neutral": 7,
-        "negative": 2
+        "positive": 58,
+        "neutral": 11,
+        "negative": 3
       },
-      "positive_rate": 78.57,
-      "negative_rate": 4.76,
+      "positive_rate": 80.56,
+      "negative_rate": 4.17,
       "prev_review_count": 148,
       "prev_avg_rating": 4.69,
       "top_reviews": [
@@ -438,23 +438,23 @@
       "name": "바디 풀고컷",
       "raw_name": "[애진X슬룸] ★단독 최대혜택★ 바디풀고컷 경락 마사지기",
       "price": 79900,
-      "review_count": 30,
-      "avg_rating": 3.57,
+      "review_count": 34,
+      "avg_rating": 3.62,
       "rating_distribution": {
         "1": 5,
-        "2": 1,
+        "2": 2,
         "3": 6,
-        "4": 8,
-        "5": 10
+        "4": 9,
+        "5": 12
       },
       "photo_count": 0,
       "sentiment": {
-        "positive": 12,
-        "neutral": 7,
-        "negative": 11
+        "positive": 14,
+        "neutral": 8,
+        "negative": 12
       },
-      "positive_rate": 40.0,
-      "negative_rate": 36.67,
+      "positive_rate": 41.18,
+      "negative_rate": 35.29,
       "prev_review_count": 72,
       "prev_avg_rating": 4.61,
       "top_reviews": [
@@ -616,23 +616,23 @@
       "name": "골반 마사지기",
       "raw_name": "골반 케어 프리미엄 골반 마사지기",
       "price": 189000,
-      "review_count": 9,
-      "avg_rating": 4.44,
+      "review_count": 14,
+      "avg_rating": 4.64,
       "rating_distribution": {
         "1": 0,
         "2": 0,
         "3": 2,
         "4": 1,
-        "5": 6
+        "5": 11
       },
       "photo_count": 0,
       "sentiment": {
-        "positive": 5,
-        "neutral": 2,
+        "positive": 9,
+        "neutral": 3,
         "negative": 2
       },
-      "positive_rate": 55.56,
-      "negative_rate": 22.22,
+      "positive_rate": 64.29,
+      "negative_rate": 14.29,
       "prev_review_count": 25,
       "prev_avg_rating": 3.84,
       "top_reviews": [
@@ -790,111 +790,22 @@
       ]
     },
     {
-      "id": "1038",
-      "name": "[썸머 수퍼데이] 목베개 스트레칭 베개",
-      "raw_name": "[썸머 수퍼데이] 목베개 스트레칭 베개",
-      "price": 11900,
-      "review_count": 7,
-      "avg_rating": 4.57,
-      "rating_distribution": {
-        "1": 0,
-        "2": 0,
-        "3": 1,
-        "4": 1,
-        "5": 5
-      },
-      "photo_count": 0,
-      "sentiment": {
-        "positive": 3,
-        "neutral": 3,
-        "negative": 1
-      },
-      "positive_rate": 42.86,
-      "negative_rate": 14.29,
-      "prev_review_count": 6,
-      "prev_avg_rating": 3.67,
-      "top_reviews": [
-        {
-          "review_id": "118064",
-          "text": "와 이거 스트레칭용으로 좋아요\n\n베고 자기엔 저한텐 높고 좀 딱딱해서 목 스트레칭에 잠깐 씁니다. 가지고 있는 베개와 같이 사용 하는 게 좋은 것 같아요\n\n종아리 발목 손목 마사지, 스트레칭에도 쓸 수 있고\n주변에 추천했더니 베고 자는 사람도 있내요. 너무 좋대요ㅎ\n다들 쓸어 담고 있는 듯 한데 하나쯤 집에 있으면 분명 쓸모 있는 제품으로 저도 가족들 선물용으로 몇개 더 구매 할려구요\n\n할인항 때 쟁이세요!! ㅎ",
-          "rating": 5,
-          "date": "2026-08-08"
-        },
-        {
-          "review_id": "119275",
-          "text": "목을 잡아줘서 목이 스트레칭되는 느낌이예요. 그런데 너무 목이 뒤로 졌혀져서 기존 베개를 스트레칭 베개위쪽으로 놓고 쓰기 조금 편했어요. 서서히 기존 배게를 제게하면서 바꿔봐야겠어요~",
-          "rating": 5,
-          "date": "2026-08-18"
-        },
-        {
-          "review_id": "119504",
-          "text": "목이 뻐근할때 쓰기 좋습니다",
-          "rating": 5,
-          "date": "2026-08-19"
-        },
-        {
-          "review_id": "118071",
-          "text": "스트레칭 되는 거 같아요",
-          "rating": 5,
-          "date": "2026-08-07"
-        },
-        {
-          "review_id": "118032",
-          "text": "편하고 젛아요 잘써요",
-          "rating": 5,
-          "date": "2026-08-05"
-        }
-      ],
-      "bottom_reviews": [
-        {
-          "review_id": "117966",
-          "text": "제품이 생각보다 딱딱합니다. 사용법을 몰라서 그런지 잠잘때 사용하기는 어려울듯 합니다. ",
-          "rating": 3,
-          "date": "2026-08-04"
-        },
-        {
-          "review_id": "118109",
-          "text": "아직 사용 더 해봐야할 것같아요 편하긴합니다 다만 냄새가 좀 심해요ㅠ",
-          "rating": 4,
-          "date": "2026-08-09"
-        },
-        {
-          "review_id": "118064",
-          "text": "와 이거 스트레칭용으로 좋아요\n\n베고 자기엔 저한텐 높고 좀 딱딱해서 목 스트레칭에 잠깐 씁니다. 가지고 있는 베개와 같이 사용 하는 게 좋은 것 같아요\n\n종아리 발목 손목 마사지, 스트레칭에도 쓸 수 있고\n주변에 추천했더니 베고 자는 사람도 있내요. 너무 좋대요ㅎ\n다들 쓸어 담고 있는 듯 한데 하나쯤 집에 있으면 분명 쓸모 있는 제품으로 저도 가족들 선물용으로 몇개 더 구매 할려구요\n\n할인항 때 쟁이세요!! ㅎ",
-          "rating": 5,
-          "date": "2026-08-08"
-        },
-        {
-          "review_id": "119275",
-          "text": "목을 잡아줘서 목이 스트레칭되는 느낌이예요. 그런데 너무 목이 뒤로 졌혀져서 기존 베개를 스트레칭 베개위쪽으로 놓고 쓰기 조금 편했어요. 서서히 기존 배게를 제게하면서 바꿔봐야겠어요~",
-          "rating": 5,
-          "date": "2026-08-18"
-        },
-        {
-          "review_id": "119504",
-          "text": "목이 뻐근할때 쓰기 좋습니다",
-          "rating": 5,
-          "date": "2026-08-19"
-        }
-      ]
-    },
-    {
       "id": "872",
       "name": "종아리편한케어",
       "raw_name": "종아리편한케어 프리미엄 종아리 마사지기",
       "price": 149000,
-      "review_count": 5,
-      "avg_rating": 5.0,
+      "review_count": 10,
+      "avg_rating": 4.8,
       "rating_distribution": {
         "1": 0,
         "2": 0,
         "3": 0,
-        "4": 0,
-        "5": 5
+        "4": 2,
+        "5": 8
       },
       "photo_count": 0,
       "sentiment": {
-        "positive": 5,
+        "positive": 10,
         "neutral": 0,
         "negative": 0
       },
@@ -1037,23 +948,23 @@
       "name": "넥숄더 프로",
       "raw_name": "넥숄더 프로 목 어깨 마사지기",
       "price": 109000,
-      "review_count": 2,
-      "avg_rating": 3.0,
+      "review_count": 13,
+      "avg_rating": 4.62,
       "rating_distribution": {
         "1": 1,
         "2": 0,
         "3": 0,
-        "4": 0,
-        "5": 1
+        "4": 1,
+        "5": 11
       },
       "photo_count": 0,
       "sentiment": {
-        "positive": 1,
+        "positive": 11,
         "neutral": 0,
-        "negative": 1
+        "negative": 2
       },
-      "positive_rate": 50.0,
-      "negative_rate": 50.0,
+      "positive_rate": 84.62,
+      "negative_rate": 15.38,
       "prev_review_count": 27,
       "prev_avg_rating": 4.41,
       "top_reviews": [
@@ -1086,133 +997,27 @@
       ]
     },
     {
-      "id": "980",
-      "name": "손편한케어",
-      "raw_name": "프리미엄 엘보케어 팔꿈치 마사지기",
-      "price": 149000,
-      "review_count": 1,
-      "avg_rating": 5.0,
-      "rating_distribution": {
-        "1": 0,
-        "2": 0,
-        "3": 0,
-        "4": 0,
-        "5": 1
-      },
-      "photo_count": 0,
-      "sentiment": {
-        "positive": 1,
-        "neutral": 0,
-        "negative": 0
-      },
-      "positive_rate": 100.0,
-      "negative_rate": 0.0,
-      "prev_review_count": 26,
-      "prev_avg_rating": 4.38,
-      "top_reviews": [
-        {
-          "review_id": "118867",
-          "text": "늘 손을 많이 사용하는 직업이라 손이 항상 피곤하고\n손목이 아파 타 제품과 고민끝에구매 했어요\n너무 좋아요 손이 편안하니 ",
-          "rating": 5,
-          "date": "2026-08-18"
-        },
-        {
-          "review_id": "117921",
-          "text": "배송이 빠르고 좋아요",
-          "rating": 5,
-          "date": "2026-08-01"
-        }
-      ],
-      "bottom_reviews": [
-        {
-          "review_id": "118867",
-          "text": "늘 손을 많이 사용하는 직업이라 손이 항상 피곤하고\n손목이 아파 타 제품과 고민끝에구매 했어요\n너무 좋아요 손이 편안하니 ",
-          "rating": 5,
-          "date": "2026-08-18"
-        },
-        {
-          "review_id": "117921",
-          "text": "배송이 빠르고 좋아요",
-          "rating": 5,
-          "date": "2026-08-01"
-        }
-      ]
-    },
-    {
-      "id": "63",
-      "name": "목베개 스트레칭 베개",
-      "raw_name": "목베개 스트레칭 베개",
-      "price": 39900,
-      "review_count": 2,
-      "avg_rating": 4.5,
+      "id": "638",
+      "name": "넥숄더 힐링케어 V2",
+      "raw_name": "[코어&상체 집중 케어 세트] 허리편한케어 V2 + 목편한케어 플라잉 + 넥숄더 힐링케어",
+      "price": 347800,
+      "review_count": 7,
+      "avg_rating": 4.86,
       "rating_distribution": {
         "1": 0,
         "2": 0,
         "3": 0,
         "4": 1,
-        "5": 1
+        "5": 6
       },
       "photo_count": 0,
       "sentiment": {
-        "positive": 2,
-        "neutral": 0,
-        "negative": 0
+        "positive": 5,
+        "neutral": 1,
+        "negative": 1
       },
-      "positive_rate": 100.0,
-      "negative_rate": 0.0,
-      "prev_review_count": 1,
-      "prev_avg_rating": 5.0,
-      "top_reviews": [
-        {
-          "review_id": "118577",
-          "text": "배송이 빠름. 거북목이 시작되는 시점에서 구매함. 머리가 뒤로 편하게 놓이고 목의 커브가 살아나는 느낌임. 눕는 자세도 편해짐.",
-          "rating": 5,
-          "date": "2026-08-12"
-        },
-        {
-          "review_id": "119514",
-          "text": "이번에는 목 베게 구입 전번에는 허리 베게구입해서 잘 사용중 입니다",
-          "rating": 4,
-          "date": "2026-08-19"
-        }
-      ],
-      "bottom_reviews": [
-        {
-          "review_id": "119514",
-          "text": "이번에는 목 베게 구입 전번에는 허리 베게구입해서 잘 사용중 입니다",
-          "rating": 4,
-          "date": "2026-08-19"
-        },
-        {
-          "review_id": "118577",
-          "text": "배송이 빠름. 거북목이 시작되는 시점에서 구매함. 머리가 뒤로 편하게 놓이고 목의 커브가 살아나는 느낌임. 눕는 자세도 편해짐.",
-          "rating": 5,
-          "date": "2026-08-12"
-        }
-      ]
-    },
-    {
-      "id": "638",
-      "name": "넥숄더 힐링케어 V2",
-      "raw_name": "[코어&상체 집중 케어 세트] 허리편한케어 V2 + 목편한케어 플라잉 + 넥숄더 힐링케어",
-      "price": 347800,
-      "review_count": 2,
-      "avg_rating": 5.0,
-      "rating_distribution": {
-        "1": 0,
-        "2": 0,
-        "3": 0,
-        "4": 0,
-        "5": 2
-      },
-      "photo_count": 0,
-      "sentiment": {
-        "positive": 2,
-        "neutral": 0,
-        "negative": 0
-      },
-      "positive_rate": 100.0,
-      "negative_rate": 0.0,
+      "positive_rate": 71.43,
+      "negative_rate": 14.29,
       "prev_review_count": 14,
       "prev_avg_rating": 4.71,
       "top_reviews": [
@@ -1249,22 +1054,22 @@
       "name": "목편한케어",
       "raw_name": "[썸머 수퍼데이] 목편한케어 목 마사지기",
       "price": 65000,
-      "review_count": 2,
-      "avg_rating": 4.5,
+      "review_count": 5,
+      "avg_rating": 4.0,
       "rating_distribution": {
         "1": 0,
         "2": 0,
-        "3": 0,
-        "4": 1,
+        "3": 1,
+        "4": 3,
         "5": 1
       },
       "photo_count": 0,
       "sentiment": {
-        "positive": 0,
-        "neutral": 2,
+        "positive": 2,
+        "neutral": 3,
         "negative": 0
       },
-      "positive_rate": 0.0,
+      "positive_rate": 40.0,
       "negative_rate": 0.0,
       "prev_review_count": 10,
       "prev_avg_rating": 4.5,
@@ -1298,26 +1103,79 @@
       ]
     },
     {
+      "id": "980",
+      "name": "손편한케어",
+      "raw_name": "프리미엄 엘보케어 팔꿈치 마사지기",
+      "price": 149000,
+      "review_count": 11,
+      "avg_rating": 4.91,
+      "rating_distribution": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 1,
+        "5": 10
+      },
+      "photo_count": 0,
+      "sentiment": {
+        "positive": 8,
+        "neutral": 3,
+        "negative": 0
+      },
+      "positive_rate": 72.73,
+      "negative_rate": 0.0,
+      "prev_review_count": 26,
+      "prev_avg_rating": 4.38,
+      "top_reviews": [
+        {
+          "review_id": "118867",
+          "text": "늘 손을 많이 사용하는 직업이라 손이 항상 피곤하고\n손목이 아파 타 제품과 고민끝에구매 했어요\n너무 좋아요 손이 편안하니 ",
+          "rating": 5,
+          "date": "2026-08-18"
+        },
+        {
+          "review_id": "117921",
+          "text": "배송이 빠르고 좋아요",
+          "rating": 5,
+          "date": "2026-08-01"
+        }
+      ],
+      "bottom_reviews": [
+        {
+          "review_id": "118867",
+          "text": "늘 손을 많이 사용하는 직업이라 손이 항상 피곤하고\n손목이 아파 타 제품과 고민끝에구매 했어요\n너무 좋아요 손이 편안하니 ",
+          "rating": 5,
+          "date": "2026-08-18"
+        },
+        {
+          "review_id": "117921",
+          "text": "배송이 빠르고 좋아요",
+          "rating": 5,
+          "date": "2026-08-01"
+        }
+      ]
+    },
+    {
       "id": "1025",
       "name": "눈편한케어",
       "raw_name": "[썸머 수퍼데이] 눈편한케어 온열 진동 눈 마사지기",
       "price": 49000,
-      "review_count": 1,
+      "review_count": 3,
       "avg_rating": 5.0,
       "rating_distribution": {
         "1": 0,
         "2": 0,
         "3": 0,
         "4": 0,
-        "5": 1
+        "5": 3
       },
       "photo_count": 0,
       "sentiment": {
-        "positive": 0,
-        "neutral": 1,
+        "positive": 1,
+        "neutral": 2,
         "negative": 0
       },
-      "positive_rate": 0.0,
+      "positive_rate": 33.33,
       "negative_rate": 0.0,
       "prev_review_count": 17,
       "prev_avg_rating": 4.71,
@@ -1380,33 +1238,6 @@
       ]
     },
     {
-      "id": "626",
-      "name": "목편한케어 플라잉",
-      "raw_name": "[시그니처 세트] 허리편한케어 V2 + 목편한케어 플라잉",
-      "price": 238000,
-      "review_count": 0,
-      "avg_rating": 0.0,
-      "rating_distribution": {
-        "1": 0,
-        "2": 0,
-        "3": 0,
-        "4": 0,
-        "5": 0
-      },
-      "photo_count": 0,
-      "sentiment": {
-        "positive": 0,
-        "neutral": 0,
-        "negative": 0
-      },
-      "positive_rate": 0.0,
-      "negative_rate": 0.0,
-      "prev_review_count": 18,
-      "prev_avg_rating": 4.39,
-      "top_reviews": [],
-      "bottom_reviews": []
-    },
-    {
       "id": "1036",
       "name": "[은주언니X슬룸] ★뱃살 돌려깎기★ 바디풀고컷 경락 디바이스",
       "raw_name": "[은주언니X슬룸] ★뱃살 돌려깎기★ 바디풀고컷 경락 디바이스",
@@ -1446,6 +1277,337 @@
           "date": "2026-08-19"
         }
       ]
+    },
+    {
+      "id": "13697408616",
+      "name": "팔꿈치 마사지기 연장벨트",
+      "raw_name": "팔꿈치 마사지기 연장벨트",
+      "price": null,
+      "review_count": 1,
+      "avg_rating": 5.0,
+      "rating_distribution": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 1
+      },
+      "photo_count": 1,
+      "sentiment": {
+        "positive": 1,
+        "neutral": 0,
+        "negative": 0
+      },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
+      "top_reviews": [
+        {
+          "review_id": "ss_5053032758",
+          "text": "배송 빠르게 잘 받았습니다",
+          "rating": 5,
+          "date": "2026-08-29"
+        }
+      ],
+      "bottom_reviews": []
+    },
+    {
+      "id": "626",
+      "name": "목편한케어 플라잉",
+      "raw_name": "[시그니처 세트] 허리편한케어 V2 + 목편한케어 플라잉",
+      "price": 238000,
+      "review_count": 8,
+      "avg_rating": 4.75,
+      "rating_distribution": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 2,
+        "5": 6
+      },
+      "photo_count": 0,
+      "sentiment": {
+        "positive": 6,
+        "neutral": 1,
+        "negative": 1
+      },
+      "positive_rate": 75.0,
+      "negative_rate": 12.5,
+      "prev_review_count": 18,
+      "prev_avg_rating": 4.39,
+      "top_reviews": [],
+      "bottom_reviews": []
+    },
+    {
+      "id": null,
+      "name": "넥숄더 힐링케어",
+      "raw_name": "넥숄더 힐링케어",
+      "price": null,
+      "review_count": 2,
+      "avg_rating": 5.0,
+      "rating_distribution": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 2
+      },
+      "photo_count": 0,
+      "sentiment": {
+        "positive": 2,
+        "neutral": 0,
+        "negative": 0
+      },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
+      "top_reviews": [],
+      "bottom_reviews": []
+    },
+    {
+      "id": null,
+      "name": "목베개",
+      "raw_name": "목베개",
+      "price": null,
+      "review_count": 10,
+      "avg_rating": 4.6,
+      "rating_distribution": {
+        "1": 0,
+        "2": 0,
+        "3": 1,
+        "4": 2,
+        "5": 7
+      },
+      "photo_count": 0,
+      "sentiment": {
+        "positive": 6,
+        "neutral": 3,
+        "negative": 1
+      },
+      "positive_rate": 60.0,
+      "negative_rate": 10.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
+      "top_reviews": [],
+      "bottom_reviews": []
+    },
+    {
+      "id": null,
+      "name": "목베개 커버",
+      "raw_name": "목베개 커버",
+      "price": null,
+      "review_count": 1,
+      "avg_rating": 3.0,
+      "rating_distribution": {
+        "1": 0,
+        "2": 0,
+        "3": 1,
+        "4": 0,
+        "5": 0
+      },
+      "photo_count": 0,
+      "sentiment": {
+        "positive": 0,
+        "neutral": 0,
+        "negative": 1
+      },
+      "positive_rate": 0.0,
+      "negative_rate": 100.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
+      "top_reviews": [],
+      "bottom_reviews": []
+    },
+    {
+      "id": null,
+      "name": "어댑터",
+      "raw_name": "어댑터",
+      "price": null,
+      "review_count": 7,
+      "avg_rating": 4.0,
+      "rating_distribution": {
+        "1": 1,
+        "2": 0,
+        "3": 1,
+        "4": 1,
+        "5": 4
+      },
+      "photo_count": 0,
+      "sentiment": {
+        "positive": 4,
+        "neutral": 2,
+        "negative": 1
+      },
+      "positive_rate": 57.14,
+      "negative_rate": 14.29,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
+      "top_reviews": [],
+      "bottom_reviews": []
+    },
+    {
+      "id": null,
+      "name": "케이블",
+      "raw_name": "케이블",
+      "price": null,
+      "review_count": 8,
+      "avg_rating": 4.5,
+      "rating_distribution": {
+        "1": 0,
+        "2": 0,
+        "3": 1,
+        "4": 2,
+        "5": 5
+      },
+      "photo_count": 0,
+      "sentiment": {
+        "positive": 2,
+        "neutral": 5,
+        "negative": 1
+      },
+      "positive_rate": 25.0,
+      "negative_rate": 12.5,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
+      "top_reviews": [],
+      "bottom_reviews": []
+    },
+    {
+      "id": null,
+      "name": "코어 요추벨트",
+      "raw_name": "코어 요추벨트",
+      "price": null,
+      "review_count": 7,
+      "avg_rating": 4.86,
+      "rating_distribution": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 1,
+        "5": 6
+      },
+      "photo_count": 0,
+      "sentiment": {
+        "positive": 7,
+        "neutral": 0,
+        "negative": 0
+      },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
+      "top_reviews": [],
+      "bottom_reviews": []
+    },
+    {
+      "id": null,
+      "name": "하루끝차",
+      "raw_name": "하루끝차",
+      "price": null,
+      "review_count": 2,
+      "avg_rating": 5.0,
+      "rating_distribution": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 2
+      },
+      "photo_count": 0,
+      "sentiment": {
+        "positive": 1,
+        "neutral": 1,
+        "negative": 0
+      },
+      "positive_rate": 50.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
+      "top_reviews": [],
+      "bottom_reviews": []
+    },
+    {
+      "id": null,
+      "name": "허리베개",
+      "raw_name": "허리베개",
+      "price": null,
+      "review_count": 14,
+      "avg_rating": 5.0,
+      "rating_distribution": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 14
+      },
+      "photo_count": 0,
+      "sentiment": {
+        "positive": 12,
+        "neutral": 2,
+        "negative": 0
+      },
+      "positive_rate": 85.71,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
+      "top_reviews": [],
+      "bottom_reviews": []
+    },
+    {
+      "id": null,
+      "name": "허리베개 프로",
+      "raw_name": "허리베개 프로",
+      "price": null,
+      "review_count": 3,
+      "avg_rating": 5.0,
+      "rating_distribution": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 3
+      },
+      "photo_count": 0,
+      "sentiment": {
+        "positive": 3,
+        "neutral": 0,
+        "negative": 0
+      },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
+      "top_reviews": [],
+      "bottom_reviews": []
+    },
+    {
+      "id": null,
+      "name": "허리편한케어 V1",
+      "raw_name": "허리편한케어 V1",
+      "price": null,
+      "review_count": 1,
+      "avg_rating": 5.0,
+      "rating_distribution": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 1
+      },
+      "photo_count": 0,
+      "sentiment": {
+        "positive": 1,
+        "neutral": 0,
+        "negative": 0
+      },
+      "positive_rate": 100.0,
+      "negative_rate": 0.0,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
+      "top_reviews": [],
+      "bottom_reviews": []
     }
   ]
 }
