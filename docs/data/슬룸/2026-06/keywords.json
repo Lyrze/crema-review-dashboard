@@ -2466,19 +2466,19 @@
         ],
         "by_product": [
           {
-            "product": "바디 풀고컷",
-            "count": 44
+            "product": "(상품 미상)",
+            "count": 66
           },
           {
             "product": "팔꿈치 마사지기",
-            "count": 33
-          },
-          {
-            "product": "목 마사지 베개 V2",
-            "count": 8
+            "count": 11
           },
           {
             "product": "발편한케어 V1",
+            "count": 7
+          },
+          {
+            "product": "목 마사지 베개 V2",
             "count": 7
           },
           {
@@ -3502,7 +3502,7 @@
         "by_product": [
           {
             "product": "목 마사지 베개 V2",
-            "count": 18
+            "count": 16
           },
           {
             "product": "팔꿈치 마사지기",
@@ -4609,15 +4609,15 @@
             "count": 3
           },
           {
-            "product": "허리베개",
-            "count": 3
-          },
-          {
             "product": "허리편한케어 V2",
             "count": 3
           },
           {
             "product": "목편한케어 플라잉",
+            "count": 2
+          },
+          {
+            "product": "허리베개",
             "count": 2
           },
           {
@@ -9917,10 +9917,6 @@
           {
             "product": "골반 마사지기",
             "count": 1
-          },
-          {
-            "product": "허리베개",
-            "count": 1
           }
         ],
         "review_samples": [
@@ -9975,7 +9971,7 @@
         ],
         "by_product": [
           {
-            "product": "허리편한케어 마스터",
+            "product": "복부 순환 마스터 프리미엄 복부 마사지기",
             "count": 1
           }
         ],
@@ -9985,7 +9981,7 @@
             "rating": 2,
             "date": "2026-06-09",
             "text": "기대하지 마세요\n\n허리 디스크 수술하고 윗 근육이 뻐근해서 \n쉽게 착용해서 마사지 받을수 있는 기계를 찾다가\n광고 보고 속아 사게 되었습니다. \n\n시원하게 마사지 해줄거라 생각했지만 \n허리에 맞게 하고 엎드리면 착 안붙고 약간 띄워진 느낌으로? \n마사지를 하는데 하는듯 마는듯 입니다.\nEms는 자꾸 중간에 꺼지고 오류가 생깁니다.\n딱히 받고나서 개운한 느낌도 없고요.\n\n이 기기를 살바엔 차라리 돈 조금 더 보태서 누워서 하는 마사지기를 사시는 것을 추천드립니다.\n지금은 창고행이라 실사용 10번정도밖에 안됩니다\n돈을 아끼세요.",
-            "product": "허리편한케어 마스터",
+            "product": "복부 순환 마스터 프리미엄 복부 마사지기",
             "is_set": false
           }
         ],
@@ -10020,18 +10016,6 @@
         "all_review_ids": [
           "116623"
         ],
-        "ai_reclassified": true
-      },
-      {
-        "word": "사이즈 안 맞음",
-        "count": 0,
-        "category": "사이즈안맞음",
-        "reviews": [
-          "116365"
-        ],
-        "by_product": [],
-        "review_samples": [],
-        "all_review_ids": [],
         "ai_reclassified": true
       },
       {
@@ -10755,20 +10739,6 @@
         "ai_reclassified": true
       },
       {
-        "word": "내구성 개선 요청",
-        "count": 0,
-        "category": "내구성개선",
-        "reviews": [
-          "115146",
-          "cp_917713534",
-          "cp_912597962"
-        ],
-        "by_product": [],
-        "review_samples": [],
-        "all_review_ids": [],
-        "ai_reclassified": true
-      },
-      {
         "word": "고정/부착 개선 요청",
         "count": 1,
         "category": "고정개선요청",
@@ -10799,19 +10769,6 @@
         "ai_reclassified": true
       },
       {
-        "word": "소음 개선",
-        "count": 0,
-        "category": "소음개선",
-        "reviews": [
-          "115623",
-          "cp_926550484"
-        ],
-        "by_product": [],
-        "review_samples": [],
-        "all_review_ids": [],
-        "ai_reclassified": true
-      },
-      {
         "word": "크기/높이 조절",
         "count": 1,
         "category": "크기높이조절",
@@ -10838,18 +10795,6 @@
         "all_review_ids": [
           "116594"
         ],
-        "ai_reclassified": true
-      },
-      {
-        "word": "경량화",
-        "count": 0,
-        "category": "경량화",
-        "reviews": [
-          "116337"
-        ],
-        "by_product": [],
-        "review_samples": [],
-        "all_review_ids": [],
         "ai_reclassified": true
       },
       {

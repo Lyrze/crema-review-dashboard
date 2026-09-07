@@ -4700,7 +4700,7 @@
         "by_product": [
           {
             "product": "목 마사지 베개 V2",
-            "count": 23
+            "count": 22
           },
           {
             "product": "목베개 플러스",
@@ -5503,22 +5503,6 @@
         "ai_reclassified": true
       },
       {
-        "word": "에어백 마사지",
-        "count": 0,
-        "category": "에어백",
-        "reviews": [
-          "117134",
-          "117347",
-          "117418",
-          "117833",
-          "ss_5029060779"
-        ],
-        "by_product": [],
-        "review_samples": [],
-        "all_review_ids": [],
-        "ai_reclassified": true
-      },
-      {
         "word": "냉감/시원한 효과",
         "count": 51,
         "category": null,
@@ -6153,7 +6137,7 @@
             "count": 1
           },
           {
-            "product": "허리편한케어 마스터",
+            "product": "복부 순환 마스터 프리미엄 복부 마사지기",
             "count": 1
           },
           {
@@ -6351,7 +6335,7 @@
             "rating": 5,
             "date": "2026-07-07",
             "text": "어른들이쓰기에편하네요",
-            "product": "허리편한케어 마스터",
+            "product": "복부 순환 마스터 프리미엄 복부 마사지기",
             "is_set": false
           },
           {
@@ -11101,19 +11085,6 @@
         "ai_reclassified": true
       },
       {
-        "word": "가격 대비 효과",
-        "count": 0,
-        "category": "가격대비",
-        "reviews": [
-          "117267",
-          "117886"
-        ],
-        "by_product": [],
-        "review_samples": [],
-        "all_review_ids": [],
-        "ai_reclassified": true
-      },
-      {
         "word": "제품 불량",
         "count": 2,
         "category": "제품불량",
@@ -11156,30 +11127,6 @@
         "ai_reclassified": true
       },
       {
-        "word": "부품/제품 파손",
-        "count": 0,
-        "category": "파손",
-        "reviews": [
-          "117477"
-        ],
-        "by_product": [],
-        "review_samples": [],
-        "all_review_ids": [],
-        "ai_reclassified": true
-      },
-      {
-        "word": "역효과(사용 후 악화)",
-        "count": 0,
-        "category": "역효과",
-        "reviews": [
-          "117911"
-        ],
-        "by_product": [],
-        "review_samples": [],
-        "all_review_ids": [],
-        "ai_reclassified": true
-      },
-      {
         "word": "저온화상 안전 이슈",
         "count": 1,
         "category": "저온화상",
@@ -11205,18 +11152,6 @@
         "all_review_ids": [
           "117486"
         ],
-        "ai_reclassified": true
-      },
-      {
-        "word": "좌우 구분 없음",
-        "count": 0,
-        "category": "좌우구분없음",
-        "reviews": [
-          "117282"
-        ],
-        "by_product": [],
-        "review_samples": [],
-        "all_review_ids": [],
         "ai_reclassified": true
       },
       {
@@ -12128,28 +12063,6 @@
         "ai_reclassified": true
       },
       {
-        "word": "AS·반품 정책 개선",
-        "count": 0,
-        "category": "AS반품개선",
-        "reviews": [
-          "117014",
-          "117267",
-          "117361",
-          "117613",
-          "117691",
-          "117700",
-          "117780",
-          "117849",
-          "117886",
-          "117911",
-          "ss_5026785674"
-        ],
-        "by_product": [],
-        "review_samples": [],
-        "all_review_ids": [],
-        "ai_reclassified": true
-      },
-      {
         "word": "기능 추가 요청",
         "count": 4,
         "category": "기능추가요청",
@@ -12168,7 +12081,7 @@
         "by_product": [
           {
             "product": "목 마사지 베개 V2",
-            "count": 4
+            "count": 3
           },
           {
             "product": "허리편한케어 V2",
@@ -12289,7 +12202,7 @@
         "by_product": [
           {
             "product": "목 마사지 베개 V2",
-            "count": 5
+            "count": 4
           },
           {
             "product": "허리편한케어 V2",
@@ -12363,7 +12276,7 @@
         "by_product": [
           {
             "product": "목 마사지 베개 V2",
-            "count": 3
+            "count": 2
           },
           {
             "product": "허리편한케어 V2",
@@ -12438,23 +12351,6 @@
         "ai_reclassified": true
       },
       {
-        "word": "소음 개선",
-        "count": 0,
-        "category": "소음개선",
-        "reviews": [
-          "117572",
-          "117575",
-          "117807",
-          "117849",
-          "ss_5016218051",
-          "cp_945438946"
-        ],
-        "by_product": [],
-        "review_samples": [],
-        "all_review_ids": [],
-        "ai_reclassified": true
-      },
-      {
         "word": "커버/세탁 개선",
         "count": 2,
         "category": "커버세탁",
@@ -12521,19 +12417,6 @@
         "all_review_ids": [
           "ss_5028885464"
         ],
-        "ai_reclassified": true
-      },
-      {
-        "word": "경량화",
-        "count": 0,
-        "category": "경량화",
-        "reviews": [
-          "117012",
-          "117609"
-        ],
-        "by_product": [],
-        "review_samples": [],
-        "all_review_ids": [],
         "ai_reclassified": true
       },
       {

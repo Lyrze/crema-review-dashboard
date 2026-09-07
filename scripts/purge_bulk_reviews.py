@@ -173,23 +173,29 @@ def recompute_keywords(month: str, purge_ids: set):
         for kw in items:
             all_ids = kw.get("all_review_ids") or []
             new_ids = [rid for rid in all_ids if rid not in purge_ids]
-            if len(new_ids) == len(all_ids):
-                new_items.append(kw)
-                continue
             if not new_ids:
                 removed_kw += 1
                 continue  # 이 키워드는 전부 가짜 리뷰였던 것 -> 통째로 제거
-            kw["all_review_ids"] = new_ids
-            kw["reviews"] = [rid for rid in (kw.get("reviews") or []) if rid not in purge_ids]
-            kw["count"] = len(new_ids)
+            # by_product/review_samples의 "product" 라벨은 purge 여부와 무관하게 항상
+            # 현재 reviews.json 기준으로 다시 계산한다 — 상품명만 바뀌고(purge_ids 없음)
+            # all_ids 자체는 그대로인 경우에도 여기서 스킵하면 by_product가 옛 이름으로
+            # 굳어버려 대시보드 상품별 인사이트가 텅 비는 버그가 있었음(2026-09 확인).
+            if len(new_ids) != len(all_ids):
+                kw["all_review_ids"] = new_ids
+                kw["reviews"] = [rid for rid in (kw.get("reviews") or []) if rid not in purge_ids]
+                kw["count"] = len(new_ids)
+                kw["review_samples"] = [s for s in (kw.get("review_samples") or [])
+                                         if s.get("review_id") not in purge_ids]
             by_prod_cnt = Counter()
             for rid in new_ids:
                 prod = (reviews.get(rid) or {}).get("product") or "(상품 미상)"
                 by_prod_cnt[prod] += 1
             kw["by_product"] = [{"product": p, "count": n} for p, n in
                                  sorted(by_prod_cnt.items(), key=lambda x: -x[1])]
-            kw["review_samples"] = [s for s in (kw.get("review_samples") or [])
-                                     if s.get("review_id") not in purge_ids]
+            for s in (kw.get("review_samples") or []):
+                rv = reviews.get(s.get("review_id"))
+                if rv is not None:
+                    s["product"] = rv.get("product") or s.get("product")
             new_items.append(kw)
         bi[grp] = new_items
     kdata["by_intent"] = bi
