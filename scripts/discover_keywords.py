@@ -47,6 +47,10 @@ def main():
     ap.add_argument("--max-samples", type=int, default=400, help="AI에 넣을 미포착 리뷰 최대 수(상한)")
     ap.add_argument("--batch-size", type=int, default=50, help="배치당 리뷰 수(순차 처리 단위)")
     ap.add_argument("--timeout", type=int, default=150, help="배치 1개당 하드 타임아웃(초)")
+    ap.add_argument("--include-positive", action="store_true",
+                     help="긍정 리뷰도 스캔 대상에 포함(칭찬으로 이미 캡처된 리뷰라도 그 안에 섞인 "
+                          "개선요청·불만을 찾음). 기본은 negative+neutral만(비용 절감) — 긍정까지 "
+                          "포함하면 대상이 크게 늘어 비용/시간이 늘어남.")
     args = ap.parse_args()
     model = args.model or "sonnet"
 
@@ -70,14 +74,18 @@ def main():
                 for rid in (kw.get("all_review_ids") or []):
                     captured.add(str(rid))
 
-    # 부정+중립 감성인데 미포착 + 본문 있는 리뷰
+    # 불만/개선으로 아직 안 잡힌 리뷰 스캔 (기본 negative+neutral, --include-positive 시 긍정도 포함)
     # (중립=3점대 혼합리뷰에 "좋은데 ~했으면"류 개선요청이 많이 섞여있는데,
-    #  예전엔 negative만 봐서 이 pool을 통째로 놓치고 있었음 — 2026-09 확인)
+    #  예전엔 negative만 봐서 이 pool을 통째로 놓치고 있었음 — 2026-09 확인.
+    #  긍정(5점) 리뷰에도 "완전 좋은데 ~하면 더 좋을 것 같아요"류가 섞여있을 수 있고,
+    #  이미 praise로 캡처된 리뷰라도 captured 집합엔 complaint/improvement만 들어있어
+    #  --include-positive 시 중복 없이 그 안의 개선요청도 같이 찾아낼 수 있음)
+    target_sentiments = ("negative", "neutral", "positive") if args.include_positive else ("negative", "neutral")
     uncap = [(rid, (r.get("text") or "").strip(), r.get("rating"))
              for rid, r in reviews.items()
-             if r.get("sentiment") in ("negative", "neutral") and str(rid) not in captured
+             if r.get("sentiment") in target_sentiments and str(rid) not in captured
              and (r.get("text") or "").strip() and "별점만 남기고" not in (r.get("text") or "")]
-    eprint(f"  {args.brand}/{args.month}: 부정+중립 미포착 {len(uncap)}건")
+    eprint(f"  {args.brand}/{args.month}: {'전체 감성' if args.include_positive else '부정+중립'} 미포착 {len(uncap)}건")
 
     out = {"brand": args.brand, "month": args.month, "generated_at": "",
            "source": "uncaptured_negative_neutral", "uncaptured_total": len(uncap), "candidates": []}
@@ -115,10 +123,13 @@ def main():
         batch = pool[bi * B:(bi + 1) * B]
         lines = [f"[{i}] {t.replace(chr(10), ' ')[:160]}" for i, (_rid, t, _rt) in enumerate(batch)]
         prompt = (
-            "다음은 '부정적이거나 중립(3점대 혼합리뷰)이지만 기존 불만 키워드에 안 잡힌' 제품 리뷰들이다. "
-            "반복되는 불만·개선요청을 5~10개의 키워드로 묶어라. 중립 리뷰는 '좋은데 ~했으면 좋겠다' 식의 "
-            "혼합 피드백이 많으니 그 안에 섞인 불만/개선요청 포인트를 놓치지 마라. 단순히 무난하거나 "
-            "미온적인 칭찬뿐이고 구체적인 불만·요청이 없는 리뷰는 클러스터링 대상에서 제외하라.\n"
+            "다음은 '기존 불만/개선요청 키워드에 안 잡힌' 제품 리뷰들이다(부정·중립 위주이며 "
+            "긍정 리뷰가 섞여 있을 수 있다). 반복되는 불만·개선요청을 5~10개의 키워드로 묶어라. "
+            "별점이 높은 긍정 리뷰라도 '완전 만족하는데 ~하면 더 좋을 것 같아요'처럼 칭찬 뒤에 "
+            "개선요청이 붙는 경우가 흔하니 그 부분만 따로 추출하라. 중립 리뷰는 '좋은데 ~했으면 "
+            "좋겠다' 식의 혼합 피드백이 많으니 그 안에 섞인 불만/개선요청 포인트를 놓치지 마라. "
+            "단순히 무난하거나 미온적인 칭찬뿐이고 구체적인 불만·요청이 전혀 없는 리뷰는 "
+            "클러스터링 대상에서 제외하라.\n"
             "- word: 짧은 한국어 명사구(예: '에어튜브 크기', '버튼 위치', '진동 강도')\n"
             "- type: 'complaint'(고장·불량·단순 불만) 또는 'improvement'(개선요청). "
             "improvement는 너그럽게 분류하라 — '~있으면 좋겠다 / ~됐으면 / ~해주세요 / ~추가 / ~지원 / ~옵션 / 아쉽다 / 부족하다' "

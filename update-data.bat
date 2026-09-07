@@ -72,11 +72,28 @@ echo  [3.7/4] PVOC 의도 재검증 중 - 부정 거짓양성 완화...
 python scripts\quota_retry.py -- python scripts\reverify_pvoc_intent.py --brand "!BRAND!" --month "!MONTH!"
 if errorlevel 1 ( echo. & echo  [ERROR] PVOC 의도 재검증 실패 - Claude 연결/한도 확인 후 재실행. 배포 중단. & pause & exit /b 1 )
 
-:: [3.8/4] 신규 키워드 후보 발굴 (부정 미포착 → 검토형)
+:: [3.8/4] 신규 키워드 후보 발굴 (부정 미포착 → 불만/개선)
 echo.
 echo  [3.8/4] 신규 키워드 후보 발굴 중 - 부정 미포착 리뷰 클러스터링...
 python scripts\quota_retry.py -- python scripts\discover_keywords.py --brand "!BRAND!" --month "!MONTH!"
 if errorlevel 1 ( echo. & echo  [ERROR] 신규 키워드 후보 발굴 실패 - Claude 연결/한도 확인 후 재실행. 배포 중단. & pause & exit /b 1 )
+
+:: [3.81/4] 신규 칭찬 키워드 후보 발굴 (긍정 미포착)
+echo.
+echo  [3.81/4] 신규 칭찬 키워드 후보 발굴 중 - 긍정 미포착 리뷰 클러스터링...
+python scripts\quota_retry.py -- python scripts\discover_praise_keywords.py --brand "!BRAND!" --month "!MONTH!"
+if errorlevel 1 ( echo. & echo  [ERROR] 칭찬 키워드 후보 발굴 실패 - Claude 연결/한도 확인 후 재실행. 배포 중단. & pause & exit /b 1 )
+
+:: [3.82/4] 칭찬 후보 통합 (AI 클러스터링 특성상 같은 주제가 여러 후보로 쪼개짐 → 유사 항목 병합)
+echo.
+echo  [3.82/4] 칭찬 후보 통합 중 - 유사 항목 병합...
+python scripts\quota_retry.py -- python scripts\consolidate_praise_candidates.py --brand "!BRAND!" --month "!MONTH!"
+if errorlevel 1 ( echo. & echo  [ERROR] 칭찬 후보 통합 실패 - Claude 연결/한도 확인 후 재실행. 배포 중단. & pause & exit /b 1 )
+
+:: [3.83/4] 신규 키워드 후보 일괄 채택 (불만/개선/칭찬 전부 keywords.json에 반영)
+echo.
+echo  [3.83/4] 신규 키워드 후보 일괄 채택 중...
+python scripts\merge_discovered_keywords.py --brand "!BRAND!" --months "!MONTH!"
 
 :: [3.9/4] Taxonomy 미분류 AI 분류 제안 (검토형)
 echo.

@@ -3,22 +3,22 @@
   "month": "2026-08",
   "generated_at": "2026-09-03T09:09:49.962075",
   "kpis": {
-    "total_reviews": 1351,
-    "avg_rating": 4.57,
+    "total_reviews": 1690,
+    "avg_rating": 4.54,
     "rating_distribution": {
-      "1": 38,
-      "2": 18,
-      "3": 74,
-      "4": 228,
-      "5": 993
+      "1": 58,
+      "2": 24,
+      "3": 94,
+      "4": 277,
+      "5": 1237
     },
     "photo_review_count": 304,
     "photo_review_rate": 17.3,
-    "positive_count": 1030,
-    "neutral_count": 198,
-    "negative_count": 123,
-    "positive_rate": 76.24,
-    "negative_rate": 9.1,
+    "positive_count": 1319,
+    "neutral_count": 221,
+    "negative_count": 150,
+    "positive_rate": 78.05,
+    "negative_rate": 8.88,
     "mom_review_change": 1029,
     "mom_review_change_pct": 141.5,
     "mom_rating_change": 0.15
@@ -26,158 +26,158 @@
   "timeline": [
     {
       "date": "2026-08-01",
-      "count": 40,
-      "avg_rating": 4.47
+      "count": 52,
+      "avg_rating": 4.4
     },
     {
       "date": "2026-08-02",
-      "count": 51,
-      "avg_rating": 4.82
+      "count": 57,
+      "avg_rating": 4.65
     },
     {
       "date": "2026-08-03",
-      "count": 82,
-      "avg_rating": 4.73
+      "count": 91,
+      "avg_rating": 4.68
     },
     {
       "date": "2026-08-04",
-      "count": 61,
-      "avg_rating": 4.66
-    },
-    {
-      "date": "2026-08-05",
-      "count": 53,
+      "count": 67,
       "avg_rating": 4.64
     },
     {
-      "date": "2026-08-06",
+      "date": "2026-08-05",
       "count": 60,
-      "avg_rating": 4.38
+      "avg_rating": 4.53
+    },
+    {
+      "date": "2026-08-06",
+      "count": 70,
+      "avg_rating": 4.44
     },
     {
       "date": "2026-08-07",
-      "count": 39,
-      "avg_rating": 4.56
+      "count": 49,
+      "avg_rating": 4.51
     },
     {
       "date": "2026-08-08",
-      "count": 58,
-      "avg_rating": 4.72
+      "count": 69,
+      "avg_rating": 4.68
     },
     {
       "date": "2026-08-09",
-      "count": 47,
-      "avg_rating": 4.43
+      "count": 56,
+      "avg_rating": 4.46
     },
     {
       "date": "2026-08-10",
-      "count": 49,
-      "avg_rating": 4.71
+      "count": 57,
+      "avg_rating": 4.6
     },
     {
       "date": "2026-08-11",
-      "count": 81,
-      "avg_rating": 4.63
+      "count": 98,
+      "avg_rating": 4.65
     },
     {
       "date": "2026-08-12",
-      "count": 39,
-      "avg_rating": 4.54
+      "count": 56,
+      "avg_rating": 4.61
     },
     {
       "date": "2026-08-13",
-      "count": 36,
+      "count": 47,
       "avg_rating": 4.72
     },
     {
       "date": "2026-08-14",
-      "count": 39,
-      "avg_rating": 4.79
-    },
-    {
-      "date": "2026-08-15",
-      "count": 55,
+      "count": 46,
       "avg_rating": 4.76
     },
     {
-      "date": "2026-08-16",
-      "count": 69,
-      "avg_rating": 4.61
-    },
-    {
-      "date": "2026-08-17",
-      "count": 34,
+      "date": "2026-08-15",
+      "count": 63,
       "avg_rating": 4.79
     },
     {
+      "date": "2026-08-16",
+      "count": 79,
+      "avg_rating": 4.65
+    },
+    {
+      "date": "2026-08-17",
+      "count": 37,
+      "avg_rating": 4.76
+    },
+    {
       "date": "2026-08-18",
-      "count": 53,
+      "count": 68,
       "avg_rating": 4.49
     },
     {
       "date": "2026-08-19",
-      "count": 43,
-      "avg_rating": 4.47
+      "count": 50,
+      "avg_rating": 4.48
     },
     {
       "date": "2026-08-20",
-      "count": 43,
-      "avg_rating": 4.44
+      "count": 55,
+      "avg_rating": 4.47
     },
     {
       "date": "2026-08-21",
-      "count": 43,
-      "avg_rating": 4.35
+      "count": 55,
+      "avg_rating": 4.38
     },
     {
       "date": "2026-08-22",
-      "count": 40,
-      "avg_rating": 4.45
+      "count": 54,
+      "avg_rating": 4.44
     },
     {
       "date": "2026-08-23",
-      "count": 31,
-      "avg_rating": 4.52
+      "count": 43,
+      "avg_rating": 4.53
     },
     {
       "date": "2026-08-24",
-      "count": 22,
-      "avg_rating": 4.64
-    },
-    {
-      "date": "2026-08-25",
-      "count": 28,
-      "avg_rating": 4.32
-    },
-    {
-      "date": "2026-08-26",
-      "count": 36,
-      "avg_rating": 4.56
-    },
-    {
-      "date": "2026-08-27",
       "count": 30,
-      "avg_rating": 4.1
-    },
-    {
-      "date": "2026-08-28",
-      "count": 21,
       "avg_rating": 4.57
     },
     {
+      "date": "2026-08-25",
+      "count": 38,
+      "avg_rating": 4.45
+    },
+    {
+      "date": "2026-08-26",
+      "count": 52,
+      "avg_rating": 4.37
+    },
+    {
+      "date": "2026-08-27",
+      "count": 48,
+      "avg_rating": 4.19
+    },
+    {
+      "date": "2026-08-28",
+      "count": 45,
+      "avg_rating": 4.62
+    },
+    {
       "date": "2026-08-29",
-      "count": 22,
-      "avg_rating": 4.59
+      "count": 35,
+      "avg_rating": 4.54
     },
     {
       "date": "2026-08-30",
-      "count": 21,
-      "avg_rating": 4.33
+      "count": 31,
+      "avg_rating": 4.19
     },
     {
       "date": "2026-08-31",
-      "count": 25,
-      "avg_rating": 4.0
+      "count": 32,
+      "avg_rating": 4.03
     }
   ],
   "review_path_distribution": {
@@ -189,6 +189,7 @@
     "PC": 4,
     "스탭후기": 3,
     "PC(팝업)": 2,
-    "스마트스토어": 272
+    "스마트스토어": 272,
+    "쿠팡": 339
   }
 }

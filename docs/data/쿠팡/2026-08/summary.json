@@ -1,0 +1,186 @@
+{
+  "brand": "쿠팡",
+  "month": "2026-08",
+  "generated_at": "2026-09-07T15:28:36.314021",
+  "kpis": {
+    "total_reviews": 339,
+    "avg_rating": 4.45,
+    "rating_distribution": {
+      "1": 20,
+      "2": 6,
+      "3": 20,
+      "4": 49,
+      "5": 244
+    },
+    "photo_review_count": 24,
+    "photo_review_rate": 7.1,
+    "positive_count": 293,
+    "neutral_count": 20,
+    "negative_count": 26,
+    "positive_rate": 85.25,
+    "negative_rate": 7.96,
+    "mom_review_change": null,
+    "mom_review_change_pct": null,
+    "mom_rating_change": null
+  },
+  "timeline": [
+    {
+      "date": "2026-08-01",
+      "count": 12,
+      "avg_rating": 4.17
+    },
+    {
+      "date": "2026-08-02",
+      "count": 6,
+      "avg_rating": 3.17
+    },
+    {
+      "date": "2026-08-03",
+      "count": 9,
+      "avg_rating": 4.22
+    },
+    {
+      "date": "2026-08-04",
+      "count": 6,
+      "avg_rating": 4.5
+    },
+    {
+      "date": "2026-08-05",
+      "count": 7,
+      "avg_rating": 3.71
+    },
+    {
+      "date": "2026-08-06",
+      "count": 10,
+      "avg_rating": 4.8
+    },
+    {
+      "date": "2026-08-07",
+      "count": 10,
+      "avg_rating": 4.3
+    },
+    {
+      "date": "2026-08-08",
+      "count": 11,
+      "avg_rating": 4.45
+    },
+    {
+      "date": "2026-08-09",
+      "count": 9,
+      "avg_rating": 4.67
+    },
+    {
+      "date": "2026-08-10",
+      "count": 8,
+      "avg_rating": 3.88
+    },
+    {
+      "date": "2026-08-11",
+      "count": 17,
+      "avg_rating": 4.76
+    },
+    {
+      "date": "2026-08-12",
+      "count": 17,
+      "avg_rating": 4.76
+    },
+    {
+      "date": "2026-08-13",
+      "count": 11,
+      "avg_rating": 4.73
+    },
+    {
+      "date": "2026-08-14",
+      "count": 7,
+      "avg_rating": 4.57
+    },
+    {
+      "date": "2026-08-15",
+      "count": 8,
+      "avg_rating": 5.0
+    },
+    {
+      "date": "2026-08-16",
+      "count": 10,
+      "avg_rating": 4.9
+    },
+    {
+      "date": "2026-08-17",
+      "count": 3,
+      "avg_rating": 4.33
+    },
+    {
+      "date": "2026-08-18",
+      "count": 15,
+      "avg_rating": 4.47
+    },
+    {
+      "date": "2026-08-19",
+      "count": 7,
+      "avg_rating": 4.57
+    },
+    {
+      "date": "2026-08-20",
+      "count": 12,
+      "avg_rating": 4.58
+    },
+    {
+      "date": "2026-08-21",
+      "count": 12,
+      "avg_rating": 4.5
+    },
+    {
+      "date": "2026-08-22",
+      "count": 14,
+      "avg_rating": 4.43
+    },
+    {
+      "date": "2026-08-23",
+      "count": 12,
+      "avg_rating": 4.58
+    },
+    {
+      "date": "2026-08-24",
+      "count": 8,
+      "avg_rating": 4.38
+    },
+    {
+      "date": "2026-08-25",
+      "count": 10,
+      "avg_rating": 4.8
+    },
+    {
+      "date": "2026-08-26",
+      "count": 16,
+      "avg_rating": 3.94
+    },
+    {
+      "date": "2026-08-27",
+      "count": 18,
+      "avg_rating": 4.33
+    },
+    {
+      "date": "2026-08-28",
+      "count": 24,
+      "avg_rating": 4.67
+    },
+    {
+      "date": "2026-08-29",
+      "count": 13,
+      "avg_rating": 4.46
+    },
+    {
+      "date": "2026-08-30",
+      "count": 10,
+      "avg_rating": 3.9
+    },
+    {
+      "date": "2026-08-31",
+      "count": 7,
+      "avg_rating": 4.14
+    }
+  ],
+  "review_path_distribution": {
+    "쿠팡": 339
+  }
+}
