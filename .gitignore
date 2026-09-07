@@ -179,3 +179,7 @@ reclass_run.log
 **/.pvoc_reverify_progress.json
 **/*.bak_purge
 **/*.bak2
+
+# 채널 분류 스테이징 브랜드 폴더(작업지시서 규칙: 중간 산출물, 커밋 안 함)
+docs/data/쿠팡/
+docs/data/스마트스토어/
