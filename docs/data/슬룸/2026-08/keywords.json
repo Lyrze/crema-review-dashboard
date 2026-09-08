@@ -9852,7 +9852,7 @@
     "complaint": [
       {
         "word": "효과 미흡",
-        "count": 22,
+        "count": 20,
         "category": "효과없음",
         "reviews": [
           "117917",
@@ -9898,11 +9898,11 @@
             "count": 9
           },
           {
-            "product": "목베개 플러스",
-            "count": 4
+            "product": "바디 풀고컷",
+            "count": 3
           },
           {
-            "product": "바디 풀고컷",
+            "product": "목베개 플러스",
             "count": 3
           },
           {
@@ -9910,11 +9910,11 @@
             "count": 2
           },
           {
-            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
-            "count": 2
+            "product": "넥숄더 프로",
+            "count": 1
           },
           {
-            "product": "넥숄더 프로",
+            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
             "count": 1
           },
           {
@@ -10050,6 +10050,30 @@
             "text": "팔에 차기가 편하지 않고 25분정도하면 피부가 따갑네요 1주일 정도 사용해봤는데..자극은 충분히 오는것 같은데 효과는 글쎄요...병원다녀보고 효과가 없어서 광고보고 구매했는데..어느정도 기간이 경과해야 효과를 알수있으려나..",
             "product": "프리미엄 엘보케어 팔꿈치 마사지기",
             "is_set": false
+          },
+          {
+            "review_id": "ss_5050817409",
+            "rating": 3,
+            "date": "2026-08-26",
+            "text": "광고내용을 보고 기대를 많이 하고 샀는데\n생각보다는 효과가 크지 않은듯 합니다.\n주무름 효과가 거의 없고 두드림도 생각보다 약합니다. 밀어 올리는건 위치를 본인이 잘 맞춰서 누워야 합니다.\n스위치는 자주하다보면 위치를 어느정도 외워서 누운 상태에서도 사용이 가능하나 작은 리모콘 형태로 만드는 것도 방법일것 같습니다.\n요즘은 조그만한 선풍기도 리모콘이 있으니까요.",
+            "product": "목 마사지 베개 V2",
+            "is_set": false
+          },
+          {
+            "review_id": "ss_5046972846",
+            "rating": 1,
+            "date": "2026-08-20",
+            "text": "마사지 하는 느낌이 없어서 시원하지 않아요\n비추입니딘",
+            "product": "발편한케어 V1",
+            "is_set": false
+          },
+          {
+            "review_id": "ss_5046972114",
+            "rating": 1,
+            "date": "2026-08-20",
+            "text": "충전시간이 짧고 마사지도 별로 시원하지 않아요 비추입니다",
+            "product": "허리편한케어 V2",
+            "is_set": false
           }
         ],
         "all_review_ids": [
@@ -10072,9 +10096,7 @@
           "ss_5050817409",
           "ss_5048287630",
           "ss_5046972846",
-          "ss_5046972114",
-          "ss_5039589765",
-          "cp_966360386"
+          "ss_5046972114"
         ],
         "ai_reclassified": true
       },
@@ -10229,6 +10251,30 @@
             "text": "목이 아파 주문했는데......소음도 크고 시원하지도않고..\n개봉해서 환불도안되네요",
             "product": "목베개 플러스",
             "is_set": false
+          },
+          {
+            "review_id": "ss_5050184008",
+            "rating": 3,
+            "date": "2026-08-25",
+            "text": "소음이 큰편이고 진동기능은 약한데 켜고하면 좀 어지러운것 같습니다. 버튼을 외워서해야하고 저는 조금 불편한것 같아요",
+            "product": "목 마사지 베개 V2",
+            "is_set": false
+          },
+          {
+            "review_id": "ss_5046812890",
+            "rating": 2,
+            "date": "2026-08-20",
+            "text": "마사지라고 해서 문질러 주는건 줄 알았는데 견인? 커브목해주는거예요ㅠㅠ 그리고 진동이랑 소음이 머리아프네요 윙윙",
+            "product": "목 마사지 베개 V2",
+            "is_set": false
+          },
+          {
+            "review_id": "ss_5044507653",
+            "rating": 3,
+            "date": "2026-08-17",
+            "text": "생각보다소음이심해서귀가울리네요.마사지의방법이틀려서인지주무르는방법이아닌단순두드리는방법이다보니별도움이되지않습니다.소재나편안함은나쁘지않은데베개를산게아니라서아쉬움이남네요.",
+            "product": "목 마사지 베개 V2",
+            "is_set": false
           }
         ],
         "all_review_ids": [
@@ -10254,7 +10300,7 @@
       },
       {
         "word": "유선/충전 불편",
-        "count": 10,
+        "count": 9,
         "category": "충전불편",
         "reviews": [
           "117932",
@@ -10266,12 +10312,12 @@
         ],
         "by_product": [
           {
-            "product": "목 마사지 베개 V2",
+            "product": "목베개 플러스",
             "count": 4
           },
           {
-            "product": "목베개 플러스",
-            "count": 4
+            "product": "목 마사지 베개 V2",
+            "count": 3
           },
           {
             "product": "발편한케어 V1",
@@ -10283,14 +10329,6 @@
           }
         ],
         "review_samples": [
-          {
-            "review_id": "120325",
-            "rating": 1,
-            "date": "2026-08-31",
-            "text": "목 마사지 베게 충천시 충전알림 빨간색이 뜨지 않거나 뜨더라도 아무리 오래 충전해도 초록불이 들어오지 않는 불량이 왔습니다. 맛사지시에도 왼쪽어깨만 맛사지되고 오른쪽어깨는 제대로 맛사지 되지 않습니다. 매우 불만족스럽고 이 불량제품을 보내주신것에 대한 반품 요구합니다.",
-            "product": "목 마사지 베개 V2",
-            "is_set": false
-          },
           {
             "review_id": "117978",
             "rating": 1,
@@ -10354,10 +10392,17 @@
             "text": "충전기 안꽃으면 사용할수가없어요 휴대용으로 여기저기서 할수도없어요 광고에서 처럼 그런거 하나도없어요 완전 사기제품입니다",
             "product": "목베개 플러스",
             "is_set": false
+          },
+          {
+            "review_id": "ss_5046972114",
+            "rating": 1,
+            "date": "2026-08-20",
+            "text": "충전시간이 짧고 마사지도 별로 시원하지 않아요 비추입니다",
+            "product": "허리편한케어 V2",
+            "is_set": false
           }
         ],
         "all_review_ids": [
-          "120325",
           "117978",
           "120163",
           "118058",
@@ -10372,7 +10417,7 @@
       },
       {
         "word": "벨크로/고정 불량",
-        "count": 8,
+        "count": 7,
         "category": "고정불량",
         "reviews": [
           "117913",
@@ -10387,7 +10432,7 @@
         "by_product": [
           {
             "product": "프리미엄 엘보케어 팔꿈치 마사지기",
-            "count": 8
+            "count": 7
           }
         ],
         "review_samples": [
@@ -10438,6 +10483,14 @@
             "text": "다 좋으나 벨크로가 너무 안좋음\n에어 안마시 그냥 다 풀림",
             "product": "프리미엄 엘보케어 팔꿈치 마사지기",
             "is_set": false
+          },
+          {
+            "review_id": "cp_992760403",
+            "rating": 1,
+            "date": "2026-08-31",
+            "text": "연장선이 없어서 그런지 둘레가 짧습니다\n\n찍찍이도 불량인지 잘붙질 않습니다\n팔이두꺼운 편이 아닌데 둘레가 짧습니다",
+            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
+            "is_set": false
           }
         ],
         "all_review_ids": [
@@ -10447,7 +10500,6 @@
           "119281",
           "120288",
           "118107",
-          "ss_5039589765",
           "cp_992760403"
         ],
         "ai_reclassified": true
@@ -10542,7 +10594,7 @@
       },
       {
         "word": "제품 불량",
-        "count": 7,
+        "count": 6,
         "category": "제품불량",
         "reviews": [
           "119755",
@@ -10561,7 +10613,7 @@
           },
           {
             "product": "바디 풀고컷",
-            "count": 2
+            "count": 1
           }
         ],
         "review_samples": [
@@ -10598,19 +10650,19 @@
             "is_set": false
           },
           {
-            "review_id": "119523",
-            "rating": 1,
-            "date": "2026-08-20",
-            "text": "팔뚝은 아예 할수도 없는 제품인 거 같고요. 한 번 움직일 때마다 끽끽겨려서 시끄럽고 괄사하는게 더 나을듯합니다.. 그리고 10분정도 했는데 베터리 헤드?쪽 발열 너무 심해요",
-            "product": "바디 풀고컷",
-            "is_set": false
-          },
-          {
             "review_id": "118001",
             "rating": 1,
             "date": "2026-08-05",
             "text": "에어백이 사용한 지 한 달 정도밖에 되지 않았는데 이미 고장 났습니다.\nA/S를 받기 위해 여러 번 문의했지만, AI에서는 항상 “접수가 완료되었습니다.“라는 안내만 나올 뿐 이후에는 아무런 연락이 없었습니다.\n2주 이상 기다렸는데도 연락이 없어 다시 문의했고, 총 3번이나 A/S를 요청했지만 회사에서는 아직까지 아무런 답변이나 조치가 없습니다.\n제품 품질도 아쉽지만, 무엇보다 A/S 대응이 전혀 이루어지지 않는 점에 매우 실망했습니다.",
             "product": "목 마사지 베개 V2",
+            "is_set": false
+          },
+          {
+            "review_id": "cp_992760403",
+            "rating": 1,
+            "date": "2026-08-31",
+            "text": "연장선이 없어서 그런지 둘레가 짧습니다\n\n찍찍이도 불량인지 잘붙질 않습니다\n팔이두꺼운 편이 아닌데 둘레가 짧습니다",
+            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
             "is_set": false
           }
         ],
@@ -10619,7 +10671,6 @@
           "120314",
           "119755",
           "120325",
-          "119523",
           "118001",
           "cp_992760403"
         ],
@@ -10627,7 +10678,7 @@
       },
       {
         "word": "고장/작동불량",
-        "count": 6,
+        "count": 2,
         "category": "고장",
         "reviews": [
           "117932",
@@ -10642,7 +10693,7 @@
         "by_product": [
           {
             "product": "목 마사지 베개 V2",
-            "count": 6
+            "count": 2
           }
         ],
         "review_samples": [
@@ -10655,52 +10706,17 @@
             "is_set": false
           },
           {
-            "review_id": "117932",
-            "rating": 1,
-            "date": "2026-08-01",
-            "text": "충전연결부분이 안에서 뜯어져서 충전도안되고 몇번 사용안한거같은데 벌써 고장이네요\nAs접수 어떻게 하는건지 회신바랍니다",
-            "product": "목 마사지 베개 V2",
-            "is_set": false
-          },
-          {
             "review_id": "118001",
             "rating": 1,
             "date": "2026-08-05",
             "text": "에어백이 사용한 지 한 달 정도밖에 되지 않았는데 이미 고장 났습니다.\nA/S를 받기 위해 여러 번 문의했지만, AI에서는 항상 “접수가 완료되었습니다.“라는 안내만 나올 뿐 이후에는 아무런 연락이 없었습니다.\n2주 이상 기다렸는데도 연락이 없어 다시 문의했고, 총 3번이나 A/S를 요청했지만 회사에서는 아직까지 아무런 답변이나 조치가 없습니다.\n제품 품질도 아쉽지만, 무엇보다 A/S 대응이 전혀 이루어지지 않는 점에 매우 실망했습니다.",
             "product": "목 마사지 베개 V2",
             "is_set": false
-          },
-          {
-            "review_id": "118537",
-            "rating": 1,
-            "date": "2026-08-11",
-            "text": "산지 2일 만에  고장 ㅋ",
-            "product": "목 마사지 베개 V2",
-            "is_set": false
-          },
-          {
-            "review_id": "118058",
-            "rating": 1,
-            "date": "2026-08-06",
-            "text": "충전하는곳 바로 고장 \n상가때문에 삿는데 3번사용하고 고장이라니",
-            "product": "목 마사지 베개 V2",
-            "is_set": false
-          },
-          {
-            "review_id": "cp_982948212",
-            "rating": 1,
-            "date": "2026-08-22",
-            "text": "설명서랑 전혀 다른 상품이고 3일만에 고장났어요\n\n설명서랑 전혀 다른 상품이고 3일만에 고장났어요",
-            "product": "목 마사지 베개 V2"
           }
         ],
         "all_review_ids": [
           "119798",
-          "117932",
-          "118001",
-          "118537",
-          "118058",
-          "cp_982948212"
+          "118001"
         ],
         "ai_reclassified": true
       },
@@ -10766,7 +10782,7 @@
       },
       {
         "word": "한손 착용 불편",
-        "count": 4,
+        "count": 3,
         "category": null,
         "reviews": [
           "117917",
@@ -10776,23 +10792,15 @@
         ],
         "by_product": [
           {
-            "product": "바디 풀고컷",
+            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
             "count": 2
           },
           {
-            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
-            "count": 2
+            "product": "바디 풀고컷",
+            "count": 1
           }
         ],
         "review_samples": [
-          {
-            "review_id": "117917",
-            "rating": 2,
-            "date": "2026-08-01",
-            "text": "솔직히 인스타 광고 보고 주문했는데\n젤 없음 소용없고 생각보다 별로에요.\n팔은 혼자 하기엔 불편합니다.\nCS도 별로입니다.",
-            "product": "바디 풀고컷",
-            "is_set": false
-          },
           {
             "review_id": "117962",
             "rating": 4,
@@ -10819,7 +10827,6 @@
           }
         ],
         "all_review_ids": [
-          "117917",
           "117962",
           "118550",
           "117913"
@@ -10829,7 +10836,7 @@
       },
       {
         "word": "마사지 효과 부족",
-        "count": 3,
+        "count": 2,
         "category": null,
         "reviews": [
           "120157",
@@ -10844,10 +10851,6 @@
           {
             "product": "목 마사지 베개 V2",
             "count": 2
-          },
-          {
-            "product": "목베개 플러스",
-            "count": 1
           }
         ],
         "review_samples": [
@@ -10866,27 +10869,18 @@
             "text": "생각보다 마사지 받는 느낌이 안 나요.",
             "product": "목 마사지 베개 V2",
             "is_set": false
-          },
-          {
-            "review_id": "119787",
-            "rating": 5,
-            "date": "2026-08-23",
-            "text": "그다지 시원하다거나 좋다는 느낌은 못받았으나 온열이 되니 핫팩 한다는 기분으로 잠자기 전에 매일 하고 있어요",
-            "product": "목베개 플러스",
-            "is_set": false
           }
         ],
         "all_review_ids": [
           "120157",
-          "119752",
-          "119787"
+          "119752"
         ],
         "ai_reclassified": true,
         "source": "discovered"
       },
       {
         "word": "맨살 접촉 불편(자국·보습·끈적임)",
-        "count": 3,
+        "count": 2,
         "category": null,
         "reviews": [
           "118110",
@@ -10895,11 +10889,11 @@
         ],
         "by_product": [
           {
-            "product": "바디 풀고컷",
-            "count": 2
+            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
+            "count": 1
           },
           {
-            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
+            "product": "바디 풀고컷",
             "count": 1
           }
         ],
@@ -10913,14 +10907,6 @@
             "is_set": false
           },
           {
-            "review_id": "118119",
-            "rating": 3,
-            "date": "2026-08-09",
-            "text": "전류를 느끼려면 꼳 보습을 하고 해야해서 귀찮아요..",
-            "product": "바디 풀고컷",
-            "is_set": false
-          },
-          {
             "review_id": "117942",
             "rating": 1,
             "date": "2026-08-02",
@@ -10931,7 +10917,6 @@
         ],
         "all_review_ids": [
           "118110",
-          "118119",
           "117942"
         ],
         "ai_reclassified": true,
@@ -10939,7 +10924,7 @@
       },
       {
         "word": "사용 시 통증",
-        "count": 3,
+        "count": 2,
         "category": null,
         "reviews": [
           "118856",
@@ -10949,7 +10934,7 @@
         "by_product": [
           {
             "product": "허리편한케어 V2",
-            "count": 3
+            "count": 2
           }
         ],
         "review_samples": [
@@ -10958,14 +10943,6 @@
             "rating": 4,
             "date": "2026-08-17",
             "text": "처음엔 사용하고 허리가 너무 아파서 이게 맞나싶어서 반품해야하나 고민했는데\n이십대 딸은 사용후 아프지않다고하니 나이가 들어 허리가 뻣뻣해져서 그런가 싶더라고요\n허리가 따뜻해지고 전자파같은 것으로 햐 주니 좋을\n것같아 꾸준히\n사용해보려고합니다.",
-            "product": "허리편한케어 V2",
-            "is_set": false
-          },
-          {
-            "review_id": "120316",
-            "rating": 3,
-            "date": "2026-08-30",
-            "text": "할때는 무지 아프네요 하고나면 시원합니다. 허리상태가 심각해 고민인데 일단 응급조치 효과있네요",
             "product": "허리편한케어 V2",
             "is_set": false
           },
@@ -10980,7 +10957,6 @@
         ],
         "all_review_ids": [
           "118856",
-          "120316",
           "118548"
         ],
         "ai_reclassified": true,
@@ -11023,7 +10999,8 @@
             "rating": 1,
             "date": "2026-08-05",
             "text": "목디스크땜에 샀는데 악화시킴\n\n높아.. 높아도 너무높아!!!\n목디스크땜에 샀는데 더 심해짐. 사이즈별로 만들던지..\n목디스땜에 팔이 아픈데 이제 팔꿈치까지 아파짐. 아.. 진짜 스트레스.. 큰맘먹고 샀고만..  다이소 목베개가 훨씬 편함. 아.. 짱나..",
-            "product": "목베개 플러스"
+            "product": "목베개 플러스",
+            "is_set": false
           }
         ],
         "all_review_ids": [
@@ -11078,7 +11055,7 @@
       },
       {
         "word": "제품 불량/내구성",
-        "count": 2,
+        "count": 1,
         "category": null,
         "reviews": [
           "120018",
@@ -11089,23 +11066,11 @@
         ],
         "by_product": [
           {
-            "product": "허리편한케어 V2",
-            "count": 1
-          },
-          {
             "product": "목 마사지 베개 V2",
             "count": 1
           }
         ],
         "review_samples": [
-          {
-            "review_id": "118063",
-            "rating": 5,
-            "date": "2026-08-08",
-            "text": "골반, 허리 사용 후에 일어날 때 허리가 뻐근 하내요\n그만큼 자세가 안좋은 거 겠죠. \n\n하단 받침(본체) 이 천으로 돼 있어 미끄럽고, 세월이 지나면 찢어지지 얺을까 싶은데 .. 내구성이 떨어지게 보이내요\n천으로 마감한 이유가 있을 거라 생각은 합니다\n\n•제품은 제가 허리 환자가 아니라서 일어날 때 뻐근한건지 , 몸에 문제가 있는건지 모르겠어서 허리 아픈 부모님 드릴려구요",
-            "product": "허리편한케어 V2",
-            "is_set": false
-          },
           {
             "review_id": "117930",
             "rating": 3,
@@ -11116,7 +11081,6 @@
           }
         ],
         "all_review_ids": [
-          "118063",
           "117930"
         ],
         "ai_reclassified": true,
@@ -11570,126 +11534,6 @@
         "source": "discovered"
       },
       {
-        "word": "베개 착용감",
-        "count": 1,
-        "category": null,
-        "reviews": [
-          "117979",
-          "117923"
-        ],
-        "by_product": [
-          {
-            "product": "발편한케어 V1",
-            "count": 1
-          }
-        ],
-        "review_samples": [
-          {
-            "review_id": "117923",
-            "rating": 4,
-            "date": "2026-08-01",
-            "text": "발은 신원하며 은근 콰감이 있어요\n베게는 공기가 터질까봐 은근 신경쓰여서 목에 힘을 주게되네요 나름 만족입니다만 베게가 완전 편하진 않아요",
-            "product": "발편한케어 V1",
-            "is_set": false
-          }
-        ],
-        "all_review_ids": [
-          "117923"
-        ],
-        "ai_reclassified": true,
-        "source": "discovered"
-      },
-      {
-        "word": "마사지 효과 미흡",
-        "count": 1,
-        "category": null,
-        "reviews": [
-          "119272",
-          "119283"
-        ],
-        "by_product": [
-          {
-            "product": "목 마사지 베개 V2",
-            "count": 1
-          }
-        ],
-        "review_samples": [
-          {
-            "review_id": "119272",
-            "rating": 5,
-            "date": "2026-08-18",
-            "text": "어느정도 시원합니다 제품도 좋아요 많이 파시고 번창하세요 다만 저한테는 안맞네요 전혀 뻐근함이 고쳐지진 않아요 근본적인 원인에 대한 마사지는 안되니 참고하시기 바랍니다.",
-            "product": "목 마사지 베개 V2",
-            "is_set": false
-          }
-        ],
-        "all_review_ids": [
-          "119272"
-        ],
-        "ai_reclassified": true,
-        "source": "discovered"
-      },
-      {
-        "word": "고정 끈 길이 부족",
-        "count": 1,
-        "category": null,
-        "reviews": [
-          "120268",
-          "119773"
-        ],
-        "by_product": [
-          {
-            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
-            "count": 1
-          }
-        ],
-        "review_samples": [
-          {
-            "review_id": "119773",
-            "rating": 5,
-            "date": "2026-08-22",
-            "text": "다좋은데 일부러 감는 줄을 짧게 했나요?",
-            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
-            "is_set": false
-          }
-        ],
-        "all_review_ids": [
-          "119773"
-        ],
-        "ai_reclassified": true,
-        "source": "discovered"
-      },
-      {
-        "word": "세탁/관리 불편",
-        "count": 1,
-        "category": null,
-        "reviews": [
-          "120016",
-          "120282"
-        ],
-        "by_product": [
-          {
-            "product": "목 마사지 베개 V2",
-            "count": 1
-          }
-        ],
-        "review_samples": [
-          {
-            "review_id": "120016",
-            "rating": 5,
-            "date": "2026-08-25",
-            "text": "지퍼가 있길래 벗겨서 세탁했는데, 세탁 불가였네요. 세탁해서 문제점이 있을까요?",
-            "product": "목 마사지 베개 V2",
-            "is_set": false
-          }
-        ],
-        "all_review_ids": [
-          "120016"
-        ],
-        "ai_reclassified": true,
-        "source": "discovered"
-      },
-      {
         "word": "발열(버튼 부위)",
         "count": 1,
         "category": null,
@@ -11896,36 +11740,6 @@
         "source": "discovered"
       },
       {
-        "word": "따끔거림",
-        "count": 1,
-        "category": null,
-        "reviews": [
-          "119759",
-          "119760"
-        ],
-        "by_product": [
-          {
-            "product": "바디 풀고컷",
-            "count": 1
-          }
-        ],
-        "review_samples": [
-          {
-            "review_id": "119760",
-            "rating": 4,
-            "date": "2026-08-21",
-            "text": "목어깨는 조금 따끔한 감이 없지 않아서 다른 바디용으로 더 잘 사용 중이에요!",
-            "product": "바디 풀고컷",
-            "is_set": false
-          }
-        ],
-        "all_review_ids": [
-          "119760"
-        ],
-        "ai_reclassified": true,
-        "source": "discovered"
-      },
-      {
         "word": "벨크로(찍찍이) 내구성",
         "count": 1,
         "category": null,
@@ -12042,35 +11856,6 @@
         "source": "discovered"
       },
       {
-        "word": "쿠션 강도(딱딱함)",
-        "count": 1,
-        "category": null,
-        "reviews": [
-          "120307"
-        ],
-        "by_product": [
-          {
-            "product": "목 마사지 베개 V2",
-            "count": 1
-          }
-        ],
-        "review_samples": [
-          {
-            "review_id": "120307",
-            "rating": 5,
-            "date": "2026-08-29",
-            "text": "조금 딱딱 한데 잘 쓰고 있어요!",
-            "product": "목 마사지 베개 V2",
-            "is_set": false
-          }
-        ],
-        "all_review_ids": [
-          "120307"
-        ],
-        "ai_reclassified": true,
-        "source": "discovered"
-      },
-      {
         "word": "안마 진동 소음",
         "count": 1,
         "category": null,
@@ -12100,11 +11885,247 @@
         "source": "discovered"
       },
       {
-        "word": "V1 사용감(반품)",
+        "word": "진동 강도",
+        "count": 3,
+        "category": null,
+        "reviews": [
+          "118077",
+          "117919",
+          "118819",
+          "118799",
+          "118007",
+          "120334",
+          "118028"
+        ],
+        "by_product": [
+          {
+            "product": "목베개 플러스",
+            "count": 2
+          },
+          {
+            "product": "바디 풀고컷",
+            "count": 1
+          }
+        ],
+        "review_samples": [
+          {
+            "review_id": "118819",
+            "rating": 3,
+            "date": "2026-08-14",
+            "text": "생각 보다 약했어요",
+            "product": "목베개 플러스",
+            "is_set": false
+          },
+          {
+            "review_id": "118799",
+            "rating": 4,
+            "date": "2026-08-13",
+            "text": "잘받앗습니다 다좋은데 진동? 하여간 요게 많이 약한거같아서 조금 아쉽구 따뜻해서 좋습니다~",
+            "product": "목베개 플러스",
+            "is_set": false
+          },
+          {
+            "review_id": "118007",
+            "rating": 4,
+            "date": "2026-08-05",
+            "text": "받아서 잘 사용중인데 승모랑 팔뚝에는 느낌이 잘 와요 팔뚝은 근데 딱 쪼이는 느낌이 아니라서 롤링할때 약간 번거롭고 허벅지부분은 ems가 제일 높은 강도로 해도 세다는 느낌이 덜해서 허리 복부 팔뚝 정도? 꾸준히 사용해봐야겠어요",
+            "product": "바디 풀고컷",
+            "is_set": false
+          }
+        ],
+        "all_review_ids": [
+          "118819",
+          "118799",
+          "118007"
+        ],
+        "ai_reclassified": true,
+        "source": "discovered"
+      },
+      {
+        "word": "소음",
+        "count": 5,
+        "category": null,
+        "reviews": [
+          "118077",
+          "ss_5050084139",
+          "118325",
+          "cp_967254956",
+          "119527"
+        ],
+        "by_product": [
+          {
+            "product": "목베개 플러스",
+            "count": 2
+          },
+          {
+            "product": "목 마사지 베개 V2",
+            "count": 1
+          },
+          {
+            "product": "바디 풀고컷",
+            "count": 1
+          },
+          {
+            "product": "허리편한케어 V2",
+            "count": 1
+          }
+        ],
+        "review_samples": [
+          {
+            "review_id": "118077",
+            "rating": 3,
+            "date": "2026-08-07",
+            "text": "온열조절이 안되서 수건을. 한장대면 맛사지가 약함.  귀옆에서 바로 진동소리가 울리니까 시끄러움.경추베게로 쓰기에도 너무 작아 옆으로 눕거나 뒤척이면 벗어나 불편함",
+            "product": "목베개 플러스",
+            "is_set": false
+          },
+          {
+            "review_id": "ss_5050084139",
+            "rating": 5,
+            "date": "2026-08-25",
+            "text": "효과 있으리라 믿고 꾸준히 사용해 보겠습니다.\n소리가 생각보다 커서 잠들기 직전에는 거시기하네요...ㅎ",
+            "product": "목 마사지 베개 V2",
+            "is_set": false
+          },
+          {
+            "review_id": "118325",
+            "rating": 3,
+            "date": "2026-08-10",
+            "text": "생각보다 별로에요 힘줘서 밀면 삐걱삐걱소리 엄청 거슬림",
+            "product": "바디 풀고컷",
+            "is_set": false
+          },
+          {
+            "review_id": "cp_967254956",
+            "rating": 4,
+            "date": "2026-08-05",
+            "text": "맛사지 기구 분리된 받침 불편 함.\n\n허리가 아파서 온열과 ems 기능이 있어서 선택 만족\n진동 맛사지 기능은 소리가 크고 별로,",
+            "product": "허리편한케어 V2",
+            "is_set": false
+          },
+          {
+            "review_id": "119527",
+            "rating": 5,
+            "date": "2026-08-20",
+            "text": "바닥에 진동이 울려 아파트 생활하는 사람은 조금 눈치가 보일거 같아요\n위로 목을 올려주는 기능은 정말 시원해요",
+            "product": "목베개 플러스",
+            "is_set": false
+          }
+        ],
+        "all_review_ids": [
+          "118077",
+          "ss_5050084139",
+          "118325",
+          "cp_967254956",
+          "119527"
+        ],
+        "ai_reclassified": true,
+        "source": "discovered"
+      },
+      {
+        "word": "착용 사이즈 답답함",
+        "count": 4,
+        "category": null,
+        "reviews": [
+          "ss_5046169750",
+          "ss_5044295359",
+          "ss_5045415941",
+          "ss_5038057687"
+        ],
+        "by_product": [
+          {
+            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
+            "count": 2
+          },
+          {
+            "product": "골반 마사지기",
+            "count": 1
+          },
+          {
+            "product": "넥숄더 프로",
+            "count": 1
+          }
+        ],
+        "review_samples": [
+          {
+            "review_id": "ss_5046169750",
+            "rating": 5,
+            "date": "2026-08-19",
+            "text": "무선이라 편해요\n서이즈가 작아소 엉덩이가 꽉끼어요",
+            "product": "골반 마사지기",
+            "is_set": false
+          },
+          {
+            "review_id": "ss_5044295359",
+            "rating": 3,
+            "date": "2026-08-16",
+            "text": "일단 써보고 후기 남길께요.. 제 팔 굵기가.. 연장 밴드 쓰기에는 조금 남고 안쓰기는 너무 쪼이고 그러네요.. 강제 벌크업이 필요함 ㅜㅜ",
+            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
+            "is_set": false
+          },
+          {
+            "review_id": "ss_5045415941",
+            "rating": 4,
+            "date": "2026-08-18",
+            "text": "목을 주무르는 힘이 좋습니다. 그런데 저는 목이 약간 두꺼운편인지 너무 꽉 낀다는 느낌이 들어요. 남자들은 어떻게 하는지 궁금하네요. 그리고 충전하면서는 사용할 수가 없어요. 그게 좀 불편합니다.",
+            "product": "넥숄더 프로",
+            "is_set": false
+          },
+          {
+            "review_id": "ss_5038057687",
+            "rating": 3,
+            "date": "2026-08-07",
+            "text": "제가 팔이 굵은 편인지라 착용하기 좀 힘드네요. 간신히 착용합니다. 그래도 새거라 그런지 마사지 중에 풀리진 않아요. 효과는 그냥 생각한 그 정도.",
+            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
+            "is_set": false
+          }
+        ],
+        "all_review_ids": [
+          "ss_5046169750",
+          "ss_5044295359",
+          "ss_5045415941",
+          "ss_5038057687"
+        ],
+        "ai_reclassified": true,
+        "source": "discovered"
+      },
+      {
+        "word": "팔뚝 밀착감",
         "count": 1,
         "category": null,
         "reviews": [
-          "120339"
+          "118324",
+          "118007"
+        ],
+        "by_product": [
+          {
+            "product": "바디 풀고컷",
+            "count": 1
+          }
+        ],
+        "review_samples": [
+          {
+            "review_id": "118007",
+            "rating": 4,
+            "date": "2026-08-05",
+            "text": "받아서 잘 사용중인데 승모랑 팔뚝에는 느낌이 잘 와요 팔뚝은 근데 딱 쪼이는 느낌이 아니라서 롤링할때 약간 번거롭고 허벅지부분은 ems가 제일 높은 강도로 해도 세다는 느낌이 덜해서 허리 복부 팔뚝 정도? 꾸준히 사용해봐야겠어요",
+            "product": "바디 풀고컷",
+            "is_set": false
+          }
+        ],
+        "all_review_ids": [
+          "118007"
+        ],
+        "ai_reclassified": true,
+        "source": "discovered"
+      },
+      {
+        "word": "광고 대비 실제 효과",
+        "count": 1,
+        "category": null,
+        "reviews": [
+          "119761",
+          "119912"
         ],
         "by_product": [
           {
@@ -12114,16 +12135,447 @@
         ],
         "review_samples": [
           {
-            "review_id": "120339",
+            "review_id": "119912",
             "rating": 4,
-            "date": "2026-08-31",
-            "text": "처음V1을사서 한달써보고 나하고는잘 맞지않는것같아 반품을했어요 쓰기도 불편했고 V2로바꾸어 새로 구입했어요 적응하고나니 괜찮아요",
+            "date": "2026-08-24",
+            "text": "일주일? 매일하고 있어요\n가끔 목에 찜질하고 싶다 생각을 했었는데 그 생각에 만족을 주는 제품입니다 뒷골이 가끔 땡기는데 딱 올려주는 마사지 기능까지  ㅎㅎ 지금까지는 광고의 20%정도 만족입니다",
             "product": "목 마사지 베개 V2",
             "is_set": false
           }
         ],
         "all_review_ids": [
-          "120339"
+          "119912"
+        ],
+        "ai_reclassified": true,
+        "source": "discovered"
+      },
+      {
+        "word": "구성품 누락",
+        "count": 1,
+        "category": null,
+        "reviews": [
+          "119757",
+          "120287"
+        ],
+        "by_product": [
+          {
+            "product": "목 마사지 베개 V2",
+            "count": 1
+          }
+        ],
+        "review_samples": [
+          {
+            "review_id": "119757",
+            "rating": 4,
+            "date": "2026-08-21",
+            "text": "보관백 주는줄알았네요 ㅠ",
+            "product": "목 마사지 베개 V2",
+            "is_set": false
+          }
+        ],
+        "all_review_ids": [
+          "119757"
+        ],
+        "ai_reclassified": true,
+        "source": "discovered"
+      },
+      {
+        "word": "자극 강도 과함",
+        "count": 2,
+        "category": null,
+        "reviews": [
+          "ss_5039459946",
+          "ss_5043623797"
+        ],
+        "by_product": [
+          {
+            "product": "허리편한케어 V2",
+            "count": 2
+          }
+        ],
+        "review_samples": [
+          {
+            "review_id": "ss_5039459946",
+            "rating": 5,
+            "date": "2026-08-09",
+            "text": "허리 수술하신 아버님 생신선물로 사드렸는데\nems는 2단으로 올리는 순간 너무 쎄서 놀랐어요 ㅠㅠ\n2단이상은 사용하기 어려울거같아요",
+            "product": "허리편한케어 V2",
+            "is_set": false
+          },
+          {
+            "review_id": "ss_5043623797",
+            "rating": 5,
+            "date": "2026-08-15",
+            "text": "우선 설정돼있는 가장 낮은 단계m1로 해봤어요 \n생각보다 높이도 높고 좌우 들석임도 커서 좀힘드네요 남편이 허리가 안좋아서 샀는데 무리가면 안좋을까봐 제가 테스트용으로 먼저 써봤는데 자극이 꽤 큰거 같아요 여튼 하고 나니 운동은 되는거 같은데 좀 더 써봐야 효과는 알 것 같아요",
+            "product": "허리편한케어 V2",
+            "is_set": false
+          }
+        ],
+        "all_review_ids": [
+          "ss_5039459946",
+          "ss_5043623797"
+        ],
+        "ai_reclassified": true,
+        "source": "discovered"
+      },
+      {
+        "word": "자극/모터 힘 약화",
+        "count": 2,
+        "category": null,
+        "reviews": [
+          "ss_5048411798",
+          "ss_5036335284"
+        ],
+        "by_product": [
+          {
+            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
+            "count": 1
+          },
+          {
+            "product": "넥숄더 힐링케어 V2",
+            "count": 1
+          }
+        ],
+        "review_samples": [
+          {
+            "review_id": "ss_5048411798",
+            "rating": 3,
+            "date": "2026-08-22",
+            "text": "엘보수술후 구매했는대 전기오는게 갈수록 떨어지네요. 사용한지 얼마되지도 않았는대 AS보내야 될련지..가격도 비싼건대",
+            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
+            "is_set": false
+          },
+          {
+            "review_id": "ss_5036335284",
+            "rating": 4,
+            "date": "2026-08-05",
+            "text": "마사지기 모터가 조금 쌔게 당겨서 하면 힘이 약해서 멈추는게 아쉽내요",
+            "product": "넥숄더 힐링케어 V2",
+            "is_set": false
+          }
+        ],
+        "all_review_ids": [
+          "ss_5048411798",
+          "ss_5036335284"
+        ],
+        "ai_reclassified": true,
+        "source": "discovered"
+      },
+      {
+        "word": "배터리 소모/잦은 충전",
+        "count": 1,
+        "category": null,
+        "reviews": [
+          "118862"
+        ],
+        "by_product": [
+          {
+            "product": "발편한케어 V1",
+            "count": 1
+          }
+        ],
+        "review_samples": [
+          {
+            "review_id": "118862",
+            "rating": 3,
+            "date": "2026-08-17",
+            "text": "휴대하기좋아요 어디서듣할수있어쇼 충전 을자주해야되는단점이있네요",
+            "product": "발편한케어 V1",
+            "is_set": false
+          }
+        ],
+        "all_review_ids": [
+          "118862"
+        ],
+        "ai_reclassified": true,
+        "source": "discovered"
+      },
+      {
+        "word": "사이즈 핏(too tight)",
+        "count": 1,
+        "category": null,
+        "reviews": [
+          "119497"
+        ],
+        "by_product": [
+          {
+            "product": "골반 마사지기",
+            "count": 1
+          }
+        ],
+        "review_samples": [
+          {
+            "review_id": "119497",
+            "rating": 4,
+            "date": "2026-08-19",
+            "text": "사이즈 선탁 잘 하셔야 할듯요. 너무 꽉 끼여요. 그리고 골반 비대칭에 도움이 되는지는 잘 모르겠어요. 그런데 조금 시원하기는 해요.",
+            "product": "골반 마사지기",
+            "is_set": false
+          }
+        ],
+        "all_review_ids": [
+          "119497"
+        ],
+        "ai_reclassified": true,
+        "source": "discovered"
+      },
+      {
+        "word": "조작부 발열",
+        "count": 1,
+        "category": null,
+        "reviews": [
+          "ss_5052055754"
+        ],
+        "by_product": [
+          {
+            "product": "바디 풀고컷",
+            "count": 1
+          }
+        ],
+        "review_samples": [
+          {
+            "review_id": "ss_5052055754",
+            "rating": 2,
+            "date": "2026-08-27",
+            "text": "조금만 사용해도 조작부 발열이 엄청납니다... 무서워서 15분 못 채우고 조금 하다가 끄게 되네요...ㅠㅠ 그리고 팔뚝은 사용이 어렵습니다....ㅠ 기대가 컸던 탓인지 아쉬움이 많네요...",
+            "product": "바디 풀고컷",
+            "is_set": false
+          }
+        ],
+        "all_review_ids": [
+          "ss_5052055754"
+        ],
+        "ai_reclassified": true,
+        "source": "discovered"
+      },
+      {
+        "word": "제품 불량/고장",
+        "count": 1,
+        "category": null,
+        "reviews": [
+          "120018"
+        ],
+        "by_product": [
+          {
+            "product": "목 마사지 베개 V2",
+            "count": 1
+          }
+        ],
+        "review_samples": [
+          {
+            "review_id": "120018",
+            "rating": 1,
+            "date": "2026-08-25",
+            "text": "매번 이상있어  교환.  지금 미사용. 귀찮아서 방칫해둠",
+            "product": "목 마사지 베개 V2",
+            "is_set": false
+          }
+        ],
+        "all_review_ids": [
+          "120018"
+        ],
+        "ai_reclassified": true,
+        "source": "discovered"
+      },
+      {
+        "word": "사용중 끼임 위험",
+        "count": 1,
+        "category": null,
+        "reviews": [
+          "ss_5044177696"
+        ],
+        "by_product": [
+          {
+            "product": "넥숄더 힐링케어 V2",
+            "count": 1
+          }
+        ],
+        "review_samples": [
+          {
+            "review_id": "ss_5044177696",
+            "rating": 5,
+            "date": "2026-08-16",
+            "text": "뭔가 힘이 세서 사이에 끼면 찝혀 다치기 쉬워서 옷을 갖춰입고 사용해야겠네요. 다리나 허리 등 다양하게 쓸수있어 좋습니다.",
+            "product": "넥숄더 힐링케어 V2",
+            "is_set": false
+          }
+        ],
+        "all_review_ids": [
+          "ss_5044177696"
+        ],
+        "ai_reclassified": true,
+        "source": "discovered"
+      },
+      {
+        "word": "커버 물빠짐 불량",
+        "count": 1,
+        "category": null,
+        "reviews": [
+          "cp_971382322"
+        ],
+        "by_product": [
+          {
+            "product": "목 마사지 베개 V2",
+            "count": 1
+          }
+        ],
+        "review_samples": [
+          {
+            "review_id": "cp_971382322",
+            "rating": 1,
+            "date": "2026-08-10",
+            "text": "에효 커버 때문에 물이 싹 다 들었어요\n\n광고 보고 샀더니 역시나 실패 커버때문에 난리 나고 참내 벗겨보니  이걸 이 가격에 .. 에효\n만원자리도 이렇게 물 들진 않을꺼 같네요",
+            "product": "목 마사지 베개 V2",
+            "is_set": false
+          }
+        ],
+        "all_review_ids": [
+          "cp_971382322"
+        ],
+        "ai_reclassified": true,
+        "source": "discovered"
+      },
+      {
+        "word": "제품 오작동/불량",
+        "count": 1,
+        "category": null,
+        "reviews": [
+          "cp_967394342"
+        ],
+        "by_product": [
+          {
+            "product": "목 마사지 베개 V2",
+            "count": 1
+          }
+        ],
+        "review_samples": [
+          {
+            "review_id": "cp_967394342",
+            "rating": 1,
+            "date": "2026-08-05",
+            "text": "이딴걸  판매 한다는 거에요 수리 교환 요청 해서 받은 상품이 더 저절이네요 사진은 멀쩡하죠 근데 실물은 그냥 계속 혼자 동작 해요",
+            "product": "목 마사지 베개 V2",
+            "is_set": false
+          }
+        ],
+        "all_review_ids": [
+          "cp_967394342"
+        ],
+        "ai_reclassified": true,
+        "source": "discovered"
+      },
+      {
+        "word": "구성품 미배송",
+        "count": 1,
+        "category": null,
+        "reviews": [
+          "cp_987624587"
+        ],
+        "by_product": [
+          {
+            "product": "허리편한케어 V1",
+            "count": 1
+          }
+        ],
+        "review_samples": [
+          {
+            "review_id": "cp_987624587",
+            "rating": 1,
+            "date": "2026-08-27",
+            "text": "구성품배송안해주는 악질\n\n구성품 충전기 보증서 설명서 안보내주고 일주일동안 사용못하고있습니다. 판매처에 연락하면 2~3일안으로 보내준다고 답변만하고 안보내주네요 ㅋㅋㅋ 2번연락해도 안보내주고 상품상세에 구성품 포함이라던데 그냥 허위정보아닌가 싶습니다. 충전기 별도 보내면 시간걸린다는데 해외직구보다 느리고 똑같은 말만 반복 ㅠ 상품 품질 리뷰란에 적지도 못합니다 써보질못했거든요 ^^",
+            "product": "허리편한케어 V1",
+            "is_set": false
+          }
+        ],
+        "all_review_ids": [
+          "cp_987624587"
+        ],
+        "ai_reclassified": true,
+        "source": "discovered"
+      },
+      {
+        "word": "여름철 발열",
+        "count": 1,
+        "category": null,
+        "reviews": [
+          "cp_964148023"
+        ],
+        "by_product": [
+          {
+            "product": "목 마사지 베개 V2",
+            "count": 1
+          }
+        ],
+        "review_samples": [
+          {
+            "review_id": "cp_964148023",
+            "rating": 1,
+            "date": "2026-08-02",
+            "text": "가성비 떨어짐\n\n1. 여름에 사용하기엔 너무 더워요\n2. 누워서 버튼을 누르기 매우 어려워요\n3. 사용하다가 잠든다는 건 말이 안될 정도로 베개처럼 편하지 않아요",
+            "product": "목 마사지 베개 V2",
+            "is_set": false
+          }
+        ],
+        "all_review_ids": [
+          "cp_964148023"
+        ],
+        "ai_reclassified": true,
+        "source": "discovered"
+      },
+      {
+        "word": "베개 편안함 부족",
+        "count": 1,
+        "category": null,
+        "reviews": [
+          "cp_964148023"
+        ],
+        "by_product": [
+          {
+            "product": "목 마사지 베개 V2",
+            "count": 1
+          }
+        ],
+        "review_samples": [
+          {
+            "review_id": "cp_964148023",
+            "rating": 1,
+            "date": "2026-08-02",
+            "text": "가성비 떨어짐\n\n1. 여름에 사용하기엔 너무 더워요\n2. 누워서 버튼을 누르기 매우 어려워요\n3. 사용하다가 잠든다는 건 말이 안될 정도로 베개처럼 편하지 않아요",
+            "product": "목 마사지 베개 V2",
+            "is_set": false
+          }
+        ],
+        "all_review_ids": [
+          "cp_964148023"
+        ],
+        "ai_reclassified": true,
+        "source": "discovered"
+      },
+      {
+        "word": "쿠션 딱딱함",
+        "count": 1,
+        "category": null,
+        "reviews": [
+          "cp_969976154"
+        ],
+        "by_product": [
+          {
+            "product": "목베개",
+            "count": 1
+          }
+        ],
+        "review_samples": [
+          {
+            "review_id": "cp_969976154",
+            "rating": 2,
+            "date": "2026-08-08",
+            "text": "높고 너무 딱딱한것 같아요",
+            "product": "목베개",
+            "is_set": false
+          }
+        ],
+        "all_review_ids": [
+          "cp_969976154"
         ],
         "ai_reclassified": true,
         "source": "discovered"
@@ -12132,7 +12584,7 @@
     "improvement": [
       {
         "word": "효과/성능 강화 요청",
-        "count": 13,
+        "count": 1,
         "category": "효과강화",
         "reviews": [
           "117920",
@@ -12180,31 +12632,7 @@
         ],
         "by_product": [
           {
-            "product": "목 마사지 베개 V2",
-            "count": 4
-          },
-          {
             "product": "허리편한케어 V2",
-            "count": 3
-          },
-          {
-            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
-            "count": 2
-          },
-          {
-            "product": "바디 풀고컷",
-            "count": 1
-          },
-          {
-            "product": "발편한케어 V1",
-            "count": 1
-          },
-          {
-            "product": "손편한케어",
-            "count": 1
-          },
-          {
-            "product": "목베개 플러스",
             "count": 1
           }
         ],
@@ -12216,63 +12644,16 @@
             "text": "강도가 조금 부족해요...\n마사지 강도가 더 쎄면 좋을거 같아요",
             "product": "허리편한케어 V2",
             "is_set": true
-          },
-          {
-            "review_id": "ss_5053906328",
-            "rating": 5,
-            "date": "2026-08-30",
-            "text": "효과 있었으면 좋겠어요",
-            "product": "바디 풀고컷"
-          },
-          {
-            "review_id": "ss_5048449355",
-            "rating": 5,
-            "date": "2026-08-22",
-            "text": "팔꿈치가 계속 안 나아서 한번 사용해 볼려구요. 효과 있었으면 좋겠습니다.",
-            "product": "프리미엄 엘보케어 팔꿈치 마사지기"
-          },
-          {
-            "review_id": "ss_5048270601",
-            "rating": 5,
-            "date": "2026-08-22",
-            "text": "허리가 아프지는 않지만 불편했는데 마사지하고 나니깐 불편함이 사라짐",
-            "product": "허리편한케어 V2"
-          },
-          {
-            "review_id": "ss_5046972846",
-            "rating": 1,
-            "date": "2026-08-20",
-            "text": "마사지 하는 느낌이 없어서 시원하지 않아요\n비추입니딘",
-            "product": "발편한케어 V1"
-          },
-          {
-            "review_id": "ss_5044084718",
-            "rating": 3,
-            "date": "2026-08-16",
-            "text": "쿠션감도 좋고 , 목 마사지 해주는 부분이 딱딱한 롤 같은게 아니고 에어백 같아서 아프거나 하지는 않습니다.\n온열기능도 금방 따뜻해지고 만족스럽지만 , 마사지 기능의 진동이 너무 약한 감이 있네요. \n아이가 손으로 조물조물 하는것 ?? 아이폰 진동 정도?? 여튼 진동으로 인한 마사지 효과는 기대하기 힘들것 같습니다.",
-            "product": "목 마사지 베개 V2"
           }
         ],
         "all_review_ids": [
-          "117920",
-          "ss_5053906328",
-          "ss_5048449355",
-          "ss_5048270601",
-          "ss_5046972846",
-          "ss_5044084718",
-          "ss_5033594052",
-          "cp_976675694",
-          "cp_973933044",
-          "cp_973260338",
-          "cp_973263784",
-          "cp_980257122",
-          "cp_987489248"
+          "117920"
         ],
         "ai_reclassified": true
       },
       {
         "word": "고정/부착 개선 요청",
-        "count": 5,
+        "count": 3,
         "category": "고정개선요청",
         "reviews": [
           "118396",
@@ -12288,11 +12669,7 @@
         "by_product": [
           {
             "product": "프리미엄 엘보케어 팔꿈치 마사지기",
-            "count": 4
-          },
-          {
-            "product": "허리편한케어 V2",
-            "count": 1
+            "count": 3
           }
         ],
         "review_samples": [
@@ -12313,39 +12690,24 @@
             "is_set": false
           },
           {
-            "review_id": "ss_5051940411",
-            "rating": 5,
-            "date": "2026-08-27",
-            "text": "허리 불편함이 많이 줄은거 같아요",
-            "product": "허리편한케어 V2"
-          },
-          {
-            "review_id": "ss_5048195115",
-            "rating": 4,
-            "date": "2026-08-22",
-            "text": "다좋은데 찍찍이가 너무약해요 잘떨어져요",
-            "product": "프리미엄 엘보케어 팔꿈치 마사지기"
-          },
-          {
             "review_id": "ss_5039589765",
             "rating": 1,
             "date": "2026-08-09",
             "text": "일주일 지나니 찍찍이가 약해서 사용 불가. 좀 좋은거 쓰세요",
-            "product": "프리미엄 엘보케어 팔꿈치 마사지기"
+            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
+            "is_set": false
           }
         ],
         "all_review_ids": [
           "120264",
           "120137",
-          "ss_5051940411",
-          "ss_5048195115",
           "ss_5039589765"
         ],
         "ai_reclassified": true
       },
       {
         "word": "기능 추가 요청",
-        "count": 4,
+        "count": 3,
         "category": "기능추가요청",
         "reviews": [
           "117973",
@@ -12361,7 +12723,7 @@
         "by_product": [
           {
             "product": "목 마사지 베개 V2",
-            "count": 3
+            "count": 2
           },
           {
             "product": "목베개 플러스",
@@ -12390,21 +12752,14 @@
             "rating": 4,
             "date": "2026-08-21",
             "text": "목을 늘려주긴하는데 내목이 이상한건지 커브가 잘 맞지않아서 자꾸 목에 힘이 들어감. 진동모드는 좀더 셌으면 좋겟음",
-            "product": "목 마사지 베개 V2"
-          },
-          {
-            "review_id": "cp_976675694",
-            "rating": 5,
-            "date": "2026-08-15",
-            "text": "목을 편하게 받쳐주는 베개를 찾으면서 마사지 기능까지 있으면 좋겠다 싶어 선택했는데 만족하면서 사용하고 있어요. 경추 C-커브를 고려한 설계라고 해서 기대했는데 누워서 사용하기 편하고, 필요할 때 에어백이나 진동, 온열 기능을 골라 사용할 수 있어서 좋았어요. 특히 저녁에 씻고 나서 따뜻하게 설정해놓고 잠깐 누워 있는 시간이 마음에 들어요. 무선이라 공간 제약 없이 사용할 수 있고 리모컨도 포함되어 있어서 누운 상태에서 조작하기 편한 점도 마음에 들어요.",
-            "product": "목 마사지 베개 V2"
+            "product": "목 마사지 베개 V2",
+            "is_set": false
           }
         ],
         "all_review_ids": [
           "120152",
           "119750",
-          "ss_5047211970",
-          "cp_976675694"
+          "ss_5047211970"
         ],
         "ai_reclassified": true
       },
@@ -12445,7 +12800,8 @@
             "rating": 5,
             "date": "2026-08-20",
             "text": "오 효과 있는거 같어요!! 반신반의로 샀는데 \n아침에 목이 안뻐근하고 팔이 안저려요!! \n잘때만이라도 목을 씨커브로 만들어주니 \n아침에 개운한듯 합니다!! 남편꺼까지 20만원 투자 괜찮은거 같아요~~ \n아쉽다면 커버 있으면 좋을거같어요!! 쿠팡에서 \n일회용 배게커버 사서 바꿔가면서 쓰구 있어요 ㅎㅎ \n아 그리고 마사지할때 목 완전 씨커브로 만든다음 멈춤 기능 있었으몀 좋겠어요 \n완전히 커브상태로 좀 있다가 낮추고 잠자고 이런기능 이요!! 마사지는 솔직히 약간 아쉽긴해요 \n그래도 아침에 확실히 다르니 써보시는걸 추천!!!",
-            "product": "목 마사지 베개 V2"
+            "product": "목 마사지 베개 V2",
+            "is_set": false
           }
         ],
         "all_review_ids": [
@@ -12457,7 +12813,7 @@
       },
       {
         "word": "강도/세기 조절",
-        "count": 3,
+        "count": 2,
         "category": "강도조절",
         "reviews": [
           "117920",
@@ -12487,10 +12843,6 @@
             "count": 1
           },
           {
-            "product": "발편한케어 V1",
-            "count": 1
-          },
-          {
             "product": "목베개 플러스",
             "count": 1
           }
@@ -12505,30 +12857,23 @@
             "is_set": true
           },
           {
-            "review_id": "cp_988834029",
-            "rating": 5,
-            "date": "2026-08-28",
-            "text": "오래 걷거나 하루 종일 서 있었던 날 발바닥이 피곤해서 집에서 편하게 관리해보려고 구매했어요. 발을 올려놓고 사용할 수 있어서 TV 보면서도 간편하게 사용할 수 있는 점이 좋았습니다. 강도는 처음에는 약하게 시작해서 익숙해지면 조금씩 올리는 방식으로 사용하고 있는데 발바닥에 자극이 오는 느낌이 확실히 있네요. L사이즈라 발을 올려놓기도 편하고 네이비 색상도 깔끔해서 만족스럽습니다.",
-            "product": "발편한케어 V1"
-          },
-          {
             "review_id": "cp_980257122",
             "rating": 4,
             "date": "2026-08-19",
             "text": "온열이랑 마사지 기능이 같이 되면 더 좋을 것 같은데 두 기능을 동시에 사용할 수 없어서 조금 아쉬워요. 높이 조절이 안 되고 마사지 강도도 따로 조절할 수 없어서 세밀하게 맞춰 쓰기는 어렵습니다.\n\n그래도 날씨가 추워서 목이 뻣뻣하게 경직됐을 때 사용하면 꽤 시원해요. 마사지로 목을 풀어준 뒤 따뜻하게 온열까지 해주면 피로가 풀리는 느낌이라 요즘처럼 쌀쌀한 날에는 잘 사용하고 있습니다.",
-            "product": "목베개 플러스"
+            "product": "목베개 플러스",
+            "is_set": false
           }
         ],
         "all_review_ids": [
           "117920",
-          "cp_988834029",
           "cp_980257122"
         ],
         "ai_reclassified": true
       },
       {
         "word": "무선/충전 개선",
-        "count": 2,
+        "count": 1,
         "category": "무선충전",
         "reviews": [
           "117932",
@@ -12544,7 +12889,7 @@
         "by_product": [
           {
             "product": "목 마사지 베개 V2",
-            "count": 2
+            "count": 1
           }
         ],
         "review_samples": [
@@ -12555,18 +12900,10 @@
             "text": "1.리모컨 없이 베게에 붙어있는 컨트롤 패널만 사용해야 하는 것이 불편함.\n2. 핸드폰 포함 대부분의 충전기가 고속충전기인데 DC 5V2A 충전기를 사용하지 않으면 고장?? 사용시간에에 비해 충전시간도 3시간 이상 걸리는 불편함 해소를 위해서는 개선이 필요함.\n3. 개인차가 있겠으나 서비스로 보내주신 목배개가 좀 높은 듯. 이걸 베고 자라는 건 아니죠?",
             "product": "목 마사지 베개 V2",
             "is_set": false
-          },
-          {
-            "review_id": "ss_5049744076",
-            "rating": 5,
-            "date": "2026-08-24",
-            "text": "바디프렌드 안마의자 기존에 사용하고 있는 충전기 탭과 연결되는 제품이어서 충전하기에는 불편함없이 편한것 같습니다. 리뷰가 안 좋은것과 좋은것 너무 극과극이어서 구매할까말까 고민이 많았는데 저는 소음은 신경쓰이지 않는 편 같구요. 왜냐면 한의원에서도 이정도 소음은 들었던것 같아서요. 버튼 누르는것도 불편하지 않은데 리모콘 있으면 더 좋을것 같긴해요. 왜냐면 버튼을 누르고 누워야하다보니 목을 베개에 맞추는게 어려워요. 제가 느끼기에 단점은 목 맞추는게 어렵다와 리모콘이 없는것 이렇게 2가지 되겠습니다. 그리고 생각보다 안마기능이 시원하",
-            "product": "목 마사지 베개 V2"
           }
         ],
         "all_review_ids": [
-          "120296",
-          "ss_5049744076"
+          "120296"
         ],
         "ai_reclassified": true
       },
@@ -12602,41 +12939,13 @@
             "rating": 5,
             "date": "2026-08-24",
             "text": "바디프렌드 안마의자 기존에 사용하고 있는 충전기 탭과 연결되는 제품이어서 충전하기에는 불편함없이 편한것 같습니다. 리뷰가 안 좋은것과 좋은것 너무 극과극이어서 구매할까말까 고민이 많았는데 저는 소음은 신경쓰이지 않는 편 같구요. 왜냐면 한의원에서도 이정도 소음은 들었던것 같아서요. 버튼 누르는것도 불편하지 않은데 리모콘 있으면 더 좋을것 같긴해요. 왜냐면 버튼을 누르고 누워야하다보니 목을 베개에 맞추는게 어려워요. 제가 느끼기에 단점은 목 맞추는게 어렵다와 리모콘이 없는것 이렇게 2가지 되겠습니다. 그리고 생각보다 안마기능이 시원하",
-            "product": "목 마사지 베개 V2"
+            "product": "목 마사지 베개 V2",
+            "is_set": false
           }
         ],
         "all_review_ids": [
           "117912",
           "ss_5049744076"
-        ],
-        "ai_reclassified": true
-      },
-      {
-        "word": "내구성 개선 요청",
-        "count": 1,
-        "category": "내구성개선",
-        "reviews": [
-          "117935",
-          "118001"
-        ],
-        "by_product": [
-          {
-            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
-            "count": 1
-          }
-        ],
-        "review_samples": [
-          {
-            "review_id": "120137",
-            "rating": 4,
-            "date": "2026-08-26",
-            "text": "꾸준히 쓰고 있는데 확실히 팔 아픈게 좀 나아진것 같습니다. 다만 찍찍이가 좀 약한것 같아 잘 풀어지는데 이것만 개선하면 아주 좋을것 같습니다.",
-            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
-            "is_set": false
-          }
-        ],
-        "all_review_ids": [
-          "120137"
         ],
         "ai_reclassified": true
       },
@@ -12762,36 +13071,6 @@
         "source": "discovered"
       },
       {
-        "word": "높이 조절",
-        "count": 1,
-        "category": null,
-        "reviews": [
-          "117971",
-          "118018"
-        ],
-        "by_product": [
-          {
-            "product": "목베개 플러스",
-            "count": 1
-          }
-        ],
-        "review_samples": [
-          {
-            "review_id": "118018",
-            "rating": 4,
-            "date": "2026-08-05",
-            "text": "높이조정이 안되는게 조금 아쉬운데, 하루15분 마사지와 베개로 사용하면서 적응하고 있어요.. \n아직까지 효과가 있는지는 모르겠는데 꾸준히 써보려 합니다.",
-            "product": "목베개 플러스",
-            "is_set": false
-          }
-        ],
-        "all_review_ids": [
-          "118018"
-        ],
-        "ai_reclassified": true,
-        "source": "discovered"
-      },
-      {
         "word": "머리안마 대신 어깨안마 추가요청",
         "count": 1,
         "category": null,
@@ -12850,88 +13129,77 @@
         "source": "discovered"
       },
       {
-        "word": "AS 안내 부족",
+        "word": "충전 어댑터/고속충전 지원",
         "count": 1,
         "category": null,
         "reviews": [
-          "119513"
+          "ss_5054617743",
+          "ss_5050551597"
         ],
         "by_product": [
           {
-            "product": "목베개 플러스",
+            "product": "목 마사지 베개 V2",
             "count": 1
           }
         ],
         "review_samples": [
           {
-            "review_id": "119513",
-            "rating": 3,
-            "date": "2026-08-19",
-            "text": "잘쓸께요~~as는어디서하나요??",
-            "product": "목베개 플러스",
+            "review_id": "ss_5054617743",
+            "rating": 5,
+            "date": "2026-08-31",
+            "text": "배송은 빨라요. 그런데 전용 어댑터가 없어서\n따로 구매 해야합니다.",
+            "product": "목 마사지 베개 V2",
             "is_set": false
           }
         ],
         "all_review_ids": [
-          "119513"
+          "ss_5054617743"
         ],
         "ai_reclassified": true,
         "source": "discovered"
       },
       {
-        "word": "크기 확대요청",
-        "count": 1,
+        "word": "충전기/케이블 호환성",
+        "count": 2,
         "category": null,
         "reviews": [
-          "119782"
+          "ss_5049056387",
+          "ss_5046918845"
         ],
         "by_product": [
           {
-            "product": "목베개 플러스",
+            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
+            "count": 1
+          },
+          {
+            "product": "케이블",
             "count": 1
           }
         ],
         "review_samples": [
           {
-            "review_id": "119782",
-            "rating": 4,
-            "date": "2026-08-22",
-            "text": "아주 맘에들어요 크기가 조금 컸으면 하는 바램입니다!!",
-            "product": "목베개 플러스",
+            "review_id": "ss_5049056387",
+            "rating": 5,
+            "date": "2026-08-23",
+            "text": "받자 마자 써보니\n사용성 편하고 강약 조절도 쉬워요\n 써봐야 효과가 있는지 알것 같지만\n다른 제품  보다는 편하네요\n단 충전기 별도로 사야 하네요.( 결국 슬룸에서 추가 구입)\n5v 2a 외 고속 충전기 쓰면 않된다고 설명서에 못 받았는데 (꼼수 ?,옥에티)\n아무 충전기나 쓸수 있게 않했는지 이해가 않가네요\n다른건 모르겠지만 충전은 짜증 나네요 \n개선이 필요 할것 같아요",
+            "product": "프리미엄 엘보케어 팔꿈치 마사지기",
+            "is_set": false
+          },
+          {
+            "review_id": "ss_5046918845",
+            "rating": 5,
+            "date": "2026-08-20",
+            "text": "본체 케이블이 사라져서 주문했는데, 다른 일반 제품하고 호환이 가능한 케이블이면 좋겠어요\n굳이 이 제품 하자 쓰자고 케이블을 사야하나 싶기도 합니다",
+            "product": "케이블",
             "is_set": false
           }
         ],
         "all_review_ids": [
-          "119782"
+          "ss_5049056387",
+          "ss_5046918845"
         ],
         "ai_reclassified": true,
         "source": "discovered"
-      },
-      {
-        "word": "크기/높이 조절",
-        "count": 1,
-        "category": "크기높이조절",
-        "reviews": [
-          "cp_980257122"
-        ],
-        "by_product": [
-          {
-            "product": "목베개 플러스",
-            "count": 1
-          }
-        ],
-        "review_samples": [
-          {
-            "review_id": "cp_980257122",
-            "rating": 4,
-            "date": "2026-08-19",
-            "text": "온열이랑 마사지 기능이 같이 되면 더 좋을 것 같은데 두 기능을 동시에 사용할 수 없어서 조금 아쉬워요. 높이 조절이 안 되고 마사지 강도도 따로 조절할 수 없어서 세밀하게 맞춰 쓰기는 어렵습니다.\n\n그래도 날씨가 추워서 목이 뻣뻣하게 경직됐을 때 사용하면 꽤 시원해요. 마사지로 목을 풀어준 뒤 따뜻하게 온열까지 해주면 피로가 풀리는 느낌이라 요즘처럼 쌀쌀한 날에는 잘 사용하고 있습니다.",
-            "product": "목베개 플러스"
-          }
-        ],
-        "all_review_ids": [
-          "cp_980257122"
-        ]
       }
     ]
   }
