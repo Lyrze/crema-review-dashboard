@@ -183,3 +183,6 @@ reclass_run.log
 # 채널 분류 스테이징 브랜드 폴더(작업지시서 규칙: 중간 산출물, 커밋 안 함)
 docs/data/쿠팡/
 docs/data/스마트스토어/
+
+# 로컬 Claude Code 설정/락 파일 (팀원마다 다름, 커밋 불필요)
+.claude/
