@@ -229,7 +229,12 @@ def recompute_keywords(month: str, purge_ids: set):
         new_items = []
         for kw in items:
             all_ids = kw.get("all_review_ids") or []
-            new_ids = [rid for rid in all_ids if rid not in purge_ids]
+            # purge_ids로 명시된 것뿐 아니라, reviews.json에 이미 없는(다른 경로로
+            # 삭제된) review_id도 죽은 참조로 간주해 같이 제거한다 — 그렇지 않으면
+            # by_product의 "(상품 미상)" 폴백 버킷에 숨어서 count가 영구히 부풀려짐
+            # (2026-09-10 확인: 2026-06 praise "효과 좋음" 키워드가 109건 중 66건이
+            # 이미 삭제된 review_id였는데 count=109로 표시되고 있었음).
+            new_ids = [rid for rid in all_ids if rid not in purge_ids and rid in reviews]
             if not new_ids:
                 removed_kw += 1
                 continue  # 이 키워드는 전부 가짜 리뷰였던 것 -> 통째로 제거
