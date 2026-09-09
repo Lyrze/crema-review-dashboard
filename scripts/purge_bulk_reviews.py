@@ -66,7 +66,64 @@ def find_matches(snippets):
     return matches, details
 
 
+TOP_REVIEW_COUNT = 30  # process_data.py calc_products(top_review_count=30) 과 동일하게 유지
+
+
+def _select_top_reviews(prod_reviews):
+    """별점 높은 순 + 최신순 (process_data.py 의 pandas sort_values(["rating","review_date"],
+    ascending=[False, False]) 와 동일 순서)."""
+    ordered = sorted(
+        prod_reviews,
+        key=lambda item: (item[1].get("rating") or 0, item[1].get("date") or ""),
+        reverse=True,
+    )
+    out = []
+    for rid, r in ordered[:TOP_REVIEW_COUNT]:
+        out.append({
+            "review_id": str(rid),
+            "text": str(r.get("text") or "")[:300],
+            "rating": int(r.get("rating") or 0),
+            "date": r.get("date") or "",
+        })
+    return out
+
+
+def _select_bottom_reviews(prod_reviews):
+    """부정 리뷰 샘플 (별점 ≤2 우선, 부족하면 =3 보충, 최대 TOP_REVIEW_COUNT건).
+    pandas sort_values(["rating","review_date"], ascending=[True, False]) 재현:
+    날짜 내림차순으로 먼저 정렬한 뒤(stable) 별점 오름차순으로 다시 정렬한다."""
+    def _sorted_asc_rating_desc_date(items):
+        by_date = sorted(items, key=lambda item: item[1].get("date") or "", reverse=True)
+        return sorted(by_date, key=lambda item: item[1].get("rating") or 0)
+
+    low = [item for item in prod_reviews if (item[1].get("rating") or 0) <= 2]
+    low_sorted = _sorted_asc_rating_desc_date(low)[:TOP_REVIEW_COUNT]
+    if len(low_sorted) < 3:
+        mid = [item for item in prod_reviews if (item[1].get("rating") or 0) == 3]
+        extra = _sorted_asc_rating_desc_date(mid)[:TOP_REVIEW_COUNT - len(low_sorted)]
+        low_sorted = low_sorted + extra
+    out = []
+    for rid, r in low_sorted[:TOP_REVIEW_COUNT]:
+        out.append({
+            "review_id": str(rid),
+            "text": str(r.get("text") or "")[:300],
+            "rating": int(r.get("rating") or 0),
+            "date": r.get("date") or "",
+        })
+    return out
+
+
 def recompute_products(month: str, purge_ids: set):
+    """products.json 재계산 — 항상 현재 reviews.json 기준으로 모든 상품의
+    통계/top_reviews/bottom_reviews를 완전히 다시 계산한다.
+
+    과거엔 review_count가 안 바뀐 상품은 통째로 건너뛰었는데(성능 최적화 목적),
+    상품명 리네임 패치들을 여러 번 거치며 review_count는 우연히 최종값과 같아졌지만
+    top_reviews/bottom_reviews는 옛 상품명 시절 값(대개 빈 리스트)으로 영구히 고정되는
+    버그가 있었다 — recompute_keywords의 by_product 정체 버그와 동일 클래스
+    (2026-09-09 확인: "프리미엄 엘보케어 팔꿈치 마사지기" 508건인데 인사이트 카드
+    "최근 리뷰"가 "리뷰 데이터 없음"으로 표시됨). 상품 수가 많지 않아(수십 개) 매번
+    전체 재계산해도 비용이 작으므로, 조건부 스킵 대신 항상 재계산한다."""
     ppath = DATA_ROOT / month / "products.json"
     rpath = DATA_ROOT / month / "reviews.json"
     pdata = json.loads(ppath.read_text(encoding="utf-8"))
@@ -79,9 +136,8 @@ def recompute_products(month: str, purge_ids: set):
                          if r.get("product") == p["name"] and rid not in purge_ids]
         old_count = p["review_count"]
         new_count = len(prod_reviews)
-        if new_count == old_count:
-            continue  # 이 상품엔 purge 대상 없음
-        affected_products.add(p["name"])
+        if new_count != old_count:
+            affected_products.add(p["name"])
 
         if new_count == 0:
             # 이 달에 이 상품 리뷰가 하나도 안 남으면 0으로 표시만 하고 남겨둠(상품 자체 삭제는 안 함)
@@ -107,9 +163,10 @@ def recompute_products(month: str, purge_ids: set):
         p["positive_rate"] = round(pos / new_count * 100, 2) if new_count else 0.0
         p["negative_rate"] = round(neg / new_count * 100, 2) if new_count else 0.0
 
-        # top/bottom_reviews에서 purge 대상 제거(있으면)
-        p["top_reviews"] = [tr for tr in (p.get("top_reviews") or []) if tr.get("review_id") not in purge_ids]
-        p["bottom_reviews"] = [br for br in (p.get("bottom_reviews") or []) if br.get("review_id") not in purge_ids]
+        # top/bottom_reviews는 항상 현재 reviews.json에서 다시 뽑는다(기존 리스트를
+        # purge 대상만 걸러내는 방식은 위 staleness 버그의 원인이었다).
+        p["top_reviews"] = _select_top_reviews(prod_reviews)
+        p["bottom_reviews"] = _select_bottom_reviews(prod_reviews)
 
     ppath.write_text(json.dumps(pdata, ensure_ascii=False, indent=2), encoding="utf-8")
     return affected_products
