@@ -441,23 +441,23 @@
       "name": "팔꿈치 마사지기",
       "raw_name": "팔꿈치 마사지기",
       "price": null,
-      "review_count": 107,
-      "avg_rating": 4.71,
+      "review_count": 96,
+      "avg_rating": 4.7,
       "rating_distribution": {
         "1": 0,
         "2": 2,
         "3": 6,
-        "4": 13,
-        "5": 86
+        "4": 11,
+        "5": 77
       },
       "photo_count": 46,
       "sentiment": {
-        "positive": 82,
+        "positive": 71,
         "neutral": 12,
         "negative": 13
       },
-      "positive_rate": 76.64,
-      "negative_rate": 12.15,
+      "positive_rate": 73.96,
+      "negative_rate": 13.54,
       "prev_review_count": null,
       "prev_avg_rating": null,
       "top_reviews": [

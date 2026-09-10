@@ -5,23 +5,23 @@
       "name": "목 마사지 베개 V2",
       "raw_name": "목 마사지 베개 V2 경추 마사지기 베개",
       "price": 129000,
-      "review_count": 497,
-      "avg_rating": 4.45,
+      "review_count": 364,
+      "avg_rating": 4.34,
       "rating_distribution": {
         "1": 26,
         "2": 10,
-        "3": 36,
-        "4": 67,
-        "5": 358
+        "3": 28,
+        "4": 52,
+        "5": 248
       },
       "photo_count": 0,
       "sentiment": {
-        "positive": 381,
+        "positive": 248,
         "neutral": 55,
         "negative": 61
       },
-      "positive_rate": 76.66,
-      "negative_rate": 12.27,
+      "positive_rate": 68.13,
+      "negative_rate": 16.76,
       "prev_review_count": 440,
       "prev_avg_rating": 4.31,
       "top_reviews": [
@@ -2844,18 +2844,18 @@
       "name": "복부 순환 마스터 프리미엄 복부 마사지기",
       "raw_name": "복부 순환 마스터 프리미엄 복부 마사지기",
       "price": 149000,
-      "review_count": 3,
+      "review_count": 2,
       "avg_rating": 5.0,
       "rating_distribution": {
         "1": 0,
         "2": 0,
         "3": 0,
         "4": 0,
-        "5": 3
+        "5": 2
       },
       "photo_count": 0,
       "sentiment": {
-        "positive": 3,
+        "positive": 2,
         "neutral": 0,
         "negative": 0
       },
@@ -2869,12 +2869,6 @@
           "text": "원래 야식 먹고 바로 자면 속이 답답해서 뒤척이는 편이었는데ㅋㅋ\n이 복부순환마사지기 쓰고 나서 그게 없어졌어요. 먹으면서 같이 돌려주면 진짜 바로 속이 편해져요!!\n그래서 이제 햄버거든 뭐든 먹을 때 필수템으로 차고 먹어요ㅋㅋㅋ\n가장 만족스러운 건 더부룩함이 안 남고~  변비로 고생 좀 했는데 확실히 도움이 됐어요!!\n기능은 EMS 자극, TENS 자극, 롤링 마사지, 온열 이렇게 있는데 자극이 아프지 않고 딱 기분 좋은 정도예요!\n특히 온열이랑 롤링 조합은 극락… 생리통 있는 날엔 아침부터 밤까지 그냥 차고 살아요!!!!",
           "rating": 5,
           "date": "2026-08-06"
-        },
-        {
-          "review_id": "118038",
-          "text": "평소에도 손발이 차고 아랫배가 냉한 편인데, 특히 그날 전후가 되면 배가 더 차갑게 느껴지고 허리까지 뻐근해서 온열 기능이 있는 제품을 찾다가 구매해봤습니다. 찜질팩은 따뜻하긴 하지만 움직이기 불편하고 금방 식는 경우가 많아서, 마사지와 온열을 같이 사용할 수 있다는 점이 마음에 드네요😀\n처음에는 마사지 자극이 너무 세지 않을까 걱정했는데 강도를 세세하게 조절할 수 있어서 좋았어요. 저는 컨디션이 예민한 날에는 1~2단계로 부드럽게 사용하고, 평소에는 중간 정도 강도로 사용하는데 배와 허리를 번갈아 눌러주는 느낌이 꽤 편안하더라고요",
-          "rating": 5,
-          "date": "2026-08-05"
         },
         {
           "review_id": "118037",
@@ -3467,23 +3461,23 @@
       "name": "팔꿈치 마사지기",
       "raw_name": "팔꿈치 마사지기",
       "price": null,
-      "review_count": 508,
-      "avg_rating": 4.68,
+      "review_count": 185,
+      "avg_rating": 4.56,
       "rating_distribution": {
         "1": 8,
         "2": 2,
         "3": 11,
-        "4": 101,
-        "5": 386
+        "4": 21,
+        "5": 143
       },
       "photo_count": 0,
       "sentiment": {
-        "positive": 435,
-        "neutral": 51,
+        "positive": 132,
+        "neutral": 31,
         "negative": 22
       },
-      "positive_rate": 85.63,
-      "negative_rate": 4.33,
+      "positive_rate": 71.35,
+      "negative_rate": 11.89,
       "prev_review_count": 208,
       "prev_avg_rating": 4.64,
       "top_reviews": [

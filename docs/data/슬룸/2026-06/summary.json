@@ -3,22 +3,22 @@
   "month": "2026-06",
   "generated_at": "2026-07-30T10:17:17.206179",
   "kpis": {
-    "total_reviews": 1201,
+    "total_reviews": 1190,
     "avg_rating": 4.46,
     "rating_distribution": {
       "1": 52,
       "2": 22,
       "3": 85,
-      "4": 202,
-      "5": 840
+      "4": 200,
+      "5": 831
     },
     "photo_review_count": 223,
     "photo_review_rate": 19.0,
-    "positive_count": 887,
+    "positive_count": 876,
     "neutral_count": 162,
     "negative_count": 152,
-    "positive_rate": 73.86,
-    "negative_rate": 12.66,
+    "positive_rate": 73.61,
+    "negative_rate": 12.77,
     "mom_review_change": -159,
     "mom_review_change_pct": -7.3,
     "mom_rating_change": 0.02
@@ -51,8 +51,8 @@
     },
     {
       "date": "2026-06-06",
-      "count": 47,
-      "avg_rating": 4.38
+      "count": 46,
+      "avg_rating": 4.37
     },
     {
       "date": "2026-06-07",
@@ -86,8 +86,8 @@
     },
     {
       "date": "2026-06-13",
-      "count": 42,
-      "avg_rating": 4.55
+      "count": 41,
+      "avg_rating": 4.54
     },
     {
       "date": "2026-06-14",
@@ -101,8 +101,8 @@
     },
     {
       "date": "2026-06-16",
-      "count": 37,
-      "avg_rating": 4.57
+      "count": 33,
+      "avg_rating": 4.52
     },
     {
       "date": "2026-06-17",
@@ -111,13 +111,13 @@
     },
     {
       "date": "2026-06-18",
-      "count": 49,
-      "avg_rating": 4.61
+      "count": 48,
+      "avg_rating": 4.6
     },
     {
       "date": "2026-06-19",
-      "count": 38,
-      "avg_rating": 4.39
+      "count": 37,
+      "avg_rating": 4.38
     },
     {
       "date": "2026-06-20",
@@ -131,8 +131,8 @@
     },
     {
       "date": "2026-06-22",
-      "count": 41,
-      "avg_rating": 4.63
+      "count": 38,
+      "avg_rating": 4.66
     },
     {
       "date": "2026-06-23",

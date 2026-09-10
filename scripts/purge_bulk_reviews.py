@@ -27,14 +27,24 @@ def eprint(*a, **k):
     print(*a, file=sys.stderr, flush=True, **k)
 
 
-def load_bulk_snippets():
-    files = sorted(glob.glob(str(DOWNLOADS / "brand_csv-*.csv")))
+TEMPLATE_EXAMPLE_ID = "32620"  # 크리마 일괄등록 템플릿에 원래 들어있는 예시행 ID
+
+
+def load_bulk_snippets(csv_dir: Path):
+    """크리마 일괄등록 CSV에서 리뷰 본문 앞 40자를 스니펫으로 모은다.
+
+    시작행을 고정 인덱스로 자르면 안 된다 — 예전엔 rows[14:]로 잘랐는데, 실제
+    템플릿은 설명 3줄 + 예시행 1줄 뒤 4번째 행부터가 데이터라서 파일당 10건씩
+    조용히 누락됐다(2026-09 확인). 헤더/설명/예시행을 값으로 판별해 걸러낸다."""
+    files = sorted(glob.glob(str(csv_dir / "brand_csv-*.csv")))
     snippets = []
     for f in files:
         with open(f, encoding="utf-8-sig", newline="") as fh:
             rows = list(csv.reader(fh))
-        for r in rows[14:]:
+        for r in rows[3:]:  # 0~2행은 컬럼명/필수여부/설명 고정
             if not r or len(r) < 8:
+                continue
+            if (r[0] or "").strip() == TEMPLATE_EXAMPLE_ID:
                 continue
             msg = (r[7] or "").strip()
             if len(msg) < 20:
@@ -49,6 +59,21 @@ def find_matches(snippets):
     스니펫 하나가 여러 리뷰(같은 문구가 중복 업로드된 경우)에 매칭될 수 있으므로
     첫 매치에서 멈추지 않고 해당 스니펫을 포함하는 리뷰를 전부 찾는다
     (예전엔 break로 스니펫당 1건만 잡아 중복분이 누락되는 버그가 있었음)."""
+    # 스니펫 앞 PREFIX_LEN자로 인덱스를 만들어 리뷰 본문의 각 위치에서 사전 조회한다.
+    # "어떤 스니펫이든 본문의 부분문자열이면 매치"라는 판정은 그대로이고 결과도
+    # 동일하지만, 스니펫×리뷰 전수 비교(수천만 회)를 피해 훨씬 빠르다.
+    PREFIX_LEN = 16
+    by_prefix = defaultdict(list)
+    for s in set(snippets):
+        by_prefix[s[:PREFIX_LEN]].append(s)
+
+    def hits(text: str) -> bool:
+        for i in range(len(text) - PREFIX_LEN + 1):
+            for s in by_prefix.get(text[i:i + PREFIX_LEN], ()):
+                if text.startswith(s, i):
+                    return True
+        return False
+
     matches = defaultdict(set)  # month -> set(review_id)
     details = []  # (month, review_id, product, rating)
     for m in sorted(p.name for p in DATA_ROOT.iterdir() if p.is_dir()):
@@ -56,13 +81,10 @@ def find_matches(snippets):
         if not rpath.is_file():
             continue
         reviews = json.loads(rpath.read_text(encoding="utf-8"))["reviews"]
-        for snippet in snippets:
-            for rid, r in reviews.items():
-                if rid in matches[m]:
-                    continue
-                if snippet in (r.get("text") or ""):
-                    matches[m].add(rid)
-                    details.append((m, rid, r.get("product"), r.get("rating")))
+        for rid, r in reviews.items():
+            if hits(r.get("text") or ""):
+                matches[m].add(rid)
+                details.append((m, rid, r.get("product"), r.get("rating")))
     return matches, details
 
 
@@ -277,9 +299,18 @@ def main():
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--dry-run", action="store_true")
     g.add_argument("--apply", action="store_true")
+    ap.add_argument("--csv-dir", default=str(DOWNLOADS),
+                    help="brand_csv-*.csv 가 있는 폴더 (기본: 다운로드 폴더)")
     args = ap.parse_args()
 
-    snippets, nfiles = load_bulk_snippets()
+    csv_dir = Path(args.csv_dir)
+    if not csv_dir.is_dir():
+        eprint(f"[중단] CSV 폴더가 없습니다: {csv_dir}")
+        sys.exit(2)
+    snippets, nfiles = load_bulk_snippets(csv_dir)
+    if not nfiles:
+        eprint(f"[중단] {csv_dir} 에 brand_csv-*.csv 파일이 없습니다.")
+        sys.exit(2)
     eprint(f"다운로드 CSV {nfiles}개에서 리뷰 스니펫 {len(snippets)}건 수집")
     matches, details = find_matches(snippets)
 
