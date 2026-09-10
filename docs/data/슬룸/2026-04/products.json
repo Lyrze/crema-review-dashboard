@@ -22,8 +22,8 @@
       },
       "positive_rate": 68.38,
       "negative_rate": 14.53,
-      "prev_review_count": 389,
-      "prev_avg_rating": 4.67,
+      "prev_review_count": null,
+      "prev_avg_rating": null,
       "top_reviews": [
         {
           "review_id": "111951",
@@ -261,8 +261,8 @@
       },
       "positive_rate": 62.99,
       "negative_rate": 20.34,
-      "prev_review_count": 526,
-      "prev_avg_rating": 4.33,
+      "prev_review_count": 602,
+      "prev_avg_rating": 4.34,
       "top_reviews": [
         {
           "review_id": "112258",
@@ -650,8 +650,8 @@
       },
       "positive_rate": 78.71,
       "negative_rate": 5.7,
-      "prev_review_count": 260,
-      "prev_avg_rating": 4.7,
+      "prev_review_count": 306,
+      "prev_avg_rating": 4.71,
       "top_reviews": [
         {
           "review_id": "112257",
@@ -889,8 +889,8 @@
       },
       "positive_rate": 77.35,
       "negative_rate": 7.73,
-      "prev_review_count": 265,
-      "prev_avg_rating": 4.63,
+      "prev_review_count": 293,
+      "prev_avg_rating": 4.6,
       "top_reviews": [
         {
           "review_id": "ss_4966054778",
@@ -1324,7 +1324,7 @@
       },
       "positive_rate": 72.88,
       "negative_rate": 6.78,
-      "prev_review_count": 10,
+      "prev_review_count": 30,
       "prev_avg_rating": 5.0,
       "top_reviews": [
         {
@@ -1539,8 +1539,8 @@
       },
       "positive_rate": 81.82,
       "negative_rate": 7.27,
-      "prev_review_count": 57,
-      "prev_avg_rating": 4.58,
+      "prev_review_count": 75,
+      "prev_avg_rating": 4.47,
       "top_reviews": [
         {
           "review_id": "ss_4966044805",
@@ -1766,8 +1766,8 @@
       },
       "positive_rate": 83.72,
       "negative_rate": 11.63,
-      "prev_review_count": 14,
-      "prev_avg_rating": 4.64,
+      "prev_review_count": 22,
+      "prev_avg_rating": 4.68,
       "top_reviews": [
         {
           "review_id": "111953",
@@ -1993,8 +1993,8 @@
       },
       "positive_rate": 80.49,
       "negative_rate": 9.76,
-      "prev_review_count": 49,
-      "prev_avg_rating": 4.61,
+      "prev_review_count": 71,
+      "prev_avg_rating": 4.45,
       "top_reviews": [
         {
           "review_id": "cp_886831292",
@@ -2238,8 +2238,8 @@
       },
       "positive_rate": 84.62,
       "negative_rate": 2.56,
-      "prev_review_count": 9,
-      "prev_avg_rating": 4.44,
+      "prev_review_count": 23,
+      "prev_avg_rating": 4.65,
       "top_reviews": [
         {
           "review_id": "ss_4965563507",
@@ -2762,8 +2762,8 @@
       },
       "positive_rate": 100.0,
       "negative_rate": 0.0,
-      "prev_review_count": 20,
-      "prev_avg_rating": 4.9,
+      "prev_review_count": 51,
+      "prev_avg_rating": 4.86,
       "top_reviews": [
         {
           "review_id": "cp_885324292",
@@ -2959,8 +2959,8 @@
       },
       "positive_rate": 57.69,
       "negative_rate": 19.23,
-      "prev_review_count": 9,
-      "prev_avg_rating": 3.67,
+      "prev_review_count": 12,
+      "prev_avg_rating": 3.5,
       "top_reviews": [
         {
           "review_id": "112256",
@@ -3174,7 +3174,7 @@
       },
       "positive_rate": 66.67,
       "negative_rate": 0.0,
-      "prev_review_count": 0,
+      "prev_review_count": null,
       "prev_avg_rating": null,
       "top_reviews": [
         {
@@ -3220,8 +3220,8 @@
       },
       "positive_rate": 90.0,
       "negative_rate": 5.0,
-      "prev_review_count": 12,
-      "prev_avg_rating": 4.75,
+      "prev_review_count": 19,
+      "prev_avg_rating": 4.53,
       "top_reviews": [
         {
           "review_id": "ss_4965909850",
@@ -3368,7 +3368,7 @@
       },
       "positive_rate": 83.33,
       "negative_rate": 0.0,
-      "prev_review_count": 7,
+      "prev_review_count": 5,
       "prev_avg_rating": 5.0,
       "top_reviews": [
         {
@@ -3596,8 +3596,8 @@
       },
       "positive_rate": 50.0,
       "negative_rate": 0.0,
-      "prev_review_count": null,
-      "prev_avg_rating": null,
+      "prev_review_count": 1,
+      "prev_avg_rating": 4.0,
       "top_reviews": [
         {
           "review_id": "cp_877088388",

@@ -22,6 +22,8 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA_ROOT = ROOT / "docs" / "data" / "슬룸"
 DOWNLOADS = Path(r"C:/Users/올릿/Downloads")
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 
 def eprint(*a, **k):
     print(*a, file=sys.stderr, flush=True, **k)
@@ -350,6 +352,16 @@ def main():
         eprint(f"  summary.json 재계산 완료")
         recompute_keywords(month, ids)
         eprint(f"  keywords.json 재계산 완료")
+
+        # 이 달의 review_count가 바뀌었으므로, 다음 달 products.json이 이 달을
+        # "전월"로 참조 중이라면 그 스냅샷도 같이 갱신해야 한다(안 그러면 다음 달
+        # SKU 변화 테이블의 전월 칸이 정리 전 옛날 값에 그대로 고정된다 — 2026-09-10
+        # "목 마사지 베개 V2" 4월분에서 발견된 버그: 3월 리뷰를 정리했는데
+        # 4월의 prev_review_count가 정리 전 값(389)에 계속 고정돼 있었음).
+        from patch_relink_prev_month import relink_month, _next_month  # noqa: E402 (순환 임포트 방지 위해 지연 임포트)
+        nxt = _next_month(month)
+        eprint(f"  → 다음 달({nxt}) 전월 연결 재계산:")
+        relink_month("슬룸", nxt, apply=True, quiet=False)
 
     eprint("\n[DONE] 전 월 처리 완료. *.bak_purge 로 원본 백업됨.")
 

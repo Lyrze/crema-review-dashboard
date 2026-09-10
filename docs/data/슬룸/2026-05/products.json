@@ -22,8 +22,8 @@
       },
       "positive_rate": 65.58,
       "negative_rate": 16.3,
-      "prev_review_count": 431,
-      "prev_avg_rating": 4.65,
+      "prev_review_count": 117,
+      "prev_avg_rating": 4.55,
       "top_reviews": [
         {
           "review_id": "114592",
@@ -369,8 +369,8 @@
       },
       "positive_rate": 67.19,
       "negative_rate": 17.58,
-      "prev_review_count": 311,
-      "prev_avg_rating": 4.28,
+      "prev_review_count": 408,
+      "prev_avg_rating": 4.26,
       "top_reviews": [
         {
           "review_id": "114594",
@@ -710,8 +710,8 @@
       },
       "positive_rate": 77.37,
       "negative_rate": 4.12,
-      "prev_review_count": 229,
-      "prev_avg_rating": 4.72,
+      "prev_review_count": 263,
+      "prev_avg_rating": 4.69,
       "top_reviews": [
         {
           "review_id": "cp_909135005",
@@ -943,8 +943,8 @@
       },
       "positive_rate": 78.61,
       "negative_rate": 5.35,
-      "prev_review_count": 169,
-      "prev_avg_rating": 4.66,
+      "prev_review_count": 181,
+      "prev_avg_rating": 4.68,
       "top_reviews": [
         {
           "review_id": "ss_4988476475",
@@ -1170,8 +1170,8 @@
       },
       "positive_rate": 89.66,
       "negative_rate": 0.0,
-      "prev_review_count": 25,
-      "prev_avg_rating": 4.72,
+      "prev_review_count": 3,
+      "prev_avg_rating": 4.67,
       "top_reviews": [
         {
           "review_id": "ss_4988430921",
@@ -1372,8 +1372,8 @@
       },
       "positive_rate": 90.32,
       "negative_rate": 4.84,
-      "prev_review_count": 38,
-      "prev_avg_rating": 4.71,
+      "prev_review_count": 55,
+      "prev_avg_rating": 4.67,
       "top_reviews": [
         {
           "review_id": "cp_908703857",
@@ -2280,8 +2280,8 @@
       },
       "positive_rate": 74.19,
       "negative_rate": 9.68,
-      "prev_review_count": 27,
-      "prev_avg_rating": 4.41,
+      "prev_review_count": 41,
+      "prev_avg_rating": 4.39,
       "top_reviews": [
         {
           "review_id": "cp_904743444",
@@ -2519,8 +2519,8 @@
       },
       "positive_rate": 83.33,
       "negative_rate": 6.67,
-      "prev_review_count": 12,
-      "prev_avg_rating": 4.83,
+      "prev_review_count": 39,
+      "prev_avg_rating": 4.59,
       "top_reviews": [
         {
           "review_id": "cp_908826148",
@@ -2746,8 +2746,8 @@
       },
       "positive_rate": 84.62,
       "negative_rate": 0.0,
-      "prev_review_count": 9,
-      "prev_avg_rating": 4.78,
+      "prev_review_count": 27,
+      "prev_avg_rating": 4.85,
       "top_reviews": [
         {
           "review_id": "ss_4988385467",
@@ -2937,8 +2937,8 @@
       },
       "positive_rate": 88.46,
       "negative_rate": 7.69,
-      "prev_review_count": 12,
-      "prev_avg_rating": 4.92,
+      "prev_review_count": 20,
+      "prev_avg_rating": 4.9,
       "top_reviews": [
         {
           "review_id": "ss_4988424405",
@@ -3134,8 +3134,8 @@
       },
       "positive_rate": 63.16,
       "negative_rate": 15.79,
-      "prev_review_count": 30,
-      "prev_avg_rating": 4.93,
+      "prev_review_count": 11,
+      "prev_avg_rating": 4.91,
       "top_reviews": [
         {
           "review_id": "114548",
@@ -3295,8 +3295,8 @@
       },
       "positive_rate": 57.89,
       "negative_rate": 21.05,
-      "prev_review_count": 18,
-      "prev_avg_rating": 4.56,
+      "prev_review_count": 43,
+      "prev_avg_rating": 4.49,
       "top_reviews": [
         {
           "review_id": "114595",
@@ -3544,8 +3544,8 @@
       },
       "positive_rate": 88.89,
       "negative_rate": 11.11,
-      "prev_review_count": 23,
-      "prev_avg_rating": 4.3,
+      "prev_review_count": 26,
+      "prev_avg_rating": 4.38,
       "top_reviews": [
         {
           "review_id": "cp_904417274",
@@ -3807,7 +3807,7 @@
       },
       "positive_rate": 100.0,
       "negative_rate": 0.0,
-      "prev_review_count": 0,
+      "prev_review_count": null,
       "prev_avg_rating": null,
       "top_reviews": [
         {
@@ -3859,8 +3859,8 @@
       },
       "positive_rate": 0.0,
       "negative_rate": 33.33,
-      "prev_review_count": 0,
-      "prev_avg_rating": null,
+      "prev_review_count": 2,
+      "prev_avg_rating": 4.0,
       "top_reviews": [
         {
           "review_id": "cp_908023305",

@@ -32,8 +32,6 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from purge_bulk_reviews import backup  # noqa: E402
 
-DATA_ROOT = ROOT / "docs" / "data" / "슬룸"
-
 
 def eprint(*a, **k):
     print(*a, file=sys.stderr, flush=True, **k)
@@ -47,22 +45,34 @@ def _prev_month(m):
     return f"{y:04d}-{mo:02d}"
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--month", required=True)
-    g = ap.add_mutually_exclusive_group(required=True)
-    g.add_argument("--dry-run", action="store_true")
-    g.add_argument("--apply", action="store_true")
-    args = ap.parse_args()
+def _next_month(m):
+    y, mo = [int(x) for x in str(m).split("-")[:2]]
+    mo += 1
+    if mo == 13:
+        y, mo = y + 1, 1
+    return f"{y:04d}-{mo:02d}"
 
-    month = args.month
+
+def relink_month(brand, month, apply=False, quiet=False):
+    """대상월 products.json의 prev_review_count/prev_avg_rating을 전월 products.json과
+    상품명 완전일치로 다시 계산한다. 리네임/컨솔리데이트/채널 병합으로 상품명이나 전월
+    데이터가 바뀐 뒤에도 호출 가능하도록 재사용 가능한 함수로 분리했다(consolidate_product.py
+    등에서 병합 직후 자동으로 다시 연결시키는 데 사용).
+
+    반환값: 변경된 항목 수. 전월 products.json이 없으면 0을 반환하고 건너뛴다.
+    """
+    log = (lambda *a, **k: None) if quiet else eprint
+    data_root = ROOT / "docs" / "data" / brand
     prev_month = _prev_month(month)
-    ppath = DATA_ROOT / month / "products.json"
-    prev_ppath = DATA_ROOT / prev_month / "products.json"
+    ppath = data_root / month / "products.json"
+    prev_ppath = data_root / prev_month / "products.json"
 
+    if not ppath.is_file():
+        log(f"[{month}] products.json 없음 — 건너뜀")
+        return 0
     if not prev_ppath.is_file():
-        eprint(f"[{month}] 전월({prev_month}) products.json 없음 — 건너뜀")
-        return
+        log(f"[{month}] 전월({prev_month}) products.json 없음 — 건너뜀")
+        return 0
 
     pdata = json.loads(ppath.read_text(encoding="utf-8"))
     prev_data = json.loads(prev_ppath.read_text(encoding="utf-8"))
@@ -83,20 +93,32 @@ def main():
             p["prev_review_count"] = want_rc
             p["prev_avg_rating"] = want_avg
 
-    eprint(f"[{month}] (전월={prev_month}) 재연결 대상 {len(changes)}건")
+    log(f"[{month}] (전월={prev_month}) 재연결 대상 {len(changes)}건")
     for name, old_rc, new_rc, old_avg, new_avg in changes:
-        eprint(f"  {name}: prev_review_count {old_rc} -> {new_rc}, prev_avg_rating {old_avg} -> {new_avg}")
+        log(f"  {name}: prev_review_count {old_rc} -> {new_rc}, prev_avg_rating {old_avg} -> {new_avg}")
 
-    if args.dry_run:
-        eprint("\n[dry-run] 실제 변경 없음.")
-        return
+    if not apply:
+        log("\n[dry-run] 실제 변경 없음.")
+        return len(changes)
 
     if changes:
         backup(ppath)
         ppath.write_text(json.dumps(pdata, ensure_ascii=False, indent=2), encoding="utf-8")
-        eprint(f"\n[DONE] {ppath} 저장 완료")
+        log(f"\n[DONE] {ppath} 저장 완료")
     else:
-        eprint("\n[DONE] 변경 없음")
+        log("\n[DONE] 변경 없음")
+    return len(changes)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--brand", default="슬룸")
+    ap.add_argument("--month", required=True)
+    g = ap.add_mutually_exclusive_group(required=True)
+    g.add_argument("--dry-run", action="store_true")
+    g.add_argument("--apply", action="store_true")
+    args = ap.parse_args()
+    relink_month(args.brand, args.month, apply=args.apply)
 
 
 if __name__ == "__main__":

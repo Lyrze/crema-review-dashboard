@@ -25,6 +25,9 @@ if hasattr(sys.stdout, "reconfigure"):
 ROOT = Path(__file__).resolve().parent.parent
 SENTS = ("positive", "neutral", "negative")
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from patch_relink_prev_month import relink_month, _next_month  # noqa: E402
+
 
 def eprint(*a, **k):
     print(*a, file=sys.stderr, flush=True, **k)
@@ -84,6 +87,15 @@ def merge_product_entries(plist, mapping):
         for fld in ("top_reviews", "bottom_reviews"):
             if isinstance(dp.get(fld), list) and isinstance(sp.get(fld), list):
                 dp[fld] = (dp[fld] + sp[fld])[:5]
+        # prev_review_count/prev_avg_rating은 "이번 달 이름 == 전월 이름" 완전일치로
+        # 계산된 값이라, src/dst 두 값을 그냥 더하거나 어느 한쪽을 취해도 틀리기 쉽다
+        # (전월 쪽은 아직 이 mapping으로 합쳐지지 않았을 수도 있음). 병합 시점엔 일단
+        # None(모름)으로 비워두고, main()이 끝에서 patch_relink_prev_month.relink_month()를
+        # 돌려 전월 products.json 기준으로 다시 정확히 계산하게 한다. 이걸 빼먹으면
+        # "SKU 변화 테이블"에 병합된 상품이 실제로는 전월 데이터가 있는데도 계속
+        # "new"로 잘못 표시되는 버그가 재발한다.
+        dp["prev_review_count"] = None
+        dp["prev_avg_rating"] = None
         del by_name[src]
     # 원래 순서 유지 어렵지 않게 리뷰수 순 재정렬
     return sorted(by_name.values(), key=lambda x: x.get("review_count", 0), reverse=True)
@@ -133,7 +145,9 @@ def main():
     for a, b in mapping.items():
         eprint(f"  {a!r} → {b!r}")
 
-    for m in [x.strip() for x in args.months.split(",") if x.strip()]:
+    months = [x.strip() for x in args.months.split(",") if x.strip()]
+    processed = []
+    for m in months:
         d = ROOT / "docs" / "data" / args.brand / m
         rp = d / "reviews.json"
         if not rp.is_file():
@@ -160,6 +174,16 @@ def main():
             apply_keywords(kdoc, mapping)
             save(kdoc, d / "keywords.json")
         eprint(f"  [OK] {m}: 리뷰 {n}건 상품명 치환 + 상품/키워드 집계 병합")
+        processed.append(m)
+
+    # 병합으로 이름/전월 필드가 바뀐 만큼, 처리한 각 월(전월 기준 재연결)과 마지막 처리월의
+    # 다음 달(아직 --months에 안 넘겼더라도, 그 달이 이 마지막 달을 전월로 참조 중이라면
+    # 마찬가지로 깨짐)까지 SKU 변화 테이블의 전월 연결을 자동으로 다시 맞춘다.
+    if processed:
+        eprint("\n전월(prev_review_count) 재연결:")
+        relink_targets = sorted(set(processed)) + [_next_month(max(processed))]
+        for m in relink_targets:
+            relink_month(args.brand, m, apply=True, quiet=False)
     eprint("완료.")
 
 
