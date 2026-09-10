@@ -4802,8 +4802,8 @@ function openKeywordReviewsModal(keyword, productFilter, type, searchTerm, expli
         '<span style="font-size:11px;color:var(--text-secondary);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">긍·부정</span>'+
         '<div style="display:inline-flex;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:3px;">'+
           '<button class="krm-sent-btn active" data-sent="all" onclick="krmSetSent(\'all\')" style="padding:4px 10px;background:var(--accent);border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:600;color:#fff;font-family:inherit;">전체 <b id="krm-sent-all">0</b></button>'+
-          '<button class="krm-sent-btn" data-sent="pos" onclick="krmSetSent(\'pos\')" title="별점 4점 이상 (긍정)" style="padding:4px 10px;background:transparent;border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:600;color:var(--text-secondary);font-family:inherit;">👍 긍정 <b id="krm-sent-pos">0</b></button>'+
-          '<button class="krm-sent-btn" data-sent="neg" onclick="krmSetSent(\'neg\')" title="별점 3점 이하 (부정)" style="padding:4px 10px;background:transparent;border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:600;color:var(--text-secondary);font-family:inherit;">👎 부정 <b id="krm-sent-neg">0</b></button>'+
+          '<button class="krm-sent-btn" data-sent="pos" onclick="krmSetSent(\'pos\')" title="긍정 (카드와 동일 기준 · 없으면 별점 4점 이상)" style="padding:4px 10px;background:transparent;border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:600;color:var(--text-secondary);font-family:inherit;">👍 긍정 <b id="krm-sent-pos">0</b></button>'+
+          '<button class="krm-sent-btn" data-sent="neg" onclick="krmSetSent(\'neg\')" title="부정 (카드와 동일 기준 · 없으면 별점 3점 이하)" style="padding:4px 10px;background:transparent;border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:600;color:var(--text-secondary);font-family:inherit;">👎 부정 <b id="krm-sent-neg">0</b></button>'+
         '</div>'+
         '<span id="krm-mode-info" style="font-size:11px;color:var(--text-secondary);margin-left:auto;"></span>'+
       '</div>'+
@@ -5041,22 +5041,26 @@ function krmRenderList(){
   var totalCount=ctx.totalCount;
   var keyword=ctx.keyword;
 
-  // 긍·부정 토글 카운트 갱신 + 필터 (별점 ≥4 긍정 / <4 부정)
+  // 긍·부정 토글 카운트 갱신 + 필터. 호출측(PVOC 카드 등)이 _cls로 판정을 넘겼으면 그걸
+  // 그대로 쓰고, 없는 경우(키워드 목록 등 일반 호출)만 별점 ≥4 긍정 / <4 부정으로 폴백한다.
+  // 항상 별점으로 다시 계산하면 카드가 AI 의도(pvoc_intent) 기준으로 보여준 숫자와
+  // 모달이 어긋나는 버그가 있었다(2026-09-10 발견: 카드 "긍정3/부정3" vs 모달 "긍정2/부정4").
+  function _krmCls(it){ return it._cls || (((it.r&&it.r.rating)||0)>=4 ? 'pos' : 'neg'); }
   var posN=0, negN=0;
-  srcAll.forEach(function(it){ if(((it.r&&it.r.rating)||0)>=4) posN++; else negN++; });
+  srcAll.forEach(function(it){ if(_krmCls(it)==='pos') posN++; else negN++; });
   var _eA=$('krm-sent-all'), _eP=$('krm-sent-pos'), _eN=$('krm-sent-neg');
   if(_eA) _eA.textContent=srcAll.length;
   if(_eP) _eP.textContent=posN;
   if(_eN) _eN.textContent=negN;
-  var allReviews = KRM_SENT==='pos' ? srcAll.filter(function(it){return ((it.r&&it.r.rating)||0)>=4;})
-                 : KRM_SENT==='neg' ? srcAll.filter(function(it){return ((it.r&&it.r.rating)||0)<4;})
+  var allReviews = KRM_SENT==='pos' ? srcAll.filter(function(it){return _krmCls(it)==='pos';})
+                 : KRM_SENT==='neg' ? srcAll.filter(function(it){return _krmCls(it)==='neg';})
                  : srcAll;
 
   var listEl=$('krm-list');
   if(allReviews.length===0){
     var emptyMsg;
     if(KRM_SENT!=='all'){
-      emptyMsg='선택한 '+(KRM_SENT==='pos'?'긍정(★4 이상)':'부정(★3 이하)')+' 리뷰가 없습니다.<br><br>'+
+      emptyMsg='선택한 '+(KRM_SENT==='pos'?'긍정':'부정')+' 리뷰가 없습니다.<br><br>'+
         '<span style="font-size:11px;color:var(--text-secondary);">상단 \'전체\'를 눌러 모든 리뷰를 보세요.</span>';
     } else if(ctx.dataSource==='text-search'){
       emptyMsg='"'+escapeHtml(ctx.searchTerm||ctx.keyword)+'" 키워드가 저장된 리뷰 본문에 나타나지 않습니다.<br><br>'+
@@ -6854,7 +6858,7 @@ var PVOC_TAXONOMY=[
    items:[
      {name:'광고 / PPL', icon:'📣', pats:['광고','유튜브','유투브','인스타','페이스북','협찬','ppl','보고 샀','보고 구매','보고구매','영상 보고','쇼츠','릴스','덤순이']},
      {name:'제품 상세페이지', icon:'📄', pats:['상세페이지','상세 페이지','홈페이지','상품 페이지','사용 방법','사용법을','사용방법','설명서','상세 설명','설명이 부족','설명이 자세']},
-     {name:'상담 (구매 전)', icon:'💬', pats:['구매 전 문의','구매전 문의','사기 전에 문의','문의했','문의드렸','상담 받','상담받','추천을 잘','추천해 주','추천해주셔','쿠폰 적용','쿠폰이']}
+     {name:'상담 (구매 전)', icon:'💬', pats:['구매 전 문의','구매전 문의','사기 전에 문의','판매자에게 문의','판매자한테 문의','판매자와 상담','판매자한테 상담','구매 전 상담','구매전 상담','미리 문의','재고 문의','사이즈 문의','쿠폰 적용','쿠폰이']}
    ]},
   {key:'motive', icon:'💡', label:'구매 동기', desc:'실제 구매 결심 계기', accent:'#16a34a',
    items:[
@@ -6962,35 +6966,59 @@ function pvjCompute(){
       // Taxonomy 기준 — txMatchTopic이 수동 포함/제외까지 처리
       items=(tax.topics||[]).map(function(tp){
         var matched=txMatchTopic(tp, src, tax);
-        var pos=0, neg=0;
-        matched.forEach(function(r){ if(senPos(r)) pos++; else neg++; });
+        var pos=0, neg=0, cls={};
+        matched.forEach(function(r){ var id=String(r.review_id); var p=senPos(r); cls[id]=p?'pos':'neg'; if(p) pos++; else neg++; });
         return {name:tp.name, icon:tp.icon||'🏷️', pats:(tp.keywords||[]).slice(), pos:pos, neg:neg, total:pos+neg,
-                _ids:matched.map(function(r){return String(r.review_id);})};
+                _ids:matched.map(function(r){return String(r.review_id);}), _cls:cls};
       });
     } else {
       // 폴백: 내장 고정값
       items=col.items.map(function(it){
-        var pos=0, neg=0, ids=[];
+        var pos=0, neg=0, ids=[], cls={};
         for(var i=0;i<src.length;i++){
           var r=src[i];
           if(!r.text) continue;
           if(pvjMatchText(r.text, it.pats)){
-            ids.push(String(r.review_id));
-            if(senPos(r)) pos++; else neg++;
+            var id=String(r.review_id);
+            ids.push(id);
+            var p=senPos(r);
+            cls[id]=p?'pos':'neg';
+            if(p) pos++; else neg++;
           }
         }
-        return {name:it.name, icon:it.icon, pats:it.pats, pos:pos, neg:neg, total:pos+neg, _ids:ids};
+        return {name:it.name, icon:it.icon, pats:it.pats, pos:pos, neg:neg, total:pos+neg, _ids:ids, _cls:cls};
       });
     }
     // 감성기반 모드: 별점 대신 AI 의도(pvoc_intent)로 pos/neg 재계산 (데이터 있는 토픽만)
+    // _cls에도 같은 판정을 기록해서, 이 항목 클릭 시 뜨는 리뷰 모달(krmRenderList)이
+    // 여기와 다른 기준(별점만)으로 다시 계산해 숫자가 어긋나는 일이 없게 한다
+    // (2026-09-10 발견: 카드 "👍3|👎3"과 모달 "긍정2/부정4"가 서로 달랐던 버그).
     if(typeof PVJ_SENT_MODE!=='undefined' && PVJ_SENT_MODE==='intent' && STATE.pvocIntent && STATE.pvocIntent.topics){
+      var srcById={}; src.forEach(function(r){ srcById[String(r.review_id)]=r; });
       items.forEach(function(it){
         var im=STATE.pvocIntent.topics[it.name];
-        if(!im){ it._intentMissing=true; return; }  // 데이터 없는 토픽 → 별점 유지
-        var negSet={}; (im.neg||[]).forEach(function(id){ negSet[String(id)]=1; });
-        var pos=0, neg=0;
-        (it._ids||[]).forEach(function(id){ if(negSet[String(id)]) neg++; else pos++; });
-        it.pos=pos; it.neg=neg; it.total=pos+neg; it._intentUsed=true;
+        if(!im){ it._intentMissing=true; return; }  // 데이터 없는 토픽 → 별점/감성 유지
+        var posSet={}, negSet={};
+        (im.pos||[]).forEach(function(id){ posSet[String(id)]=1; });
+        (im.neg||[]).forEach(function(id){ negSet[String(id)]=1; });
+        var pos=0, neg=0, orphan=0, cls={};
+        (it._ids||[]).forEach(function(id){
+          id=String(id);
+          var c;
+          if(negSet[id]) c='neg';
+          else if(posSet[id]) c='pos';
+          else {
+            // pvoc_intent.json에 아직 없는(새로 들어왔거나 파이프라인 갱신 후 재분류 안 된)
+            // 리뷰 — 예전엔 무조건 긍정으로 카운트해서 부정 리뷰가 긍정으로 잘못
+            // 집계되는 버그가 있었다. 그 리뷰 자체의 별점/감성으로 폴백한다.
+            orphan++;
+            var r=srcById[id];
+            c=(r && senPos(r))?'pos':'neg';
+          }
+          cls[id]=c;
+          if(c==='pos') pos++; else neg++;
+        });
+        it.pos=pos; it.neg=neg; it.total=pos+neg; it._intentUsed=true; it._intentOrphans=orphan; it._cls=cls;
       });
     }
     return {key:col.key, icon:col.icon, label:col.label, desc:col.desc, accent:col.accent,
@@ -7100,10 +7128,12 @@ function pvjOpenItem(ci, ii){
   // 표시 카운트(pvjCompute)와 동일하게 매칭된 리뷰를 직접 전달 → 카운트·실제 목록 100% 일치
   var byId=STATE.reviewsById||null;
   var fallback=byId?null:txGetAllReviews();
+  // 카드에서 쓴 긍/부정 판정(_cls)을 그대로 넘긴다 — 모달(krmRenderList)이 이걸 안 받고
+  // 별점만으로 다시 계산하면 카드와 다른 숫자가 나온다(2026-09-10 발견 버그).
   var explicit=(it._ids||[]).map(function(id){
     var rv=byId?byId[String(id)]:fallback.find(function(x){return String(x.review_id)===String(id);});
     if(!rv) return null;
-    return {name:rv.product||'(상품 미상)', r:{review_id:String(id), rating:rv.rating, date:rv.date, text:rv.text}};
+    return {name:rv.product||'(상품 미상)', r:{review_id:String(id), rating:rv.rating, date:rv.date, text:rv.text}, _cls:(it._cls&&it._cls[String(id)])||null};
   }).filter(function(x){return !!x;});
   var terms=(it.pats||[]).join('|');
   openKeywordReviewsModal(it.name, STATE.productFocus||null, domType, terms, explicit);
@@ -7135,9 +7165,9 @@ function renderProductVOC(){
   }
   var items=(tax.topics||[]).map(function(tp){
     var matched=txMatchTopic(tp, src, tax);
-    var pos=0,neg=0; matched.forEach(function(r){ if(senPos(r)) pos++; else neg++; });
+    var pos=0,neg=0,cls={}; matched.forEach(function(r){ var id=String(r.review_id); var p=senPos(r); cls[id]=p?'pos':'neg'; if(p) pos++; else neg++; });
     return {name:tp.name, icon:tp.icon||'🏷️', pats:(tp.keywords||[]).slice(), pos:pos, neg:neg, total:pos+neg,
-            _ids:matched.map(function(r){return String(r.review_id);})};
+            _ids:matched.map(function(r){return String(r.review_id);}), _cls:cls};
   }).filter(function(it){return it.total>0;}).sort(function(a,b){return b.total-a.total;});
   PRODVOC_DATA=items;
   if(items.length===0){
@@ -7171,7 +7201,7 @@ function prodVocOpen(ii){
   var explicit=(it._ids||[]).map(function(id){
     var rv=byId?byId[String(id)]:fallback.find(function(x){return String(x.review_id)===String(id);});
     if(!rv) return null;
-    return {name:rv.product||'(상품 미상)', r:{review_id:String(id), rating:rv.rating, date:rv.date, text:rv.text}};
+    return {name:rv.product||'(상품 미상)', r:{review_id:String(id), rating:rv.rating, date:rv.date, text:rv.text}, _cls:(it._cls&&it._cls[String(id)])||null};
   }).filter(function(x){return !!x;});
   openKeywordReviewsModal(it.name, STATE.productFocus||null, domType, (it.pats||[]).join('|'), explicit);
 }
