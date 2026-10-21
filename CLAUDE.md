@@ -509,6 +509,41 @@ python scripts/auto_reverify_loop.py --brand 슬룸 --months 2026-04,2026-05,202
 
 ---
 
+### 🟠 HIGH: 키워드 발굴은 감성 재판정(recheck_sentiment) 뒤에 (2026-10-21)
+
+**발생**: `update-data.bat` 에서 키워드 발굴 4단계(`discover_keywords.py` / `discover_praise_keywords.py` /
+`consolidate_praise_candidates.py` / `merge_discovered_keywords.py`)가 `[4/5] recheck_sentiment.py --full`
+보다 **먼저** 돌았다. `process_data.py` 출력 `reviews.json` 에는 `sentiment` 필드가 없어서(감성은 recheck
+이후에야 채워짐) 발굴 스크립트가 "미포착 0건"으로 후보 없이 조용히 끝났다(2026-09: 재판정 전 0개 →
+재판정 후 불만/개선 75개·칭찬 57개).
+
+**규칙**: `reviews.json` 의 `sentiment` 를 읽는 단계는 전부 `[4/5]` 감성 재판정 **뒤**에 둔다.
+현재 순서: `[4/5]` recheck → `[4.1~4.4/5]` 발굴·통합·채택 → `[4.5/5]` 전월 KPI 재연결 → `[5/5]` 검증.
+새 단계를 끼워 넣을 땐 그 단계가 sentiment 를 읽는지 먼저 확인할 것.
+
+---
+
+### 🟠 HIGH: summary.json 전월 KPI(mom_*)는 전월 summary.json 기준 (2026-10-21)
+
+**발생**: `process_data.py` `calc_kpis()` 가 `mom_review_change` / `mom_review_change_pct` /
+`mom_rating_change` 를 `--prev-input` **원본 CSV**(가짜 리뷰 제거·스마트스토어·쿠팡 병합 전) 기준으로
+계산했다. 그 뒤 정리·병합으로 실제 전월 건수가 바뀌어도 재계산 경로가 없어 틀린 값이 남았다
+(예: 2026-08 = +1029, 141.5% → 실제 −183, −12.9%). products 의 `prev_*` 는
+`patch_relink_prev_month.py` 가 다시 맞췄지만 summary KPI 는 빠져 있었다. 이 값은 대시보드
+`buildDashboardContext` 와 `claude_engine.py` 가 AI 컨텍스트로 쓴다(잘못된 수치로 AI 분석이 됨).
+
+**규칙**:
+- `patch_relink_prev_month.relink_month()` 가 상품 `prev_*` 와 함께 summary MoM 세 필드도 **전월
+  summary.json(total_reviews, avg_rating)** 기준으로 재계산한다(`calc_summary_mom`). 전월 summary 가
+  없으면 None.
+- `update-data.bat [4.5/5]` 에서 매달 자동 실행되고, `validate_data.py` 가 불일치를 **FAIL** 로 막는다.
+- 과거 월 리뷰를 정리·병합해 `total_reviews`/`avg_rating` 이 바뀌면 **다음 달**도
+  `python scripts/patch_relink_prev_month.py --month <다음달> --apply` 로 다시 맞출 것
+  (`purge_bulk_reviews.py`/`consolidate_product.py` 는 이미 자동 호출).
+- 2026-04~08 을 이 방식으로 바로잡음(2026-09 는 수동 보정: +251, 20.4%, −0.02).
+
+---
+
 ### 🟠 HIGH: loadData — 로드 실패 시 사용자에게 반드시 알릴 것
 
 **발생**: `Promise.allSettled` 사용 시 JSON 로드 실패가 조용히 REAL_DATA 폴백으로 처리됨. 사용자가 잘못된 데이터를 보고 있음을 알 수 없었음.
