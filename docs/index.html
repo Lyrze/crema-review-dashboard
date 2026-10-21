@@ -987,6 +987,8 @@
     .pvj-bar{height:8px;border-radius:5px;background:rgba(0,0,0,.07);margin:6px 0 4px;overflow:hidden;display:flex;}
     .pvj-bar .pos{background:#22c55e;height:100%;}
     .pvj-bar .neg{background:#ef4444;height:100%;}
+    .pvj-bar .neu{background:#cbd5e1;height:100%;}
+    .pvj-rates .u{color:var(--text-secondary);}
     .pvj-rates{display:flex;justify-content:space-between;font-size:10.5px;font-weight:700;}
     .pvj-rates .p{color:#16a34a;}
     .pvj-rates .n{color:#dc2626;}
@@ -5057,7 +5059,7 @@ function krmRenderList(){
   // 모달이 어긋나는 버그가 있었다(2026-09-10 발견: 카드 "긍정3/부정3" vs 모달 "긍정2/부정4").
   function _krmCls(it){ return it._cls || (((it.r&&it.r.rating)||0)>=4 ? 'pos' : 'neg'); }
   var posN=0, negN=0;
-  srcAll.forEach(function(it){ if(_krmCls(it)==='pos') posN++; else negN++; });
+  srcAll.forEach(function(it){ var c=_krmCls(it); if(c==='pos') posN++; else if(c==='neg') negN++; });
   var _eA=$('krm-sent-all'), _eP=$('krm-sent-pos'), _eN=$('krm-sent-neg');
   if(_eA) _eA.textContent=srcAll.length;
   if(_eP) _eP.textContent=posN;
@@ -6976,27 +6978,27 @@ function pvjCompute(){
       // Taxonomy 기준 — txMatchTopic이 수동 포함/제외까지 처리
       items=(tax.topics||[]).map(function(tp){
         var matched=txMatchTopic(tp, src, tax);
-        var pos=0, neg=0, cls={};
-        matched.forEach(function(r){ var id=String(r.review_id); var p=senPos(r); cls[id]=p?'pos':'neg'; if(p) pos++; else neg++; });
-        return {name:tp.name, icon:tp.icon||'🏷️', pats:(tp.keywords||[]).slice(), pos:pos, neg:neg, total:pos+neg,
+        var pos=0, neg=0, neu=0, cls={};
+        matched.forEach(function(r){ var id=String(r.review_id); var c=senClass(r); cls[id]=c; if(c==='pos') pos++; else if(c==='neg') neg++; else neu++; });
+        return {name:tp.name, icon:tp.icon||'🏷️', pats:(tp.keywords||[]).slice(), pos:pos, neg:neg, neu:neu, total:pos+neg+neu,
                 _ids:matched.map(function(r){return String(r.review_id);}), _cls:cls};
       });
     } else {
       // 폴백: 내장 고정값
       items=col.items.map(function(it){
-        var pos=0, neg=0, ids=[], cls={};
+        var pos=0, neg=0, neu=0, ids=[], cls={};
         for(var i=0;i<src.length;i++){
           var r=src[i];
           if(!r.text) continue;
           if(pvjMatchText(r.text, it.pats)){
             var id=String(r.review_id);
             ids.push(id);
-            var p=senPos(r);
-            cls[id]=p?'pos':'neg';
-            if(p) pos++; else neg++;
+            var c=senClass(r);
+            cls[id]=c;
+            if(c==='pos') pos++; else if(c==='neg') neg++; else neu++;
           }
         }
-        return {name:it.name, icon:it.icon, pats:it.pats, pos:pos, neg:neg, total:pos+neg, _ids:ids, _cls:cls};
+        return {name:it.name, icon:it.icon, pats:it.pats, pos:pos, neg:neg, neu:neu, total:pos+neg+neu, _ids:ids, _cls:cls};
       });
     }
     // 감성기반 모드: 별점 대신 AI 의도(pvoc_intent)로 pos/neg 재계산 (데이터 있는 토픽만)
@@ -7011,7 +7013,7 @@ function pvjCompute(){
         var posSet={}, negSet={};
         (im.pos||[]).forEach(function(id){ posSet[String(id)]=1; });
         (im.neg||[]).forEach(function(id){ negSet[String(id)]=1; });
-        var pos=0, neg=0, orphan=0, cls={};
+        var pos=0, neg=0, neu=0, orphan=0, cls={};
         (it._ids||[]).forEach(function(id){
           id=String(id);
           var c;
@@ -7023,12 +7025,12 @@ function pvjCompute(){
             // 집계되는 버그가 있었다. 그 리뷰 자체의 별점/감성으로 폴백한다.
             orphan++;
             var r=srcById[id];
-            c=(r && senPos(r))?'pos':'neg';
+            c=r?senClass(r):'neu';
           }
           cls[id]=c;
-          if(c==='pos') pos++; else neg++;
+          if(c==='pos') pos++; else if(c==='neg') neg++; else neu++;
         });
-        it.pos=pos; it.neg=neg; it.total=pos+neg; it._intentUsed=true; it._intentOrphans=orphan; it._cls=cls;
+        it.pos=pos; it.neg=neg; it.neu=neu; it.total=pos+neg+neu; it._intentUsed=true; it._intentOrphans=orphan; it._cls=cls;
       });
     }
     return {key:col.key, icon:col.icon, label:col.label, desc:col.desc, accent:col.accent,
@@ -7083,19 +7085,20 @@ function renderPVOCKanban(){
     var maxC=1; c.items.forEach(function(it){ if(it.total>maxC) maxC=it.total; });
     var rows=c.items.map(function(it, ii){
       var pr=it.total? Math.round(it.pos/it.total*100) : 0;
-      var nr=it.total? 100-pr : 0;
+      var nr=it.total? Math.round(it.neg/it.total*100) : 0;
       var alert=(it.total>=5 && nr>=60);
       var cap = !it.total ? '언급 없음'
         : alert ? '부정 집중 — 리뷰 확인 권장'
         : nr>=40 ? '긍·부정 혼재'
         : '긍정 신호';
-      // 막대는 건수가 아니라 긍/부정 비율로 꽉 채움 (pr+nr=100). 건수는 위 숫자로 표시.
+      // 막대는 건수가 아니라 긍/중립/부정 비율로 꽉 채움. 건수는 위 숫자로 표시.
+      //   (2026-10-21: 중립을 부정으로 세던 버그 수정 — 중립은 회색 구간으로 따로 표시)
       var wP=pr, wN=nr;
       return '<div class="pvj-item'+(alert?' alert':'')+'" onclick="pvjOpenItem('+ci+','+ii+')" title="클릭하여 관련 리뷰 보기">'+
         '<div class="pvj-i-head"><span>'+it.icon+' '+escapeHtml(it.name)+'</span>'+
-        '<span class="pvj-i-cnt">👍 <b style="color:#16a34a;">'+it.pos+'</b> | 👎 <b style="color:#dc2626;">'+it.neg+'</b> &nbsp;'+it.total+'건'+(alert?' <span class="pvj-badge">주의</span>':'')+'</span></div>'+
-        '<div class="pvj-bar"><div class="pos" style="width:'+wP+'%;"></div><div class="neg" style="width:'+wN+'%;"></div></div>'+
-        '<div class="pvj-rates"><span class="p">긍정 '+pr+'%</span><span class="n">부정 '+nr+'%</span></div>'+
+        '<span class="pvj-i-cnt">👍 <b style="color:#16a34a;">'+it.pos+'</b> | 👎 <b style="color:#dc2626;">'+it.neg+'</b>'+(it.neu?' | 중립 '+it.neu:'')+' &nbsp;'+it.total+'건'+(alert?' <span class="pvj-badge">주의</span>':'')+'</span></div>'+
+        '<div class="pvj-bar"><div class="pos" style="width:'+wP+'%;"></div><div class="neu" style="width:'+(it.total?Math.max(0,100-wP-wN):0)+'%;"></div><div class="neg" style="width:'+wN+'%;"></div></div>'+
+        '<div class="pvj-rates"><span class="p">긍정 '+pr+'%</span>'+(it.neu?'<span class="u">중립 '+Math.max(0,100-pr-nr)+'%</span>':'')+'<span class="n">부정 '+nr+'%</span></div>'+
         '<div class="pvj-cap">'+cap+'</div></div>';
     }).join('');
     // 컬럼 인사이트: 부정 최다 항목
@@ -7175,8 +7178,8 @@ function renderProductVOC(){
   }
   var items=(tax.topics||[]).map(function(tp){
     var matched=txMatchTopic(tp, src, tax);
-    var pos=0,neg=0,cls={}; matched.forEach(function(r){ var id=String(r.review_id); var p=senPos(r); cls[id]=p?'pos':'neg'; if(p) pos++; else neg++; });
-    return {name:tp.name, icon:tp.icon||'🏷️', pats:(tp.keywords||[]).slice(), pos:pos, neg:neg, total:pos+neg,
+    var pos=0,neg=0,neu=0,cls={}; matched.forEach(function(r){ var id=String(r.review_id); var c=senClass(r); cls[id]=c; if(c==='pos') pos++; else if(c==='neg') neg++; else neu++; });
+    return {name:tp.name, icon:tp.icon||'🏷️', pats:(tp.keywords||[]).slice(), pos:pos, neg:neg, neu:neu, total:pos+neg+neu,
             _ids:matched.map(function(r){return String(r.review_id);}), _cls:cls};
   }).filter(function(it){return it.total>0;}).sort(function(a,b){return b.total-a.total;});
   PRODVOC_DATA=items;
@@ -7186,14 +7189,14 @@ function renderProductVOC(){
   }
   var rows=items.map(function(it, ii){
     var pr=it.total?Math.round(it.pos/it.total*100):0;
-    var nr=it.total?100-pr:0;
+    var nr=it.total?Math.round(it.neg/it.total*100):0;
     var alert=(it.total>=5 && nr>=50);
     var cap = alert ? '부정 비중 높음 — 확인 권장' : nr>=30 ? '긍·부정 혼재' : '긍정 신호';
     return '<div class="pvj-item'+(alert?' alert':'')+'" onclick="prodVocOpen('+ii+')" title="클릭하여 관련 리뷰 보기">'+
       '<div class="pvj-i-head"><span>'+it.icon+' '+escapeHtml(it.name)+'</span>'+
-      '<span class="pvj-i-cnt">👍 <b style="color:#16a34a;">'+it.pos+'</b> | 👎 <b style="color:#dc2626;">'+it.neg+'</b> &nbsp;'+it.total+'건'+(alert?' <span class="pvj-badge">주의</span>':'')+'</span></div>'+
-      '<div class="pvj-bar"><div class="pos" style="width:'+pr+'%;"></div><div class="neg" style="width:'+nr+'%;"></div></div>'+
-      '<div class="pvj-rates"><span class="p">긍정 '+pr+'%</span><span class="n">부정 '+nr+'%</span></div>'+
+      '<span class="pvj-i-cnt">👍 <b style="color:#16a34a;">'+it.pos+'</b> | 👎 <b style="color:#dc2626;">'+it.neg+'</b>'+(it.neu?' | 중립 '+it.neu:'')+' &nbsp;'+it.total+'건'+(alert?' <span class="pvj-badge">주의</span>':'')+'</span></div>'+
+      '<div class="pvj-bar"><div class="pos" style="width:'+pr+'%;"></div><div class="neu" style="width:'+(it.total?Math.max(0,100-pr-nr):0)+'%;"></div><div class="neg" style="width:'+nr+'%;"></div></div>'+
+      '<div class="pvj-rates"><span class="p">긍정 '+pr+'%</span>'+(it.neu?'<span class="u">중립 '+Math.max(0,100-pr-nr)+'%</span>':'')+'<span class="n">부정 '+nr+'%</span></div>'+
       '<div class="pvj-cap">'+cap+'</div></div>';
   }).join('');
   var totAll=items.reduce(function(s,x){return s+x.total;},0);
@@ -8901,7 +8904,34 @@ function txEnsurePvocTaxonomies(){
     });
     changed=true;
   });
+  if(txMigratePvocLegacyKeywords()) changed=true;
   if(changed) txSave();
+}
+
+// 고정 분류 기본 키워드가 바뀌었을 때(PVOC_TAXONOMY 수정) 이미 저장된 Topic 은 옛 키워드를 그대로
+//   들고 있다(시드는 '없을 때만' 생성). 사용자가 손대지 않은 옛 기본값과 정확히 같을 때만 새 기본값으로
+//   교체한다(편집된 Topic 은 보존). 2026-09-11 '상담 (구매 전)' 맨몸 패턴 제거 후에도 Firebase 공유본에
+//   '추천해 주'·'문의했' 등이 남아 "주변에 추천해 주는" 같은 리뷰가 계속 매칭되던 문제(2026-10-21).
+var PVOC_LEGACY_PATS={
+  '상담 (구매 전)':[['구매 전 문의','구매전 문의','사기 전에 문의','문의했','문의드렸','상담 받','상담받','추천을 잘','추천해 주','추천해주셔','쿠폰 적용','쿠폰이']]
+};
+function txMigratePvocLegacyKeywords(){
+  if(typeof PVOC_TAXONOMY==='undefined' || !PVOC_LEGACY_PATS) return false;
+  function norm(a){ return (a||[]).map(function(k){return String(k).trim().toLowerCase();}).filter(Boolean).sort().join('\u0001'); }
+  var changed=false;
+  PVOC_TAXONOMY.forEach(function(col){
+    var tax=TAXONOMIES.find(function(t){return t.pvoc===col.key;});
+    if(!tax) return;
+    col.items.forEach(function(it){
+      var olds=PVOC_LEGACY_PATS[it.name]; if(!olds) return;
+      (tax.topics||[]).forEach(function(tp){
+        if(tp.name!==it.name) return;
+        var cur=norm(tp.keywords);
+        if(olds.some(function(o){return norm(o)===cur;})){ tp.keywords=it.pats.slice(); changed=true; }
+      });
+    });
+  });
+  return changed;
 }
 
 function txSave(){
@@ -8951,6 +8981,8 @@ function fwEnable(){
       FW.applying = true;
       try{ txMergeIncoming(data.taxonomies); }catch(e){}
       FW.applying = false;
+      // 공유본에 옛 기본 키워드가 남아 있으면 교체 후 다시 올린다(다른 담당자 화면도 함께 정리됨)
+      try{ if(txMigratePvocLegacyKeywords()) txSave(); }catch(e){}
       if(document.body.classList.contains('taxonomy-mode')){
         try{ if(typeof txRenderGrid==='function') txRenderGrid(); if(TX_STATE && TX_STATE.activeTaxonomyId) txRenderDetail(); }catch(e){}
       }
