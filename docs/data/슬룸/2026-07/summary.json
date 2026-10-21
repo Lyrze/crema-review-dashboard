@@ -19,9 +19,9 @@
     "negative_count": 177,
     "positive_rate": 69.99,
     "negative_rate": 12.5,
-    "mom_review_change": null,
-    "mom_review_change_pct": null,
-    "mom_rating_change": null
+    "mom_review_change": 226,
+    "mom_review_change_pct": 19.0,
+    "mom_rating_change": 0.01
   },
   "timeline": [
     {
