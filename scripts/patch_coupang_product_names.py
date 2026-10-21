@@ -12,7 +12,7 @@ consolidate_product.py의 product_consolidate.json은 옛 매핑 4건뿐이라 �
   python scripts/patch_coupang_product_names.py --dry-run
   python scripts/patch_coupang_product_names.py --apply
 """
-import argparse, json, sys
+import argparse, json, re, sys
 from pathlib import Path
 
 if hasattr(sys.stdout, "reconfigure"):
@@ -49,7 +49,14 @@ RENAME_MAP = {
     "슬룸 골반 마사지기 안마기 의자 엉덩이 고관절 허리 진동 온열 에어백": "골반 마사지기",
     "슬룸 허리 마사지기 스트레칭 온열 3단 조절 마사지 허리베개 프로": "허리베개 프로",
     "슬룸 발편한케어 EMS 저주파 발 발바닥 마사지기 안마기 족저근막염": "발편한케어 V1",
+    # 2026-09 신규 쿠팡 CSV
+    "슬룸 코어 요추벨트 허리 보호대": "코어 요추벨트",
+    "슬룸 종아리편한케어 좌우세트": "종아리편한케어",
+    "슬룸 스트레칭 목베개": "스트레칭 목베개",   # 온열·스트레칭 기능 언급 — 메모리폼 "목베개"와 구분해 별도 유지
 }
+
+# 다운로드 중복 시 파일명에 붙는 " (1)" 같은 꼬리표 — 매핑 조회 전에 떼어낸다(2026-09 확인)
+DUP_SUFFIX = re.compile(r"\s*\(\d+\)$")
 
 
 def eprint(*a, **k):
@@ -57,11 +64,14 @@ def eprint(*a, **k):
 
 
 def main():
+    global MONTH
     ap = argparse.ArgumentParser()
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--dry-run", action="store_true")
     g.add_argument("--apply", action="store_true")
+    ap.add_argument("--month", default=MONTH, help="처리월 YYYY-MM (기본 2026-08)")
     args = ap.parse_args()
+    MONTH = args.month
 
     rpath = DATA_ROOT / MONTH / "reviews.json"
     rdata = json.loads(rpath.read_text(encoding="utf-8"))
@@ -70,7 +80,7 @@ def main():
     renames = {}
     for rid, rv in reviews.items():
         cur = rv.get("product")
-        new = RENAME_MAP.get(cur)
+        new = RENAME_MAP.get(DUP_SUFFIX.sub("", cur or ""))
         if new and new != cur:
             renames[rid] = (cur, new)
 

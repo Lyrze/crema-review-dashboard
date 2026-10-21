@@ -113,11 +113,14 @@ def resolve(name: str):
 
 
 def main():
+    global MONTH
     ap = argparse.ArgumentParser()
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--dry-run", action="store_true")
     g.add_argument("--apply", action="store_true")
+    ap.add_argument("--month", default=MONTH, help="처리월 YYYY-MM (기본 2026-08)")
     args = ap.parse_args()
+    MONTH = args.month
 
     rpath = DATA_ROOT / MONTH / "reviews.json"
     rdata = json.loads(rpath.read_text(encoding="utf-8"))
