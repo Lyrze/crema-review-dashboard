@@ -2005,7 +2005,15 @@
 </div>
 
 <script>
-var FALLBACK_PREV = { total_reviews:2200, avg_rating:4.45, negative_rate:2.1, photo_review_count:195 };
+// 전월 리뷰 수/별점 — 상품 포커스면 products.json prev_*, 전체면 summary.json mom_* 로 역산.
+// 전월이 없으면 null("전월 없음"). 고정 임시값(예전 FALLBACK_PREV 2200건)으로 대체하지 않는다.
+function kpiPrev(prod,k){
+  if(prod) return {rv:prod.prev_review_count!=null?prod.prev_review_count:null, rt:prod.prev_avg_rating!=null?prod.prev_avg_rating:null};
+  return {
+    rv:k&&k.mom_review_change!=null&&k.total_reviews!=null?k.total_reviews-k.mom_review_change:null,
+    rt:k&&k.mom_rating_change!=null&&k.avg_rating!=null?Math.round((k.avg_rating-k.mom_rating_change)*100)/100:null
+  };
+}
 var REAL_DATA = {
   summary: {
     kpis: { total_reviews:1998, avg_rating:4.63, positive_count:1829, neutral_count:134, negative_count:35, positive_rate:91.54, negative_rate:1.75, photo_review_count:220, photo_review_rate:11.0 },
@@ -2432,9 +2440,9 @@ async function aiAnalyzeSection(key){
       '핵심 인사이트와 개선 포인트를 3~5줄로 한국어로 요약하세요.';
   } else if(key==='kpi-reviews'){
     var cur=prod?prod.review_count:k.total_reviews;
-    var prev=prod&&prod.prev_review_count!=null?prod.prev_review_count:FALLBACK_PREV.total_reviews;
+    var prev=kpiPrev(prod,k).rv;
     prompt=subject+' '+STATE.month+' 리뷰 수 분석:\n'+
-      '현재: '+cur+'건, 전월: '+prev+'건, 변화: '+(cur-prev)+'건 ('+(((cur-prev)/prev)*100).toFixed(1)+'%)\n\n'+
+      '현재: '+cur+'건, '+(prev!=null?'전월: '+prev+'건, 변화: '+(cur-prev)+'건 ('+(((cur-prev)/prev)*100).toFixed(1)+'%)':'전월 데이터 없음')+'\n\n'+
       '리뷰 수 변화의 원인과 시사점을 3~5줄로 한국어로 분석하세요.';
   } else if(key==='kpi-sentiment'){
     var kk2=prod&&prod.sentiment?{pos:prod.sentiment.positive||0,neu:prod.sentiment.neutral||0,neg:prod.sentiment.negative||0,pr:prod.positive_rate||0,nr:prod.negative_rate||0}:{pos:k.positive_count||0,neu:k.neutral_count||0,neg:k.negative_count||0,pr:k.positive_rate||0,nr:k.negative_rate||0};
@@ -2443,9 +2451,9 @@ async function aiAnalyzeSection(key){
       '감성 분포의 의미와 부정 리뷰 주요 원인 추정, 개선 방향을 3~5줄로 한국어로 분석하세요.';
   } else if(key==='kpi-rating'){
     var curRt=prod?prod.avg_rating:k.avg_rating;
-    var prevRt=prod&&prod.prev_avg_rating!=null?prod.prev_avg_rating:FALLBACK_PREV.avg_rating;
+    var prevRt=kpiPrev(prod,k).rt;
     prompt=subject+' '+STATE.month+' 평균 별점:\n'+
-      '현재: '+curRt.toFixed(2)+'★, 전월: '+prevRt.toFixed(2)+'★, 변화: '+(curRt-prevRt>=0?'+':'')+(curRt-prevRt).toFixed(2)+'\n\n'+
+      '현재: '+curRt.toFixed(2)+'★, '+(prevRt!=null?'전월: '+prevRt.toFixed(2)+'★, 변화: '+(curRt-prevRt>=0?'+':'')+(curRt-prevRt).toFixed(2):'전월 데이터 없음')+'\n\n'+
       '별점 변화의 의미와 고객 만족도 개선 방향을 3~5줄로 한국어로 분석하세요.';
   } else if(key==='kpi-keywords'){
     var kw=STATE.keywords||REAL_DATA.keywords;
@@ -2891,12 +2899,14 @@ function renderKPI(){
     k.positive_rate=liveK.positive_rate; k.negative_rate=liveK.negative_rate;
     k.positive_count=liveK.positive_count; k.negative_count=liveK.negative_count; k.neutral_count=liveK.neutral_count;
   }
-  var prevRv=prod&&prod.prev_review_count!=null?prod.prev_review_count:FALLBACK_PREV.total_reviews;
-  var prevRt=prod&&prod.prev_avg_rating!=null?prod.prev_avg_rating:FALLBACK_PREV.avg_rating;
+  var kp=kpiPrev(prod,(STATE.summary||REAL_DATA.summary).kpis);
+  var prevRv=kp.rv, prevRt=kp.rt;
   var prevMonth=STATE.month.replace(/(\d{4})-(\d{2})/,function(_,y,m){var n=parseInt(m)-1;return n<1?(parseInt(y)-1)+'-12':y+'-'+(n<10?'0'+n:n);});
-  var revPct=(((k.total_reviews-prevRv)/prevRv)*100).toFixed(1);
-  setDelta('kpi-total-delta',revPct,'%',false);
-  setDelta('kpi-rating-delta',(k.avg_rating-prevRt).toFixed(2),'★',false);
+  var revPct=prevRv?(((k.total_reviews-prevRv)/prevRv)*100).toFixed(1):null;
+  if(revPct!=null) setDelta('kpi-total-delta',revPct,'%',false);
+  else { var tdEl=$('kpi-total-delta'); if(tdEl){ tdEl.className='delta neu'; tdEl.textContent='전월 없음'; } }
+  if(prevRt!=null) setDelta('kpi-rating-delta',(k.avg_rating-prevRt).toFixed(2),'★',false);
+  else { var rdEl=$('kpi-rating-delta'); if(rdEl){ rdEl.className='delta neu'; rdEl.textContent='전월 없음'; } }
   var tvEl=$('kpi-total-val'); if(tvEl) tvEl.textContent=fmt(k.total_reviews);
   var rvEl=$('kpi-rating-val'); if(rvEl) rvEl.textContent=k.avg_rating.toFixed(2);
   var pcEl=$('kpi-pos-count'); if(pcEl) pcEl.textContent='긍정 '+k.positive_rate.toFixed(1)+'%  ·  부정 '+k.negative_rate.toFixed(2)+'%';
@@ -2907,7 +2917,7 @@ function renderKPI(){
       borderRadius:6,maxBarThickness:64
     }]},
     options:{responsive:true,maintainAspectRatio:false,
-      onClick:function(evt,els){if(els.length){var i=els[0].index;showCIPGeneric('리뷰 수 — '+[prevMonth,STATE.month][i],[{label:'기간',val:[prevMonth,STATE.month][i]},{label:'리뷰 수',val:fmt([prevRv,k.total_reviews][i])+'건',color:'var(--accent)'},{label:'변화율',val:revPct+'%',color:revPct>=0?'var(--positive)':'var(--negative)'}],$('kpi-reviews-chart'),evt);}},
+      onClick:function(evt,els){if(els.length){var i=els[0].index;showCIPGeneric('리뷰 수 — '+[prevMonth,STATE.month][i],[{label:'기간',val:[prevMonth,STATE.month][i]},{label:'리뷰 수',val:fmt([prevRv,k.total_reviews][i])+'건',color:'var(--accent)'},{label:'변화율',val:revPct!=null?revPct+'%':'전월 없음',color:revPct>=0?'var(--positive)':'var(--negative)'}],$('kpi-reviews-chart'),evt);}},
       plugins:{legend:{display:false},tooltip:{enabled:true}},
       scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,.04)'},ticks:{maxTicksLimit:4,font:{size:10}}},
               x:{grid:{display:false},ticks:{font:{size:11}}}}}});
@@ -2927,7 +2937,7 @@ function renderKPI(){
       borderRadius:6,maxBarThickness:64
     }]},
     options:{responsive:true,maintainAspectRatio:false,
-      onClick:function(evt,els){if(els.length){var i=els[0].index;var rtD=(k.avg_rating-prevRt).toFixed(2);showCIPGeneric('평균 별점 — '+[prevMonth,STATE.month][i],[{label:'기간',val:[prevMonth,STATE.month][i]},{label:'평균 별점',val:[prevRt,k.avg_rating][i].toFixed(2)+'★',color:'#f59e0b'},{label:'전월 대비',val:(rtD>=0?'+':'')+rtD+'★',color:rtD>=0?'var(--positive)':'var(--negative)'}],$('kpi-rating-chart'),evt);}},
+      onClick:function(evt,els){if(els.length){var i=els[0].index;var rtD=prevRt!=null?(k.avg_rating-prevRt).toFixed(2):null;var rtV=[prevRt,k.avg_rating][i];showCIPGeneric('평균 별점 — '+[prevMonth,STATE.month][i],[{label:'기간',val:[prevMonth,STATE.month][i]},{label:'평균 별점',val:rtV!=null?rtV.toFixed(2)+'★':'-',color:'#f59e0b'},{label:'전월 대비',val:rtD!=null?(rtD>=0?'+':'')+rtD+'★':'전월 없음',color:rtD>=0?'var(--positive)':'var(--negative)'}],$('kpi-rating-chart'),evt);}},
       plugins:{legend:{display:false},tooltip:{enabled:true}},
       scales:{y:{min:3.5,max:5.0,grid:{color:'rgba(0,0,0,.04)'},ticks:{maxTicksLimit:4,font:{size:10}}},
               x:{grid:{display:false},ticks:{font:{size:11}}}}}});
