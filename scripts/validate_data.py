@@ -8,6 +8,7 @@
      · 필수 파일 없음/파싱 불가 (summary/products/keywords/reviews)
      · total_reviews 불일치 (KPI ≠ reviews.json ≠ 상품 합계)
      · products 에 positive_rate/negative_rate 누락
+     · summary MoM(mom_*) 이 전월 summary.json 기준값과 불일치
   ⚠️ WARN (exit 0) — 배포는 가능하나 확인 권장.
      · 감성 커버리지 < 100% 또는 별점 폴백 존재
      · 후보 review_id 가 reviews.json 에 없음
@@ -26,6 +27,8 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from patch_relink_prev_month import calc_summary_mom, load_prev_kpis  # noqa: E402
 
 
 def main():
@@ -79,6 +82,22 @@ def main():
                        f"(사은품 제외 {gifts}) · 상품합 {psum}(세트 다중귀속 +{psum - nrev})")
         else:
             fails.append(f"리뷰 수 불일치: KPI={kpi_tot}, reviews.json={nrev}, 상품합={psum}")
+
+    # ── 1.5) summary 전월 KPI(MoM) = 전월 summary.json 기준 ──
+    # process_data 는 원본 prev CSV(병합·정리 전) 기준으로 계산해 틀린 값을 남긴다.
+    # patch_relink_prev_month.py 가 바로잡으므로 여기선 일치 여부만 본다.
+    if summary is not None:
+        kpis = summary.get("kpis", {}) or {}
+        want = calc_summary_mom(kpis, load_prev_kpis(args.brand, args.month))
+        bad = {k: (kpis.get(k), v) for k, v in want.items() if kpis.get(k) != v}
+        if bad:
+            fails.append(f"summary MoM 이 전월 summary.json 과 불일치 {bad} — "
+                         f"patch_relink_prev_month.py --month {args.month} --apply 실행")
+        elif want["mom_review_change"] is None:
+            oks.append("summary MoM 정합: 전월 summary 없음 → None")
+        else:
+            oks.append(f"summary MoM 정합: {want['mom_review_change']:+d} "
+                       f"({want['mom_review_change_pct']}%) · 별점 {want['mom_rating_change']}")
 
     # ── 2) products 필수 필드 ──
     if products:
